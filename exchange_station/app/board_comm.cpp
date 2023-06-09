@@ -20,8 +20,8 @@ void BoardComm::handle(void) {
   connect_.check();
 }
 
-// Transmit data to capacity
-// 向电容控制板发送数据(未使用)
+// Transmit data
+// 发送数据
 void BoardComm::canTxMsg(void) {
   can_tx_header_.IDE = CAN_ID_STD;
   can_tx_header_.RTR = CAN_RTR_DATA;
@@ -41,7 +41,7 @@ bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
 
 // Receive feedback data message callback. Called in
 // HAL_CAN_RxFifo0MsgPendingCallback()
-// 电容信息接收回调，在HAL_CAN_RxFifo0MsgPendingCallback中调用
+// 信息接收回调，在HAL_CAN_RxFifo0MsgPendingCallback中调用
 void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                  CAN_RxHeaderTypeDef rx_header,
                                  uint8_t rx_data[8]) {

@@ -12,20 +12,12 @@
 
 #include "iwdg.h"
 
-#include "app/autoaim.h"
-#include "app/chassis.h"
-#include "app/gimbal.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
-#include "app/power_limit.h"
-#include "app/shoot.h"
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
-#include "base/cap_comm/cap_comm.h"
 #include "base/common/math.h"
-#include "base/cv_comm/cv_comm.h"
 #include "base/remote/remote.h"
-#include "base/servo/servo.h"
 
 void iwdgHandler(bool iwdg_refresh_flag);
 void robotPowerStateFSM(bool stop_flag);
@@ -36,18 +28,7 @@ void boardLedHandle(void);
 
 extern RC rc;
 extern IMU board_imu;
-extern CVComm cv_comm;
-extern ServoZX361D gate_servo;
-extern CapComm ultra_cap;
-extern RefereeComm referee;
 
-Gimbal gimbal(&GMY, &GMP, &board_imu);
-MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(5, 0, 10, 100, 240),
-                       LowPassFilter(2e-2f));
-MecanumChassisPower power_limit(&chassis, &referee, &ultra_cap);
-Shoot shoot(&FRICL, &FRICR, &STIR);
-Gate gate(1580, 800, &gate_servo);
-Autoaim autoaim;
 BoardLed led;
 
 // 上电状态
@@ -89,8 +70,6 @@ const uint16_t time = 10;
 // 控制初始化
 void controlInit(void) {
   led.init();
-  gate.init();
-  power_limit.init();
   robot_state = STOP;
 }
 
@@ -109,14 +88,6 @@ void controlLoop(void) {
     allMotorsOn();   // 电机上电
     robotControl();  // 机器人控制
   }
-  chassis.rotateHandle(math::degNormalize180(
-      -(GMY.motor_data_.ecd_angle - yaw_zero_ecd) / GMY.ratio_));
-  power_limit.handle(extra_power_max);
-  chassis.handle();
-  gimbal.handle();
-  shoot.handle();
-  autoaim.handle();
-  cv_comm.handle();
   boardLedHandle();
 }
 
@@ -153,29 +124,12 @@ void robotPowerStateFSM(bool stop_flag) {
 void robotReset(void) {
   robot_init_flag = false;
 
-  gimbal.setMode(IMU_MODE);
-  shoot.fricOff();
-  autoaim.setState(false, false);
-  cv_comm.mode_ = CVMode::AUTOAIM;
-
   last_rc_switch = rc.switch_;
 }
 
 // 开机上电启动处理
 bool robotStartup(void) {
   bool flag = true;
-
-  gimbal.init();
-  gimbal.handle();
-  if (!gimbal.initFinish()) {
-    chassis.lock_ = true;
-    flag = flag && false;
-  } else {
-    chassis.lock_ = false;
-  }
-
-  shoot.setShootParam(15, 200, 10);  // todo
-
   return flag;
 }
 
@@ -183,130 +137,21 @@ bool robotStartup(void) {
 void robotControl(void) {
   // 遥控器挡位左上右上
   if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::FOLLOW;
-    chassis.setAngleSpeed(
-        rc.channel_.r_col * rcctrl::chassis_speed_rate * 0.75f,
-        -rc.channel_.r_row * rcctrl::chassis_speed_rate * 0.75f, 0,
-        gimbal.fdb_.yaw_speed * rcctrl::chassis_follow_ff_rate);
-    extra_power_max = 20;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOff();
-
-    if (rc.channel_.l_col < -500) {
-      gate.set(Gate::OPEN);
-    } else {
-      gate.set(Gate::CLOSE);
-    }
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::AUTOAIM;
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::FOLLOW;
-    chassis.setAngleSpeed(
-        rc.channel_.r_col * rcctrl::chassis_speed_rate,
-        -rc.channel_.r_row * rcctrl::chassis_speed_rate, 0,
-        gimbal.fdb_.yaw_speed * rcctrl::chassis_follow_ff_rate);
-    extra_power_max = 80;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOn();
-    gate.set(Gate::COMPLIANCE);
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::AUTOAIM;
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::FOLLOW;
-    chassis.setAngleSpeed(
-        rc.channel_.r_col * rcctrl::chassis_speed_rate,
-        -rc.channel_.r_row * rcctrl::chassis_speed_rate, 0,
-        gimbal.fdb_.yaw_speed * rcctrl::chassis_follow_ff_rate);
-    extra_power_max = 150;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOn();
-    gate.set(Gate::COMPLIANCE);
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::AUTOAIM;
-
-    if (last_rc_switch.l != rc.switch_.l) {
-      shoot.shootOneBullet();
-    }
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::FOLLOW;
-    chassis.setAngleSpeed(
-        rc.channel_.r_col * rcctrl::chassis_speed_rate * 0.75f,
-        -rc.channel_.r_row * rcctrl::chassis_speed_rate * 0.75f, 0,
-        gimbal.fdb_.yaw_speed * rcctrl::chassis_follow_ff_rate);
-    extra_power_max = 10;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOff();
-    gate.set(Gate::COMPLIANCE);
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::AUTOAIM;
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::GYRO;
-    chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate * 0.5f,
-                     -rc.channel_.r_row * rcctrl::chassis_speed_rate * 0.5f,
-                     240);
-    extra_power_max = 10;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOff();
-    gate.set(Gate::COMPLIANCE);
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::ENERGY;
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    chassis.lock_ = false;
-    chassis.mode_ = MecanumChassis::GYRO;
-    chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate * 0.75f,
-                     -rc.channel_.r_row * rcctrl::chassis_speed_rate * 0.75f,
-                     420);
-    extra_power_max = 150;
-
-    gimbal.setMode(IMU_MODE);
-    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
-                    -rc.channel_.l_col * rcctrl::gimbal_rate);
-
-    shoot.fricOff();
-    gate.set(Gate::COMPLIANCE);
-
-    autoaim.setState(false, false);
-    cv_comm.mode_ = CVMode::ENERGY;
   }
 
   // 记录遥控器挡位状态

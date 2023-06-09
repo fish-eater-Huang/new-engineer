@@ -20,8 +20,8 @@ class BoardComm {
 
   void handle(void);
 
-  // Transmit data to capacity
-  // 向电容控制板发送数据
+  // Transmit data
+  // 发送数据
   void canTxMsg(void);
 
   // Check CAN channel and id of received CAN message
@@ -30,7 +30,7 @@ class BoardComm {
 
   // Receive feedback data message callback. Called in
   // HAL_CAN_RxFifo0MsgPendingCallback()
-  // 电容信息接收回调，在HAL_CAN_RxFifo0MsgPendingCallback中调用
+  // 信息接收回调，在HAL_CAN_RxFifo0MsgPendingCallback中调用
   void canRxMsgCallback(CAN_HandleTypeDef* hcan, CAN_RxHeaderTypeDef rx_header,
                         uint8_t rx_data[8]);
 

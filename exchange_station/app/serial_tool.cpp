@@ -17,10 +17,6 @@
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 extern IMU board_imu;
-extern Gimbal gimbal;
-extern MecanumChassis chassis;
-extern MecanumChassisPower power_limit;
-extern Autoaim autoaim;
 
 // 数据发送封装，在robot.cpp中调用
 void SerialStudio::handle(void) {
@@ -110,99 +106,6 @@ void SerialStudio::txMotorData(Motor& motor) {
       motor.kf_data_.x[1],             // %9
       (float)motor.intensity_,         // %10
       motor.motor_data_.current,       // %11
-  };
-  txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
-}
-
-// 云台数据可视化/采集
-void SerialStudio::txGimbalData(Gimbal& gimbal) {
-  sys_time_ = (float)HAL_GetTick() * 1e-3f;
-  float txdata_pack[] = {
-      sys_time_,                            // %1
-      gimbal.ref_.yaw,                      // %2
-      gimbal.fdb_.yaw,                      // %3
-      gimbal.ref_.pitch,                    // %4
-      gimbal.fdb_.pitch,                    // %5
-      gimbal.ref_.yaw_speed,                // %6
-      gimbal.fdb_.yaw_speed,                // %7
-      gimbal.ref_.pitch_speed,              // %8
-      gimbal.fdb_.pitch_speed,              // %9
-      (float)gimbal.gm_yaw_->intensity_,    // %10
-      (float)gimbal.gm_pitch_->intensity_,  // %11
-  };
-  txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
-}
-
-// 麦轮底盘数据可视化/采集
-void SerialStudio::txChassisData(MecanumChassis& chassis) {
-  sys_time_ = (float)HAL_GetTick() * 1e-3f;
-  float txdata_pack[] = {
-      sys_time_,                    // %1
-      chassis.ref_.vx,              // %2
-      chassis.fdb_.vx,              // %3
-      chassis.ref_.vy,              // %4
-      chassis.fdb_.vy,              // %5
-      chassis.ref_.wz,              // %6
-      chassis.fdb_.wz,              // %7
-      chassis.ref_.angle,           // %8
-      chassis.fdb_.angle,           // %9
-      chassis.ref_.wheel_speed.fl,  // %10
-      chassis.fdb_.wheel_speed.fl,  // %11
-      chassis.ref_.wheel_speed.fr,  // %12
-      chassis.fdb_.wheel_speed.fr,  // %13
-      chassis.ref_.wheel_speed.bl,  // %14
-      chassis.fdb_.wheel_speed.bl,  // %15
-      chassis.ref_.wheel_speed.br,  // %16
-      chassis.fdb_.wheel_speed.br,  // %17
-  };
-  txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
-}
-
-// 发送功率限制数据
-void SerialStudio::txPowerLimitData(MecanumChassisPower& power) {
-  sys_time_ = (float)HAL_GetTick() * 1e-3f;
-  float txdata_pack[] = {
-      sys_time_,                                             // %1
-      power_limit.motor_power_fdb_.fl,                       // %2
-      power_limit.motor_power_fdb_.fr,                       // %3
-      power_limit.motor_power_fdb_.bl,                       // %4
-      power_limit.motor_power_fdb_.br,                       // %5
-      power_limit.ref_power_limit_,                          // %6
-      power_limit.chassis_power_fdb_,                        // %7
-      power_limit.chassis_power_est_,                        // %8
-      power_limit.referee_->power_heat_data_.chassis_power,  // %9
-      (float)
-          power_limit.referee_->game_robot_status_.chassis_power_limit,  // %10
-      power_limit.ultra_cap_->rx_msg_.chassis_power,                     // %11
-      (float)
-          power_limit.referee_->power_heat_data_.chassis_power_buffer,  // %12
-      power_limit.ultra_cap_->rx_msg_.cap_voltage * 1e-3f,              // %13
-      power_limit.speed_rate_,                                          // %14
-      power_limit.eq_.r,                                                // %15
-      power_limit.chassis_->ref_.vx,                                    // %16
-      power_limit.chassis_->ref_.vy,                                    // %17
-      power_limit.chassis_->ref_.wz,                                    // %18
-  };
-  txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
-}
-
-// 发送自瞄数据
-void SerialStudio::txAutoaimData(Autoaim& autoaim) {
-  sys_time_ = (float)HAL_GetTick() * 1e-3f;
-  float txdata_pack[] = {
-      sys_time_,                           // %1
-      autoaim.status_.relative_yaw,        // %2
-      autoaim.status_.relative_pitch,      // %3
-      autoaim.status_.absolute_yaw_ref,    // %4
-      autoaim.status_.absolute_yaw_fdb,    // %5
-      autoaim.status_.absolute_pitch_ref,  // %6
-      autoaim.status_.absolute_pitch_fdb,  // %7
-      autoaim.status_.yaw_speed_ref,       // %8
-      autoaim.status_.yaw_speed_fdb,       // %9
-      autoaim.status_.pitch_speed_ref,     // %10
-      autoaim.status_.pitch_speed_fdb,     // %11
-      autoaim.offset_.yaw,                 // %12
-      autoaim.offset_.pitch,               // %13
   };
   txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
 }

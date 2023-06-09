@@ -743,44 +743,14 @@
               <FilePath>..\..\..\app\control.cpp</FilePath>
             </File>
             <File>
-              <FileName>chassis.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\chassis.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>gimbal.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\gimbal.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>shoot.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\shoot.cpp</FilePath>
-            </File>
-            <File>
               <FileName>can_monitor.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\can_monitor.cpp</FilePath>
             </File>
             <File>
-              <FileName>autoaim.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\autoaim.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>power_limit.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\power_limit.cpp</FilePath>
-            </File>
-            <File>
               <FileName>board_comm.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\board_comm.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>client_ui.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\client_ui.cpp</FilePath>
             </File>
             <File>
               <FileName>serial_tool.cpp</FileName>

@@ -17,12 +17,8 @@
 #include "hardware_config.h"
 #include "usart.h"
 
-#include "app/autoaim.h"
-#include "app/chassis.h"
-#include "app/gimbal.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
-#include "app/power_limit.h"
 
 class SerialStudio {
  public:
@@ -46,14 +42,6 @@ class SerialStudio {
   void txIMUData(IMU& imu);
   // 发送电机数据
   void txMotorData(Motor& motor);
-  // 发送云台数据
-  void txGimbalData(Gimbal& gimbal);
-  // 发送麦轮底盘数据
-  void txChassisData(MecanumChassis& chassis);
-  // 发送功率限制数据
-  void txPowerLimitData(MecanumChassisPower& power);
-  // 发送自瞄数据
-  void txAutoaimData(Autoaim& autoaim);
 
  private:
   UART_HandleTypeDef* huart_;
