@@ -32,10 +32,10 @@ void allMotorsHandle(void);
 
 // Check CAN channel and id of received CAN message
 // 校验接收信息的CAN通道和ID，调用对应回调函数
-void motorscanRxMsgHandle(CAN_HandleTypeDef* hcan,
+void motorsCanRxMsgHandle(CAN_HandleTypeDef* hcan,
                           CAN_RxHeaderTypeDef rx_header, uint8_t* rx_data);
 
-extern Motor CMFL, CMFR, CMBL, CMBR, GMY, GMP, FRICL, FRICR, STIR, m1;
+extern Motor JM1, JM2, JM3, JSM3, JM4, JM5, JM6;
 extern Motor* can1_dji_motor[11];
 extern Motor* can2_dji_motor[11];
 

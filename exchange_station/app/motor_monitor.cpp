@@ -15,65 +15,87 @@
 // Motor parameter config
 // 电机参数配置
 
-// Chassis motor 底盘电机
-const PID chassis_wheel_spid(40, 1, 10, 1000, 16384);
-Motor CMFL(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
-           PID(), PID(chassis_wheel_spid));             // ppid, spid
-Motor CMFR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
-           PID(), PID(chassis_wheel_spid));             // ppid, spid
-Motor CMBL(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
-           PID(), PID(chassis_wheel_spid));             // ppid, spid
-Motor CMBR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
-           PID(), PID(chassis_wheel_spid));             // ppid, spid
+// 机械臂关节电机
+float j1Model(const float& torque, const float& speed = 0) {
+  return torque * 5.25e2f;  // 8192*19.2/(3*100) ~= 5.2e2
+}
+Motor JM1(Motor::M3508, 100, Motor::TORQUE,             // type, ratio, method
+          PID(0, 0, 0, 0, 0),                           // ppid
+          PID(0, 0, 0, 0, 0),                           // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j1Model);                                     // model
 
-// Gimbal motor 云台电机
-Motor GMY(Motor::GM6020, 1, Motor::POSITION_SPEED,   // type, ratio, method
-          PID(25, 0.1, 10, 10, 1800),                // ppid
-          PID(400, 2, 0, 500, 30000),                // spid
-          true);                                     // use kf
-Motor GMP(Motor::GM6020, -1, Motor::POSITION_SPEED,  // type, ratio, method
-          PID(25, 0.1, 10, 10, 1800),                // ppid
-          PID(400, 2, 0, 500, 30000),                // spid
-          true);                                     // use kf
+float j2Model(const float& torque, const float& speed = 0) {
+  return torque * 5.25e2f;  // 8192*19.2/(3*100) ~= 5.2e2
+}
+Motor JM2(Motor::M3508, 100, Motor::TORQUE,             // type, ratio, method
+          PID(0, 0, 0, 0, 0),                           // ppid
+          PID(0, 0, 0, 0, 0),                           // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j2Model);                                     // model
 
-// Friction wheel motors
-const PID fric_spid(6, 0.05, 2, 200, 16384);
-Motor FRICL(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
-            PID(), PID(fric_spid));         // ppid, spid
-Motor FRICR(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
-            PID(), PID(fric_spid));         // ppid, spid
+float j3Model(const float& torque, const float& speed = 0) {
+  return torque * 1.75e2f;  // 8192*19.2/(3*100)*1/3 ~= 1.75e2
+}
+Motor JM3(Motor::M3508, 100, Motor::TORQUE,              // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
+          j3Model);                                      // model
+Motor JSM3(Motor::M3508, 100, Motor::TORQUE,             // type, ratio, method
+           PID(0, 0, 0, 0, 0),                           // ppid
+           PID(0, 0, 0, 0, 0),                           // spid
+           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+           j3Model);                                     // model
 
-// Stir motor
-Motor STIR(Motor::M2006, 36, Motor::POSITION_SPEED,  // type, ratio, method
-           PID(20, 0.1, 10, 10, 2500),               // ppid
-           PID(60, 0.1, 200, 1000, 10000));          // spid
+float j4Model(const float& torque, const float& speed = 0) {
+  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+}
+Motor JM4(Motor::M3508, 50, Motor::TORQUE,              // type, ratio, method
+          PID(0, 0, 0, 0, 0),                           // ppid
+          PID(0, 0, 0, 0, 0),                           // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j4Model);                                     // model
 
-// Other motors
-Motor m1(Motor::M3508, 1, Motor::POSITION_SPEED,  // type, ratio, method
-         PID(50, 0.02, 50, 200, 36000),           // ppid
-         PID(20, 0.02, 50, 200, 16384));          // spid
+float j5Model(const float& torque, const float& speed = 0) {
+  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+}
+Motor JM5(Motor::M3508, 50, Motor::TORQUE,              // type, ratio, method
+          PID(0, 0, 0, 0, 0),                           // ppid
+          PID(0, 0, 0, 0, 0),                           // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j5Model);                                     // model
+
+float j6Model(const float& torque, const float& speed = 0) {
+  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+}
+Motor JM6(Motor::M3508, 50, Motor::TORQUE,              // type, ratio, method
+          PID(0, 0, 0, 0, 0),                           // ppid
+          PID(0, 0, 0, 0, 0),                           // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j6Model);                                     // model
 
 // DJI Motor id config, M3508/M2006: 1~8, GM6020: 5~11
 // DJI电机ID配置，M3508，M2006可配置范围为1~8，GM6020可配置范围为5~11
 Motor* can1_dji_motor[11] = {
-    &FRICL,   // id:1
-    &FRICR,   // id:2
+    nullptr,  // id:1
+    nullptr,  // id:2
     nullptr,  // id:3
     nullptr,  // id:4
-    &STIR,    // id:5
-    &GMP,     // id:6
+    nullptr,  // id:5
+    nullptr,  // id:6
     nullptr,  // id:7
-    &m1,      // id:8
+    nullptr,  // id:8
     nullptr,  // id:9
     nullptr,  // id:10
     nullptr   // id:11
 };
 Motor* can2_dji_motor[11] = {
-    &CMFL,    // id:1
-    &CMFR,    // id:2
-    &CMBL,    // id:3
-    &CMBR,    // id:4
-    &GMY,     // id:5
+    nullptr,  // id:1
+    nullptr,  // id:2
+    nullptr,  // id:3
+    nullptr,  // id:4
+    nullptr,  // id:5
     nullptr,  // id:6
     nullptr,  // id:7
     nullptr,  // id:8
@@ -186,7 +208,7 @@ void allMotorsHandle(void) {
 
 // Check CAN channel and id of received CAN message
 // 校验接收信息的CAN通道和ID，调用对应回调函数
-void motorscanRxMsgHandle(CAN_HandleTypeDef* hcan,
+void motorsCanRxMsgHandle(CAN_HandleTypeDef* hcan,
                           CAN_RxHeaderTypeDef rx_header, uint8_t* rx_data) {
   if (dji_motor_driver.canRxMsgCheck(hcan, rx_header)) {
     dji_motor_driver.canRxMsgCallback(hcan, rx_header, rx_data);

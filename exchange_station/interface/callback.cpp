@@ -27,7 +27,6 @@
 extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
-extern CapComm ultra_cap;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -37,10 +36,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   uint8_t rx_data[8];
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 
-  motorscanRxMsgHandle(hcan, rx_header, rx_data);
-  if (ultra_cap.canRxMsgCheck(hcan, rx_header)) {
-    ultra_cap.canRxMsgCallback(hcan, rx_header, rx_data);
-  }
+  motorsCanRxMsgHandle(hcan, rx_header, rx_data);
 }
 
 // UART transmit callback

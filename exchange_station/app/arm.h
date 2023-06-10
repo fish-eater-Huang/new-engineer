@@ -23,7 +23,7 @@ class Arm {
       Motor* j3_sup);
 
   // 初始化关节角度(非绝对式编码器, todo)
-  void initJoint(void);
+  void init(void);
 
   // 设置目标状态
   void setRef(float x, float y, float z, float yaw, float pitch, float roll);
@@ -51,7 +51,7 @@ class Arm {
   // 机械臂模型
   robotics::Link links_[6] = {
       // link1
-      robotics::Link(0, 0.352, 0, -PI / 2,       // theta,d,a,alpha
+      robotics::Link(0, 0.352, 0, PI / 2,        // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 1.234,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, -0.017, 0.018}),  // rc
@@ -60,14 +60,14 @@ class Arm {
       // link2
       robotics::Link(0, 0.117, 0.4439, 0,        // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 2.326,             // offset,qmin,qmax,m
+                     PI / 2, 0, 0, 2.326,        // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){-0.25, 0, -0.033}),  // rc
                      matrixf::zeros<3, 3>()),                      // I
 
       // link3
       robotics::Link(0, -0.1218, 0.4639, 0,      // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 2.182,             // offset,qmin,qmax,m
+                     -PI / 2, 0, 0, 2.182,       // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){-0.26, 0, 0.032}),  // rc
                      matrixf::zeros<3, 3>()),                     // I
 
@@ -81,7 +81,7 @@ class Arm {
       // link5
       robotics::Link(0, 0.128, 0, PI / 2,        // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.98,              // offset,qmin,qmax,m
+                     PI / 2, 0, 0, 0.98,         // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, -0.022, 0.085}),  // rc
                      matrixf::zeros<3, 3>()),                      // I
 
@@ -107,21 +107,25 @@ class Arm {
 
   // 目标状态
   struct Ref_t {
-    float q[6];
+    Matrixf<6, 1> q;  // rad
     Matrixf<4, 4> T;
 
-    float x, y, z;
-    float yaw, pitch, roll;
+    float x, y, z;           // m
+    float yaw, pitch, roll;  // rad
   } ref_;
 
   // 反馈状态
   struct Fdb_t {
-    float q[6], q_D1[6];
+    Matrixf<6, 1> q, q_D1;  // rad, rad/s
     Matrixf<4, 4> T;
+    Matrixf<6, 6> J;
 
-    float x, y, z;
-    float yaw, pitch, roll;
+    float x, y, z;           // m
+    float yaw, pitch, roll;  // rad
   } fdb_;
+
+  // 前馈力矩
+  Matrixf<6, 1> torq_;
 };
 
 #endif  // ARM_H

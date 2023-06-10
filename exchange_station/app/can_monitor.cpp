@@ -48,21 +48,9 @@ void canTxMonitor(void) {
   // note: 每个通道一次只能发送3个包
   dji_motor_driver.canTxMsg(1, djimotor::ID_1_4);   // can1, id: 0x200
   dji_motor_driver.canTxMsg(1, djimotor::ID_5_8);   // can1, id: 0x1ff
-  dji_motor_driver.canTxMsg(1, djimotor::ID_9_11);  // can1, id: 0x2ff
 
   dji_motor_driver.canTxMsg(2, djimotor::ID_1_4);  // can2, id: 0x200
   dji_motor_driver.canTxMsg(2, djimotor::ID_5_8);  // can2, id: 0x1ff
-  // dji_motor_driver.canTxMsg(2, DJIMotor::ID_9_11);  // can2, id: 0x2ff
 
   osDelay(1);
-
-  // dji_motor_driver.canTxMsg(1, DJIMotor::ID_1_4);  // can1, id: 0x200
-  // dji_motor_driver.canTxMsg(1, DJIMotor::ID_5_8);  // can1, id: 0x1ff
-  // capacity.canTxMsg();                       // can1, id: 0x301
-
-  // dji_motor_driver.canTxMsg(2, DJIMotor::ID_1_4);  // can2, id: 0x200
-  // dji_motor_driver.canTxMsg(2, DJIMotor::ID_5_8);  // can2, id: 0x1ff
-  // LK9025.canTxMsg();                         // can2, id: 0x280
-
-  // osDelay(1);
 }

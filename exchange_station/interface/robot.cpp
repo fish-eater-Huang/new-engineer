@@ -19,12 +19,11 @@
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
+#include "app/arm.h"
 #include "base/cap_comm/cap_comm.h"
 #include "base/cv_comm/cv_comm.h"
 #include "base/referee_comm/referee_comm.h"
 #include "base/remote/remote.h"
-#include "base/robotics/robotics.h"
-#include "base/servo/servo.h"
 
 #ifdef RC_UART
 RC rc(RC_UART);
@@ -41,18 +40,13 @@ RefereeComm referee(REFEREE_UART);
 #else
 RefereeComm referee;
 #endif  // REFEREE_UART
-#ifdef SERVO_UART
-ServoZX361D gate_servo(SERVO_UART);
-#else
-ServoZX361D gate_servo;
-#endif  // REFEREE_UART
 #ifdef DEBUG_UART
 SerialStudio serial_tool(DEBUG_UART);
 #else
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-CapComm ultra_cap(&hcan2);
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &JSM3);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -92,48 +86,11 @@ void imuTask(void const* argument) {
   }
 }
 
-// robotics test
-float m[6] = {0.2645, 0.17, 0.1705, 0, 0, 0};
-Matrixf<3, 6> rc_((float[18]){0, -8.5e-2, 0, 0, 0, 0, 13.225e-2, 0, 0, 0, 0, 0,
-                              0, 3.7e-2, 8.525e-2, 0, 0, 0});
-Matrixf<3, 3> I[6] = {
-    matrixf::diag<3, 3>(Matrixf<3, 1>((float[3]){1.542e-3, 0, 1.542e-3})),
-    matrixf::diag<3, 3>(Matrixf<3, 1>((float[3]){0, 0.409e-3, 0.409e-3})),
-    matrixf::diag<3, 3>(Matrixf<3, 1>((float[3]){0.413e-3, 0.413e-3, 0})),
-    3.0f * matrixf::eye<3, 3>(),
-    2.0f * matrixf::eye<3, 3>(),
-    1.0f * matrixf::eye<3, 3>(),
-};
-robotics::Link links[6]{
-    robotics::Link(0, 26.45e-2, 0, -PI / 2, robotics::Joint_Type_e::R, 0, 0, 0,
-                   m[0], rc_.col(0), I[0]),
-    robotics::Link(0, 5.5e-2, 17e-2, 0, robotics::Joint_Type_e::R, 0, 0, 0,
-                   m[1], rc_.col(1), I[1]),
-    robotics::Link(0, 0, 0, -PI / 2, robotics::Joint_Type_e::R, 0, 0, 0, m[2],
-                   rc_.col(2), I[2]),
-    robotics::Link(0, 17.05e-2, 0, PI / 2, robotics::Joint_Type_e::R, 0, 0, 0,
-                   m[3], rc_.col(3), I[3]),
-    robotics::Link(0, 0, 0, -PI / 2, robotics::Joint_Type_e::R, 0, 0, 0, m[4],
-                   rc_.col(4), I[4]),
-    robotics::Link(0, 0, 0, 0, robotics::Joint_Type_e::R, 0, 0, 0, m[5],
-                   rc_.col(5), I[5]),
-};
-robotics::Serial_Link<6> p560(links);
-
-Matrixf<4, 4> T_test;
-Matrixf<6, 6> J_test;
-Matrixf<6, 1> torq_test;
-
-osThreadId roboticsTaskHandle;
-void roboticsTask(void const* argument) {
+osThreadId armTaskHandle;
+void armTask(void const* argument) {
+  arm.init();
   for (;;) {
-    float q[6] = {0.2, -0.5, -0.3, -0.6, 0.5, 0.2};
-    float qv[6] = {1, 0.5, -1, 0.3, 0, -1};
-    float qa[6] = {0.2, -0.3, 0.1, 0, -1, 0};
-    float he[6] = {1, 2, -3, -0.5, -2, 1};
-    T_test = p560.fkine(q);
-    J_test = p560.jacob(q);
-    torq_test = p560.rne(q, qv, qa, he);
+    arm.handle();
     osDelay(1);
   }
 }
@@ -179,15 +136,15 @@ void rtosTaskInit(void) {
 
   osThreadDef(imu_task, imuTask, osPriorityRealtime, 0, 512);
   imuTaskHandle = osThreadCreate(osThread(imu_task), NULL);
+  
+  osThreadDef(arm_task, armTask, osPriorityNormal, 0, 1800);
+  armTaskHandle = osThreadCreate(osThread(arm_task), NULL);
 
   osThreadDef(minipc_comm_task, minipcCommTask, osPriorityNormal, 0, 512);
   minipcCommTaskHandle = osThreadCreate(osThread(minipc_comm_task), NULL);
 
   osThreadDef(referee_comm_task, refereeCommTask, osPriorityNormal, 0, 512);
   refereeCommTaskHandle = osThreadCreate(osThread(referee_comm_task), NULL);
-
-  osThreadDef(robotics_task, roboticsTask, osPriorityNormal, 0, 1800);
-  roboticsTaskHandle = osThreadCreate(osThread(robotics_task), NULL);
 
   osThreadDef(serial_tool_task, serialToolTask, osPriorityLow, 0, 1024);
   serialToolTaskHandle = osThreadCreate(osThread(serial_tool_task), NULL);

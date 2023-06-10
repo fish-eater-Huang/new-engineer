@@ -111,7 +111,7 @@ class Link {
 
   Matrixf<4, 4> T(float q);  // forward kinematic
 
- private:
+ public:
   // kinematic parameter
   DH_t dh_;
   float offset_;
@@ -333,9 +333,9 @@ class Serial_Link {
       ai = a.col(i - 1) + vector3f::cross(b_i, p_i - p.col(i - 1)) +
            vector3f::cross(w_i, vector3f::cross(w_i, p_i - p.col(i - 1)));
       // ac_i = a_i+β_ix(R_0^i*rc_i^i)+ω_ix(ω_ix(R_0^i*rc_i^i))
-      ac_i = ai + vector3f::cross(b_i, R_0i * links_[i - 1].rc()) +
-             vector3f::cross(w_i,
-                             vector3f::cross(w_i, R_0i * links_[i - 1].rc()));
+      ac_i =
+          ai + vector3f::cross(b_i, R_0i * links_[i - 1].rc()) +
+          vector3f::cross(w_i, vector3f::cross(w_i, R_0i * links_[i - 1].rc()));
       for (int row = 0; row < 3; row++) {
         w[row][i] = w_i[row][0];
         b[row][i] = b_i[row][0];
