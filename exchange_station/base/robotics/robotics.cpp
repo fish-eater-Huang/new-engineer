@@ -277,59 +277,59 @@ Matrixf<4, 4> robotics::DH_t::fkine() {
 robotics::Link::Link(float theta, float d, float a, float alpha,
                      robotics::Joint_Type_e type, float offset, float qmin,
                      float qmax, float m, Matrixf<3, 1> rc, Matrixf<3, 3> I) {
-  m_dh.theta = theta;
-  m_dh.d = d;
-  m_dh.alpha = alpha;
-  m_dh.a = a;
-  m_type = type;
-  m_offset = offset;
-  m_qmin = qmin;
-  m_qmax = qmax;
-  m_m = m;
-  m_rc = rc;
-  m_I = I;
+  dh_.theta = theta;
+  dh_.d = d;
+  dh_.alpha = alpha;
+  dh_.a = a;
+  type_ = type;
+  offset_ = offset;
+  qmin_ = qmin;
+  qmax_ = qmax;
+  m_ = m;
+  rc_ = rc;
+  I_ = I;
 }
 
 robotics::Link::Link(const Link& link) {
-  m_dh.theta = link.m_dh.theta;
-  m_dh.d = link.m_dh.d;
-  m_dh.alpha = link.m_dh.alpha;
-  m_dh.a = link.m_dh.a;
-  m_type = link.m_type;
-  m_offset = link.m_offset;
-  m_qmin = link.m_qmin;
-  m_qmax = link.m_qmax;
-  m_m = link.m_m;
-  m_rc = link.m_rc;
-  m_I = link.m_I;
+  dh_.theta = link.dh_.theta;
+  dh_.d = link.dh_.d;
+  dh_.alpha = link.dh_.alpha;
+  dh_.a = link.dh_.a;
+  type_ = link.type_;
+  offset_ = link.offset_;
+  qmin_ = link.qmin_;
+  qmax_ = link.qmax_;
+  m_ = link.m_;
+  rc_ = link.rc_;
+  I_ = link.I_;
 }
 
 robotics::Link& robotics::Link::operator=(Link link) {
-  m_dh.theta = link.m_dh.theta;
-  m_dh.d = link.m_dh.d;
-  m_dh.alpha = link.m_dh.alpha;
-  m_dh.a = link.m_dh.a;
-  m_type = link.m_type;
-  m_offset = link.m_offset;
-  m_qmin = link.m_qmin;
-  m_qmax = link.m_qmax;
-  m_m = link.m_m;
-  m_rc = link.m_rc;
-  m_I = link.m_I;
+  dh_.theta = link.dh_.theta;
+  dh_.d = link.dh_.d;
+  dh_.alpha = link.dh_.alpha;
+  dh_.a = link.dh_.a;
+  type_ = link.type_;
+  offset_ = link.offset_;
+  qmin_ = link.qmin_;
+  qmax_ = link.qmax_;
+  m_ = link.m_;
+  rc_ = link.rc_;
+  I_ = link.I_;
   return *this;
 }
 
 Matrixf<4, 4> robotics::Link::T(float q) {
-  if (m_type == R) {
-    if (m_qmin >= m_qmax)
-      m_dh.theta = q + m_offset;
+  if (type_ == R) {
+    if (qmin_ >= qmax_)
+      dh_.theta = q + offset_;
     else
-      m_dh.theta = math::limit(q + m_offset, m_qmin, m_qmax);
+      dh_.theta = math::limit(q + offset_, qmin_, qmax_);
   } else {
-    if (m_qmin >= m_qmax)
-      m_dh.d = q + m_offset;
+    if (qmin_ >= qmax_)
+      dh_.d = q + offset_;
     else
-      m_dh.d = math::limit(q + m_offset, m_qmin, m_qmax);
+      dh_.d = math::limit(q + offset_, qmin_, qmax_);
   }
-  return m_dh.fkine();
+  return dh_.fkine();
 }

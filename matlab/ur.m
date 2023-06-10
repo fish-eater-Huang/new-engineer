@@ -15,6 +15,8 @@ UR.offset = [0,pi/2,-pi/2,0,pi/2,0];
 % joint variable
 % q = [0,0,0,0,0,0];
 q = [0.1,0.2,0.3,0.4,0.5,0.6];
+q_D1 = [0,0,0,0,0,0];
+q_D2 = [0,0,0,0,0,0];
 
 % forward kinematic
 T = UR.fkine(q);
@@ -22,22 +24,14 @@ T = UR.fkine(q);
 % jacobian matrix
 J = UR.jacob0(q);
 
-% innverse kinematic
+% inverse kinematic
 q_ikine = UR.ikine(T);
 q_ikine_self = ur_ikine(T.T,UR.d,UR.a);
+
+% inverse dynamic
+torq = UR.rne(q,q_D1,q_D2);
 
 % plot
 figure(1); view(3);
 UR.plot(q);
 % UR.teach;
-
-% % 操作控制误差控制
-% kv = 0.01;
-% kw = 0.01;
-% Td = UR.fkine(zeros(1,6));
-% ve = kv*(Td.t-T.t);
-% Te = Td.T*T.T^-1;
-% Re = Te(1:3,1:3); % Rd = Re*R
-% [theta,vec] = tr2angvec(Re);
-% we = kw*theta*vec';
-% dq = (J\[ve;we])*100;

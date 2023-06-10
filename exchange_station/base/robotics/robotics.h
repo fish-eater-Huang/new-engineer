@@ -102,28 +102,28 @@ class Link {
 
   Link& operator=(Link link);
 
-  float qmin() { return m_qmin; }
-  float qmax() { return m_qmax; }
-  Joint_Type_e type() { return m_type; }
-  float m() { return m_m; }
-  Matrixf<3, 1> rc() { return m_rc; }
-  Matrixf<3, 3> I() { return m_I; }
+  float qmin() { return qmin_; }
+  float qmax() { return qmax_; }
+  Joint_Type_e type() { return type_; }
+  float m() { return m_; }
+  Matrixf<3, 1> rc() { return rc_; }
+  Matrixf<3, 3> I() { return I_; }
 
   Matrixf<4, 4> T(float q);  // forward kinematic
 
  private:
   // kinematic parameter
-  DH_t m_dh;
-  float m_offset;
+  DH_t dh_;
+  float offset_;
   // limit(qmin,qmax), no limit if qmin<=qmax
-  float m_qmin;
-  float m_qmax;
+  float qmin_;
+  float qmax_;
   // joint type
-  Joint_Type_e m_type;
+  Joint_Type_e type_;
   // dynamic parameter
-  float m_m;           // mass
-  Matrixf<3, 1> m_rc;  // centroid(link coordinate)
-  Matrixf<3, 3> m_I;   // inertia tensor(3*3)
+  float m_;           // mass
+  Matrixf<3, 1> rc_;  // centroid(link coordinate)
+  Matrixf<3, 3> I_;   // inertia tensor(3*3)
 };
 
 template <uint16_t _n = 1>
@@ -131,25 +131,25 @@ class Serial_Link {
  public:
   Serial_Link(Link links[_n]) {
     for (int i = 0; i < _n; i++)
-      m_links[i] = links[i];
-    m_gravity = matrixf::zeros<3, 1>();
-    m_gravity[2][0] = -9.81f;
+      links_[i] = links[i];
+    gravity_ = matrixf::zeros<3, 1>();
+    gravity_[2][0] = -9.81f;
   }
 
   Serial_Link(Link links[_n], Matrixf<3, 1> gravity) {
     for (int i = 0; i < _n; i++)
-      m_links[i] = links[i];
-    m_gravity = gravity;
+      links_[i] = links[i];
+    gravity_ = gravity;
   }
 
   // forward kinematic: T_n^0
   // param[in] q: joint variable vector
   // param[out] T_n^0
   Matrixf<4, 4> fkine(Matrixf<_n, 1> q) {
-    m_T = matrixf::eye<4, 4>();
+    T_ = matrixf::eye<4, 4>();
     for (int iminus1 = 0; iminus1 < _n; iminus1++)
-      m_T = m_T * m_links[iminus1].T(q[iminus1][0]);
-    return m_T;
+      T_ = T_ * links_[iminus1].T(q[iminus1][0]);
+    return T_;
   }
 
   // forward kinematic: T_k^0
@@ -161,7 +161,7 @@ class Serial_Link {
       k = _n;
     Matrixf<4, 4> T = matrixf::eye<4, 4>();
     for (int iminus1 = 0; iminus1 < k; iminus1++)
-      T = T * m_links[iminus1].T(q[iminus1][0]);
+      T = T * links_[iminus1].T(q[iminus1][0]);
     return T;
   }
 
@@ -172,7 +172,7 @@ class Serial_Link {
   Matrixf<4, 4> T(Matrixf<_n, 1> q, uint16_t kminus1) {
     if (kminus1 >= _n)
       kminus1 = _n - 1;
-    return m_links[kminus1].T(q[kminus1][0]);
+    return links_[kminus1].T(q[kminus1][0]);
   }
 
   // jacobian matrix, J_i = [J_pi;j_oi]
@@ -187,28 +187,28 @@ class Serial_Link {
     Matrixf<3, 1> J_oi;
     for (int iminus1 = 0; iminus1 < _n; iminus1++) {
       // revolute joint: J_pi = z_i-1x(p_e-p_i-1), J_oi = z_i-1
-      if (m_links[iminus1].type() == R) {
+      if (links_[iminus1].type() == R) {
         z_iminus1 = T_iminus1.block<3, 1>(0, 2);
         p_iminus1 = t2p(T_iminus1);
-        T_iminus1 = T_iminus1 * m_links[iminus1].T(q[iminus1][0]);
+        T_iminus1 = T_iminus1 * links_[iminus1].T(q[iminus1][0]);
         J_pi = vector3f::cross(z_iminus1, p_e - p_iminus1);
         J_oi = z_iminus1;
       }
       // prismatic joint: J_pi = z_i-1, J_oi = 0
       else {
         z_iminus1 = T_iminus1.block<3, 1>(0, 2);
-        T_iminus1 = T_iminus1 * m_links[iminus1].T(q[iminus1][0]);
+        T_iminus1 = T_iminus1 * links_[iminus1].T(q[iminus1][0]);
         J_pi = z_iminus1;
         J_oi = matrixf::zeros<3, 1>();
       }
-      m_J[0][iminus1] = J_pi[0][0];
-      m_J[1][iminus1] = J_pi[1][0];
-      m_J[2][iminus1] = J_pi[2][0];
-      m_J[3][iminus1] = J_oi[0][0];
-      m_J[4][iminus1] = J_oi[1][0];
-      m_J[5][iminus1] = J_oi[2][0];
+      J_[0][iminus1] = J_pi[0][0];
+      J_[1][iminus1] = J_pi[1][0];
+      J_[2][iminus1] = J_pi[2][0];
+      J_[3][iminus1] = J_oi[0][0];
+      J_[4][iminus1] = J_oi[1][0];
+      J_[5][iminus1] = J_oi[2][0];
     }
-    return m_J;
+    return J_;
   }
 
   // inverse kinematic, numerical solution(Newton method)
@@ -249,7 +249,7 @@ class Serial_Link {
           // dq = JTJ_svd.solve(err) * step * 5e-2f;
           q += dq;
           for (int i = 0; i < _n; i++) {
-            if (m_links[i].type() == R)
+            if (links_[i].type() == R)
               q[i][0] = math::loopLimit(q[i][0], -PI, PI);
           }
           break;
@@ -264,7 +264,7 @@ class Serial_Link {
         if (new_err.norm() < err.norm()) {
           q += dq;
           for (int i = 0; i < _n; i++) {
-            if (m_links[i].type() == robotics::Joint_Type_e::R) {
+            if (links_[i].type() == robotics::Joint_Type_e::R) {
               q[i][0] = math::loopLimit(q[i][0], -PI, PI);
             }
           }
@@ -333,9 +333,9 @@ class Serial_Link {
       ai = a.col(i - 1) + vector3f::cross(b_i, p_i - p.col(i - 1)) +
            vector3f::cross(w_i, vector3f::cross(w_i, p_i - p.col(i - 1)));
       // ac_i = a_i+β_ix(R_0^i*rc_i^i)+ω_ix(ω_ix(R_0^i*rc_i^i))
-      ac_i = ai + vector3f::cross(b_i, R_0i * m_links[i - 1].rc()) +
+      ac_i = ai + vector3f::cross(b_i, R_0i * links_[i - 1].rc()) +
              vector3f::cross(w_i,
-                             vector3f::cross(w_i, R_0i * m_links[i - 1].rc()));
+                             vector3f::cross(w_i, R_0i * links_[i - 1].rc()));
       for (int row = 0; row < 3; row++) {
         w[row][i] = w_i[row][0];
         b[row][i] = b_i[row][0];
@@ -373,15 +373,15 @@ class Serial_Link {
       RT_iminus1i = t2r(T_iminus1i).trans();  // R_i^i-1'
       R_0iminus1 = R_0i * RT_iminus1i;        // R_i-1^0
       // I_i^0 = R_i^0*I_i^i*(R_i^0)'
-      I_i = R_0i * m_links[i - 1].I() * R_0i.trans();
+      I_i = R_0i * links_[i - 1].I() * R_0i.trans();
       // f_i-1 = f_i+m_i*ac_i-m_i*g
-      f_iminus1 = f.col(i) + m_links[i - 1].m() * ac.col(i) -
-                  m_links[i - 1].m() * m_gravity;
+      f_iminus1 = f.col(i) + links_[i - 1].m() * ac.col(i) -
+                  links_[i - 1].m() * gravity_;
       // μ_i-1 = μ_i+f_ixrc_i-f_i-1xrc_i-1->ci+I_i*b_i+ω_ix(I_i*ω_i)
       mu_iminus1 = mu.col(i) +
-                   vector3f::cross(f.col(i), R_0i * m_links[i - 1].rc()) -
+                   vector3f::cross(f.col(i), R_0i * links_[i - 1].rc()) -
                    vector3f::cross(f_iminus1, R_0i * (RT_iminus1i * P_iminus1i +
-                                                      m_links[i - 1].rc())) +
+                                                      links_[i - 1].rc())) +
                    I_i * b.col(i) + vector3f::cross(w.col(i), I_i * w.col(i));
       // τ_i = μ_i-1'*(R_i-1^0*ez)
       torq[i - 1][0] = (mu_iminus1.trans() * R_0iminus1 * ez)[0][0];
@@ -396,11 +396,11 @@ class Serial_Link {
   }
 
  private:
-  Link m_links[_n];
-  Matrixf<3, 1> m_gravity;
+  Link links_[_n];
+  Matrixf<3, 1> gravity_;
 
-  Matrixf<4, 4> m_T;
-  Matrixf<6, _n> m_J;
+  Matrixf<4, 4> T_;
+  Matrixf<6, _n> J_;
 };
 };  // namespace robotics
 
