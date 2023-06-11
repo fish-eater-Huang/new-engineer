@@ -14,12 +14,12 @@
 #include "cmsis_os.h"
 #include "hardware_config.h"
 
+#include "app/arm.h"
 #include "app/can_monitor.h"
 #include "app/control.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
-#include "app/arm.h"
 #include "base/cap_comm/cap_comm.h"
 #include "base/cv_comm/cv_comm.h"
 #include "base/referee_comm/referee_comm.h"
@@ -88,6 +88,7 @@ void imuTask(void const* argument) {
 
 osThreadId armTaskHandle;
 void armTask(void const* argument) {
+  osDelay(100);
   arm.init();
   for (;;) {
     arm.handle();
@@ -136,7 +137,7 @@ void rtosTaskInit(void) {
 
   osThreadDef(imu_task, imuTask, osPriorityRealtime, 0, 512);
   imuTaskHandle = osThreadCreate(osThread(imu_task), NULL);
-  
+
   osThreadDef(arm_task, armTask, osPriorityNormal, 0, 1800);
   armTaskHandle = osThreadCreate(osThread(arm_task), NULL);
 

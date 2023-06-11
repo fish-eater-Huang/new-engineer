@@ -12,6 +12,7 @@
 
 #include "iwdg.h"
 
+#include "app/arm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "base/bsp/bsp_buzzer.h"
@@ -28,6 +29,7 @@ void boardLedHandle(void);
 
 extern RC rc;
 extern IMU board_imu;
+extern Arm arm;
 
 BoardLed led;
 
@@ -46,26 +48,9 @@ float extra_power_max = 0;
 
 // 遥控器控制
 namespace rcctrl {
-const float chassis_speed_rate = 6e-3f;
-const float chassis_rotate_rate = 0.8f;
-const float gimbal_rate = 6e-4f;
-const float chassis_follow_ff_rate = 0.3f;
+const float arm_position_rate = 5e-7f;
+const float arm_direction_rate = 1e-7f;
 }  // namespace rcctrl
-
-// 键鼠控制
-namespace kbctrl {
-const float chassis_speed_rate = 6e-3f;
-const float chassis_rotate_rate = 0.8f;
-const float gimbal_rate = 6e-4f;
-const float chassis_follow_ff_rate = 0.3f;
-}  // namespace kbctrl
-
-// 弹舱参数
-namespace gateparam {
-const uint16_t pwm_close = 1530;
-const uint16_t pwm_open = 600;
-const uint16_t time = 10;
-}  // namespace gateparam
 
 // 控制初始化
 void controlInit(void) {
@@ -75,7 +60,7 @@ void controlInit(void) {
 
 // 控制主循环
 void controlLoop(void) {
-  iwdgHandler(1);
+  iwdgHandler(rc.connect_.check());
   robotPowerStateFSM(!rc.connect_.check() || rc.switch_.r == RC::DOWN);
 
   if (robot_state == STOP) {
@@ -123,7 +108,7 @@ void robotPowerStateFSM(bool stop_flag) {
 // 重置各功能状态
 void robotReset(void) {
   robot_init_flag = false;
-
+  arm.mode_ = Arm::Mode_e::STOP;
   last_rc_switch = rc.switch_;
 }
 
@@ -137,9 +122,17 @@ bool robotStartup(void) {
 void robotControl(void) {
   // 遥控器挡位左上右上
   if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
+    arm.mode_ = Arm::Mode_e::MANIPULATION;
+    arm.addRef(-rc.channel_.r_col * rcctrl::arm_position_rate,
+               rc.channel_.r_row * rcctrl::arm_position_rate,
+               rc.channel_.l_col * rcctrl::arm_position_rate, 0, 0, 0);
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
+    arm.mode_ = Arm::Mode_e::MANIPULATION;
+    arm.addRef(0, 0, 0, rc.channel_.l_row * rcctrl::arm_direction_rate,
+               -rc.channel_.l_col * rcctrl::arm_direction_rate,
+               rc.channel_.dial_wheel * rcctrl::arm_direction_rate*5);
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {

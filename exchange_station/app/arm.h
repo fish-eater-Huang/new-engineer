@@ -100,9 +100,9 @@ class Arm {
 
   // 工作模式
   enum Mode_e {
+    STOP,
     MANIPULATION,
     JOINT,
-    STOP,
   } mode_;
 
   // 目标状态
@@ -123,6 +123,9 @@ class Arm {
     float x, y, z;           // m
     float yaw, pitch, roll;  // rad
   } fdb_;
+  
+  // 默认旋转矩阵
+  Matrixf<3,3> R0;
 
   // 前馈力矩
   Matrixf<6, 1> torq_;

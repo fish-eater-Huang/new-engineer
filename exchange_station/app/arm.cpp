@@ -28,17 +28,30 @@ Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
 
 // 初始化关节角度
 void Arm::init(void) {
-  // todo
-  float q[6] = {0, 0, 0, 0, 0, 0};
+  // 初始角度设置
+  float q_init_deg[6] = {0, 67.5f, -65.6f, -1.9f, 90.0f, 0};
+  j1_->resetFeedbackAngle(q_init_deg[0]);
+  j2_->resetFeedbackAngle(q_init_deg[1]);
+  j3_->resetFeedbackAngle(q_init_deg[2]);
+  j4_->resetFeedbackAngle(q_init_deg[3]);
+  j5_->resetFeedbackAngle(q_init_deg[4]);
+  j6_->resetFeedbackAngle(q_init_deg[5]);
+  j3_sup_->resetFeedbackAngle(q_init_deg[2]);
+
+  float q[6];
+  for (int i = 0; i < 6; i++) {
+    q[i] = math::deg2rad(q_init_deg[i]);
+  }
   fdb_.q = Matrixf<6, 1>(q);
   fdb_.q_D1 = matrixf::zeros<6, 1>();
 
   fdb_.T = arm_.fkine(fdb_.q);
+  R0 = robotics::t2r(arm_.fkine(matrixf::zeros<6, 1>()));
   Matrixf<3, 1> p_fdb = robotics::t2p(fdb_.T);
   fdb_.x = p_fdb[0][0];
   fdb_.y = p_fdb[1][0];
   fdb_.z = p_fdb[2][0];
-  Matrixf<3, 1> rpy_fdb = robotics::t2rpy(fdb_.T);
+  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T)*R0.trans());
   fdb_.yaw = rpy_fdb[0][0];
   fdb_.pitch = rpy_fdb[1][0];
   fdb_.roll = rpy_fdb[2][0];
@@ -77,25 +90,56 @@ void Arm::addRef(float x, float y, float z, float yaw, float pitch,
 
 // 反馈状态解算，目标状态处理，运行控制器
 void Arm::handle(void) {
-  // 目标状态限制
-  ref_.x = math::limit(ref_.x, 0.2f, 0.8f);
-  ref_.y = math::limit(ref_.y, -0.3f, 0.3f);
-  ref_.z = math::limit(ref_.z, 0.5f, 1.0f);
-  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
-  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
-  ref_.roll = math::limit(ref_.roll, -45.0f, 45.0f);
+  // 获取关节角度&角速度
+  fdb_.q[0][0] = math::deg2rad(j1_->realAngle());
+  fdb_.q[1][0] = math::deg2rad(j2_->realAngle());
+  fdb_.q[2][0] = math::deg2rad(j3_->realAngle());
+  fdb_.q[3][0] = math::deg2rad(j4_->realAngle());
+  fdb_.q[4][0] = math::deg2rad(j5_->realAngle());
+  fdb_.q[5][0] = math::deg2rad(j6_->realAngle());
+  fdb_.q_D1[0][0] = math::dps2radps(j1_->realSpeed());
+  fdb_.q_D1[1][0] = math::dps2radps(j2_->realSpeed());
+  fdb_.q_D1[2][0] = math::dps2radps(j3_->realSpeed());
+  fdb_.q_D1[3][0] = math::dps2radps(j4_->realSpeed());
+  fdb_.q_D1[4][0] = math::dps2radps(j5_->realSpeed());
+  fdb_.q_D1[5][0] = math::dps2radps(j6_->realSpeed());
 
-  // 获取关节角度
+  // 反馈位姿解算(正运动学)
+  fdb_.T = arm_.fkine(fdb_.q);
+  fdb_.J = arm_.jacob(fdb_.q);
+  Matrixf<3, 1> p_fdb = robotics::t2p(fdb_.T);
+  fdb_.x = p_fdb[0][0];
+  fdb_.y = p_fdb[1][0];
+  fdb_.z = p_fdb[2][0];
+  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T)*R0.trans());
+  fdb_.yaw = rpy_fdb[0][0];
+  fdb_.pitch = rpy_fdb[1][0];
+  fdb_.roll = rpy_fdb[2][0];
 
-  // test
-  float q[6] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
-  float qv[6] = {1, 0.5, -1, 0.3, 0, -1};
-  float qa[6] = {0.2, -0.3, 0.1, 0, -1, 0};
-  float he[6] = {0};
-  fdb_.T = arm_.fkine(q);
-  fdb_.J = arm_.jacob(q);
-  fdb_.q = ikine(fdb_.T);
-  torq_ = arm_.rne(q, qv, qa, he);
+  // 控制器
+  if (mode_ == Arm::Mode_e::MANIPULATION) {
+    manipulationController();
+  } else if (mode_ == Arm::Mode_e::JOINT) {
+    jointController();
+  } else if (mode_ == Arm::Mode_e::STOP) {
+    stopController();
+  }
+
+  // 电机控制
+  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0,
+                     j1_->model_(torq_[0][0], 0));
+  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0,
+                     j2_->model_(torq_[1][0], 0));
+  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
+                     j3_->model_(torq_[2][0], 0));
+  j3_sup_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
+                         j3_sup_->model_(torq_[2][0], 0));
+  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0,
+                     j4_->model_(torq_[3][0], 0));
+  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0,
+                     j5_->model_(torq_[4][0], 0));
+  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0,
+                     j6_->model_(torq_[5][0], 0));
 }
 
 // 逆运动学求解(解析形式)
@@ -189,12 +233,50 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
 }
 
 // 操作空间控制器(末端位姿)
-void Arm::manipulationController(void) {}
+void Arm::manipulationController(void) {
+  // 目标状态限制
+//  ref_.x = math::limit(ref_.x, 0.2f, 0.8f);
+//  ref_.y = math::limit(ref_.y, -0.3f, 0.3f);
+//  ref_.z = math::limit(ref_.z, 0.5f, 1.0f);
+//  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
+//  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
+//  ref_.roll = math::limit(ref_.roll, -45.0f, 45.0f);
+
+  // 目标状态解算
+  Matrixf<3, 1> p_ref;
+  p_ref[0][0] = ref_.x;
+  p_ref[1][0] = ref_.y;
+  p_ref[2][0] = ref_.z;
+  Matrixf<3, 1> rpy_ref;
+  rpy_ref[0][0] = ref_.yaw;
+  rpy_ref[1][0] = ref_.pitch;
+  rpy_ref[2][0] = ref_.roll;
+  ref_.T = robotics::rp2t(robotics::rpy2r(rpy_ref) * R0, p_ref);
+
+  // 逆运动学解析解
+  ref_.q = ikine(ref_.T);
+
+  // 动力学前馈(仅取位置项)
+  torq_ = arm_.rne(fdb_.q);
+}
 
 // 关节空间控制器(关节角度)
-void Arm::jointController(void) {}
+void Arm::jointController(void) {
+  // todo
+}
 
 // 停止状态控制器(电机断电/阻尼模式)
 void Arm::stopController(void) {
   // 重置目标状态
+  ref_.q = fdb_.q;
+  ref_.T = fdb_.T;
+  ref_.x = fdb_.x;
+  ref_.y = fdb_.y;
+  ref_.z = fdb_.z;
+  ref_.yaw = fdb_.yaw;
+  ref_.pitch = fdb_.pitch;
+  ref_.roll = fdb_.roll;
+
+  // 力矩前馈清零
+  torq_ = matrixf::zeros<6, 1>();
 }

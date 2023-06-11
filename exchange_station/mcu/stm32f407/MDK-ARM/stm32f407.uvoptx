@@ -190,7 +190,7 @@
         <Ww>
           <count>3</count>
           <WinNumber>1</WinNumber>
-          <ItemText>arm</ItemText>
+          <ItemText>arm,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>
