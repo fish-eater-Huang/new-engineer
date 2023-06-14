@@ -51,7 +51,7 @@ class Arm {
   // 机械臂模型
   robotics::Link links_[6] = {
       // link1
-      robotics::Link(0, 0.352, 0, PI / 2,        // theta,d,a,alpha
+      robotics::Link(0, 0, 0, PI / 2,        // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 1.234,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, -0.017, 0.018}),  // rc

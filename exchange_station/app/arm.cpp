@@ -51,7 +51,7 @@ void Arm::init(void) {
   fdb_.x = p_fdb[0][0];
   fdb_.y = p_fdb[1][0];
   fdb_.z = p_fdb[2][0];
-  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T)*R0.trans());
+  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T) * R0.trans());
   fdb_.yaw = rpy_fdb[0][0];
   fdb_.pitch = rpy_fdb[1][0];
   fdb_.roll = rpy_fdb[2][0];
@@ -111,7 +111,7 @@ void Arm::handle(void) {
   fdb_.x = p_fdb[0][0];
   fdb_.y = p_fdb[1][0];
   fdb_.z = p_fdb[2][0];
-  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T)*R0.trans());
+  Matrixf<3, 1> rpy_fdb = robotics::r2rpy(robotics::t2r(fdb_.T) * R0.trans());
   fdb_.yaw = rpy_fdb[0][0];
   fdb_.pitch = rpy_fdb[1][0];
   fdb_.roll = rpy_fdb[2][0];
@@ -152,8 +152,20 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
   // (2)
   Matrixf<3, 1> z5 = z6;
   Matrixf<3, 1> o5 = o6 - links_[5].dh_.d * z5;
-  // (3)
+  // 处理奇异输入
   float d234 = links_[1].dh_.d + links_[2].dh_.d + links_[3].dh_.d;
+  float a2 = links_[1].dh_.a;
+  float a3 = links_[2].dh_.a;
+  if (o5.norm() > (a2 + a3) * 0.85) {
+    o5 = o5 / o5.norm() * (a2 + a3) * 0.85;
+  } else if (sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) <
+             fabs(d234) * 2.0f) {
+    o5[0][0] = o5[0][0] / sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) *
+               fabs(d234) * 2.0f;
+    o5[1][0] = o5[1][0] / sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) *
+               fabs(d234) * 2.0f;
+  }
+  // (3)
   float xo5 = o5[0][0];
   float yo5 = o5[1][0];
   if (fabs(d234) < 1e-8f) {
@@ -185,8 +197,6 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
   Matrixf<3, 1> o1 = matrixf::zeros<3, 1>();
   o1[2][0] = links_[0].dh_.d;
   Matrixf<3, 1> p14 = o4 - o1;
-  float a2 = links_[1].dh_.a;
-  float a3 = links_[2].dh_.a;
   float phi =
       acosf((a2 * a2 + a3 * a3 + d234 * d234 - p14.norm() * p14.norm()) /
             (2 * a2 * a3));
@@ -217,6 +227,45 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
   Matrixf<3, 3> R13 = Matrixf<3, 3>(r13);
   Matrixf<3, 3> R34 = (R01 * R13).trans() * R04;
   q[3][0] = atan2f(R34[1][0], R34[0][0]);
+  // 校验q4
+  if (fabs(math::loopLimit(q[3][0], -PI, PI)) > PI / 2) {
+    z4 *= -1;
+    // goto (4)
+    o4 = o5 - links_[4].dh_.d * z4;
+    // (5)
+    o1 = matrixf::zeros<3, 1>();
+    o1[2][0] = links_[0].dh_.d;
+    p14 = o4 - o1;
+    phi = acosf((a2 * a2 + a3 * a3 + d234 * d234 - p14.norm() * p14.norm()) /
+                (2 * a2 * a3));
+    q[2][0] = phi - PI / 2;
+    // (6)
+    y1 = matrixf::zeros<3, 1>();
+    y1[2][0] = 1;
+    x1 = vector3f::cross(y1, z1);
+    gamma =
+        asinf(a3 * sinf(phi) / sqrtf(p14.norm() * p14.norm() - d234 * d234));
+    q[1][0] = atan2f((y1.trans() * p14)[0][0], (x1.trans() * p14)[0][0]) +
+              gamma - PI / 2;
+    // (7)
+    y4 = matrixf::zeros<3, 1>() - z1;
+    x4 = vector3f::cross(y4, z4);
+    float r04[9] = {x4[0][0], y4[0][0], z4[0][0], x4[1][0], y4[1][0],
+                    z4[1][0], x4[2][0], y4[2][0], z4[2][0]};
+    R04 = Matrixf<3, 3>(r04);
+    float r13[9] = {cosf(q[1][0] + q[2][0]),
+                    -sinf(q[1][0] + q[2][0]),
+                    0,
+                    sinf(q[1][0] + q[2][0]),
+                    cosf(q[1][0] + q[2][0]),
+                    0,
+                    0,
+                    0,
+                    1};
+    R13 = Matrixf<3, 3>(r13);
+    R34 = (R01 * R13).trans() * R04;
+    q[3][0] = atan2f(R34[1][0], R34[0][0]);
+  }
   // (8)
   Matrixf<3, 1> y5 = z4;
   Matrixf<3, 1> x5 = vector3f::cross(y5, z5);
@@ -235,12 +284,12 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
 // 操作空间控制器(末端位姿)
 void Arm::manipulationController(void) {
   // 目标状态限制
-//  ref_.x = math::limit(ref_.x, 0.2f, 0.8f);
-//  ref_.y = math::limit(ref_.y, -0.3f, 0.3f);
-//  ref_.z = math::limit(ref_.z, 0.5f, 1.0f);
-//  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
-//  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
-//  ref_.roll = math::limit(ref_.roll, -45.0f, 45.0f);
+  //  ref_.x = math::limit(ref_.x, 0.2f, 0.8f);
+  //  ref_.y = math::limit(ref_.y, -0.3f, 0.3f);
+  //  ref_.z = math::limit(ref_.z, 0.5f, 1.0f);
+  //  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
+  //  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
+  //  ref_.roll = math::limit(ref_.roll, -45.0f, 45.0f);
 
   // 目标状态解算
   Matrixf<3, 1> p_ref;

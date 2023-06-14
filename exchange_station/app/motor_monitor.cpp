@@ -44,7 +44,7 @@ Motor JM3(Motor::M3508, -100, Motor::POSITION_SPEED,     // type, ratio, method
           j3Model);                                      // model
 Motor JSM3(Motor::M3508, -100, Motor::POSITION_SPEED,    // type, ratio, method
            PID(8, 0, 0, 0, 90),                          // ppid
-           PID(1000, 0, 200, 0, 16384),                   // spid
+           PID(1000, 0, 200, 0, 16384),                  // spid
            true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
            j3Model);                                     // model
 
