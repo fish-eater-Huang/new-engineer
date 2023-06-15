@@ -166,7 +166,7 @@
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>C:\Users\thinkpad\Desktop\home\sjtu\Robomaster\program\RM_frame_2023\RM_frame\mcu\stm32f407\Src\stm32f4xx_it.c</Filename>
+          <Filename>../Src/stm32f4xx_it.c</Filename>
           <ExecCommand></ExecCommand>
           <Expression>\\stm32f407\../Src/stm32f4xx_it.c\103</Expression>
         </Bp>

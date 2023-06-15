@@ -51,45 +51,45 @@ class Arm {
   // 机械臂模型
   robotics::Link links_[6] = {
       // link1
-      robotics::Link(0, 0, 0, PI / 2,            // theta,d,a,alpha
+      robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 1.234,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, -0.017, 0.018}),  // rc
-                     matrixf::zeros<3, 3>()),                      // I
+                     0, 0, 0, 0.83,              // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, 0.003, 0.049}),  // rc
+                     matrixf::zeros<3, 3>()),                     // I
 
       // link2
-      robotics::Link(0, 0.117, 0.4439, 0,        // theta,d,a,alpha
+      robotics::Link(0, 0, 0.266, 0,             // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     PI / 2, 0, 0, 2.326,        // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){-0.25, 0, -0.033}),  // rc
-                     matrixf::zeros<3, 3>()),                      // I
+                     0, 0, 0, 1.222,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){-0.06, 0, 0.062}),  // rc
+                     matrixf::zeros<3, 3>()),                     // I
 
       // link3
-      robotics::Link(0, -0.1218, 0.4639, 0,      // theta,d,a,alpha
+      robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     -PI / 2, 0, 0, 2.182,       // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){-0.26, 0, 0.032}),  // rc
-                     matrixf::zeros<3, 3>()),                     // I
-
-      // link4
-      robotics::Link(0, -0.0475, 0, -PI / 2,     // theta,d,a,alpha
-                     robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.648,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){-0.018, 0, 0.04}),  // rc
-                     matrixf::zeros<3, 3>()),                     // I
-
-      // link5
-      robotics::Link(0, 0.128, 0, PI / 2,        // theta,d,a,alpha
-                     robotics::Joint_Type_e::R,  // joint type
-                     PI / 2, 0, 0, 0.98,         // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, -0.022, 0.085}),  // rc
+                     0, 0, 0, 0.538,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){-0.004, 0, 0.012}),  // rc
                      matrixf::zeros<3, 3>()),                      // I
 
-      // link6
-      robotics::Link(0, 0.384, 0, 0,             // theta,d,a,alpha
+      // link4
+      robotics::Link(0, 0.28, 0, PI / 2,         // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 1.792,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, 0, -0.123}),  // rc
+                     0, 0, 0, 0.342,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, -0.327, 0.035}),  // rc
+                     matrixf::zeros<3, 3>()),                      // I
+
+      // link5
+      robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
+                     robotics::Joint_Type_e::R,  // joint type
+                     0, 0, 0, 0.162,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, -0.02, 0}),  // rc
+                     matrixf::zeros<3, 3>()),                 // I
+
+      // link6
+      robotics::Link(0, 0.07, 0, 0,              // theta,d,a,alpha
+                     robotics::Joint_Type_e::R,  // joint type
+                     0, 0, 0, 0.12,              // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, 0, -0.015}),  // rc
                      matrixf::zeros<3, 3>()),                  // I
   };
 
