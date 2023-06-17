@@ -49,7 +49,7 @@ float extra_power_max = 0;
 // 遥控器控制
 namespace rcctrl {
 const float arm_position_rate = 5e-7f;
-const float arm_direction_rate = 2e-7f;
+const float arm_direction_rate = 8e-7f;
 }  // namespace rcctrl
 
 // 控制初始化
@@ -60,7 +60,7 @@ void controlInit(void) {
 
 // 控制主循环
 void controlLoop(void) {
-  iwdgHandler(1); // iwdgHandler(rc.connect_.check());
+  iwdgHandler(rc.connect_.check());
   robotPowerStateFSM(!rc.connect_.check() || rc.switch_.r == RC::DOWN);
 
   if (robot_state == STOP) {
@@ -132,7 +132,7 @@ void robotControl(void) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     arm.addRef(0, 0, 0, rc.channel_.l_row * rcctrl::arm_direction_rate,
                -rc.channel_.l_col * rcctrl::arm_direction_rate,
-               rc.channel_.dial_wheel * rcctrl::arm_direction_rate * 3);
+               rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {

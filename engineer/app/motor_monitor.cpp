@@ -17,61 +17,56 @@
 
 // 机械臂关节电机
 float j1Model(const float& torque, const float& speed = 0) {
-  return torque * 5.25e2f;  // 8192*19.2/(3*100) ~= 5.2e2
+  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
 }
 Motor JM1(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(10, 0, 0, 0, 90),                         // ppid
-          PID(1000, 0, 100, 0, 16384),                  // spid
+          PID(20, 0.1, 5, 10, 90),                      // ppid
+          PID(200, 0.1, 20, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j1Model);                                     // model
 
 float j2Model(const float& torque, const float& speed = 0) {
-  return torque * 6e2f;  // 8192*19.2/(3*100) ~= 5.2e2
+  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
 }
-Motor JM2(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(10, 0, 0, 0, 90),                         // ppid
-          PID(2000, 0, 200, 0, 16384),                  // spid
+Motor JM2(Motor::M3508, -100, Motor::POSITION_SPEED,    // type, ratio, method
+          PID(20, 0.1, 5, 10, 90),                      // ppid
+          PID(200, 0.1, 20, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j2Model);                                     // model
 
 float j3Model(const float& torque, const float& speed = 0) {
-  return torque * 3e2f;  // 8192*19.2/(3*100)*1/3 ~= 1.75e2
+  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
 }
-Motor JM3(Motor::M3508, -100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(8, 0, 0, 0, 90),                           // ppid
-          PID(2000, 0, 100, 0, 16384),                   // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
-          j3Model);                                      // model
-Motor JSM3(Motor::M3508, -100, Motor::POSITION_SPEED,    // type, ratio, method
-           PID(8, 0, 0, 0, 90),                          // ppid
-           PID(1000, 0, 200, 0, 16384),                  // spid
-           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-           j3Model);                                     // model
+Motor JM3(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
+          PID(20, 0.1, 5, 10, 90),                      // ppid
+          PID(200, 0.1, 20, 1000, 16384),               // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
+          j3Model);                                     // model
 
 float j4Model(const float& torque, const float& speed = 0) {
-  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+  return torque * 2.73e3f;  // 8192*19.2/(3*19.2) ~= 2.73e3
 }
-Motor JM4(Motor::M3508, -50, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(20, 0, 0, 0, 180),                        // ppid
-          PID(100, 0, 10, 0, 16384),                    // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j4Model);                                     // model
+Motor JM4(Motor::M3508, 19.2032f, Motor::POSITION_SPEED,  // type, ratio, method
+          PID(20, 0.1, 5, 10, 180),                       // ppid
+          PID(50, 0.1, 10, 1000, 16384),                  // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),    // kf
+          j4Model);                                       // model
 
 float j5Model(const float& torque, const float& speed = 0) {
-  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+  return torque * 5.24e4f;  // 8192*19.2/(3*1) ~= 5.24e4
 }
-Motor JM5(Motor::M3508, 50, Motor::POSITION_SPEED,      // type, ratio, method
-          PID(10, 0, 0, 0, 180),                        // ppid
-          PID(100, 0, 10, 0, 16384),                    // spid
+Motor JM5(Motor::M3508, 1, Motor::POSITION_SPEED,       // type, ratio, method
+          PID(30, 0.1, 50, 50, 360),                    // ppid
+          PID(50, 0.1, 200, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j5Model);                                     // model
 
 float j6Model(const float& torque, const float& speed = 0) {
-  return torque * 1e3f;  // 8192*19.2/(3*50) ~= 1e3
+  return torque * 5.24e4f;  // 8192*19.2/(3*1) ~= 5.24e4
 }
-Motor JM6(Motor::M3508, 50, Motor::POSITION_SPEED,      // type, ratio, method
-          PID(10, 0, 0, 0, 180),                        // ppid
-          PID(50, 0, 0, 0, 16384),                      // spid
+Motor JM6(Motor::M3508, -1, Motor::POSITION_SPEED,      // type, ratio, method
+          PID(50, 0.1, 10, 10, 360),                    // ppid
+          PID(5, 0.02, 20, 1000, 16384),                // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j6Model);                                     // model
 
@@ -84,7 +79,7 @@ Motor* can1_dji_motor[11] = {
     &JM4,     // id:4
     &JM5,     // id:5
     &JM6,     // id:6
-    &JSM3,    // id:7
+    nullptr,  // id:7
     nullptr,  // id:8
     nullptr,  // id:9
     nullptr,  // id:10

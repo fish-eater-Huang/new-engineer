@@ -19,8 +19,7 @@
 class Arm {
  public:
   // 构造函数
-  Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-      Motor* j3_sup);
+  Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6);
 
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
@@ -89,14 +88,14 @@ class Arm {
       robotics::Link(0, 0.07, 0, 0,              // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 0.12,              // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, 0, -0.015}),  // rc
-                     matrixf::zeros<3, 3>()),                  // I
+                     Matrixf<3, 1>((float[3]){0, 0, -0.02}),  // rc
+                     matrixf::zeros<3, 3>()),                 // I
   };
 
   robotics::Serial_Link<6> arm_;
 
   // 电机指针
-  Motor *j1_, *j2_, *j3_, *j4_, *j5_, *j6_, *j3_sup_;
+  Motor *j1_, *j2_, *j3_, *j4_, *j5_, *j6_;
 
   // 工作模式
   enum Mode_e {

@@ -46,7 +46,7 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &JSM3);
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;

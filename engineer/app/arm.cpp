@@ -13,30 +13,27 @@
 #include "base/common/math.h"
 
 // 构造函数
-Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-         Motor* j3_sup)
-    : j1_(j1),
-      j2_(j2),
-      j3_(j3),
-      j4_(j4),
-      j5_(j5),
-      j6_(j6),
-      j3_sup_(j3_sup),
-      arm_(links_) {
+Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6)
+    : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
   init();
 }
 
 // 初始化关节角度
 void Arm::init(void) {
   // 初始角度设置
-  float q_init_deg[6] = {0, 67.5f, -65.6f, -1.9f, 90.0f, 0};
+  float q_init_deg[6] = {0, -180.0f, 80.0f, 0, 100.0f, 0};
   j1_->resetFeedbackAngle(q_init_deg[0]);
   j2_->resetFeedbackAngle(q_init_deg[1]);
   j3_->resetFeedbackAngle(q_init_deg[2]);
   j4_->resetFeedbackAngle(q_init_deg[3]);
   j5_->resetFeedbackAngle(q_init_deg[4]);
   j6_->resetFeedbackAngle(q_init_deg[5]);
-  j3_sup_->resetFeedbackAngle(q_init_deg[2]);
+  j1_->setFdbSrc(&j1_->kfAngle(), &j1_->kfSpeed());
+  j2_->setFdbSrc(&j2_->kfAngle(), &j2_->kfSpeed());
+  j3_->setFdbSrc(&j3_->kfAngle(), &j3_->kfSpeed());
+  j4_->setFdbSrc(&j4_->kfAngle(), &j4_->kfSpeed());
+  j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
+  j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
 
   float q[6];
   for (int i = 0; i < 6; i++) {
@@ -132,8 +129,6 @@ void Arm::handle(void) {
                      j2_->model_(torq_[1][0], 0));
   j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
                      j3_->model_(torq_[2][0], 0));
-  j3_sup_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
-                         j3_sup_->model_(torq_[2][0], 0));
   j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0,
                      j4_->model_(torq_[3][0], 0));
   j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0,
