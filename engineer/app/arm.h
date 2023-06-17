@@ -37,14 +37,17 @@ class Arm {
   // 逆运动学求解(解析形式)
   Matrixf<6, 1> ikine(Matrixf<4, 4> T);
 
+  // 停止状态控制器(电机断电/阻尼模式)
+  void stopController(void);
+
   // 操作空间控制器(末端位姿)
   void manipulationController(void);
 
   // 关节空间控制器(关节角度)
   void jointController(void);
 
-  // 停止状态控制器(电机断电/阻尼模式)
-  void stopController(void);
+  // 柔顺控制器
+  void complianceController(void);
 
  public:
   // 机械臂模型
@@ -102,6 +105,7 @@ class Arm {
     STOP,
     MANIPULATION,
     JOINT,
+    COMPLIANCE,
   } mode_;
 
   // 目标状态
@@ -124,7 +128,7 @@ class Arm {
   } fdb_;
 
   // 默认旋转矩阵
-  Matrixf<3, 3> R0;
+  Matrixf<3, 3> R0_;
 
   // 前馈力矩
   Matrixf<6, 1> torq_;

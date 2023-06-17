@@ -56,8 +56,8 @@ float j5Model(const float& torque, const float& speed = 0) {
   return torque * 5.24e4f;  // 8192*19.2/(3*1) ~= 5.24e4
 }
 Motor JM5(Motor::M3508, 1, Motor::POSITION_SPEED,       // type, ratio, method
-          PID(30, 0.1, 50, 50, 360),                    // ppid
-          PID(50, 0.1, 200, 1000, 16384),               // spid
+          PID(30, 0.1, 10, 50, 360),                    // ppid
+          PID(30, 0.1, 100, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j5Model);                                     // model
 

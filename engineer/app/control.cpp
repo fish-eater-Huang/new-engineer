@@ -49,7 +49,7 @@ float extra_power_max = 0;
 // 遥控器控制
 namespace rcctrl {
 const float arm_position_rate = 5e-7f;
-const float arm_direction_rate = 8e-7f;
+const float arm_direction_rate = 3e-6f;
 }  // namespace rcctrl
 
 // 控制初始化
@@ -139,12 +139,15 @@ void robotControl(void) {
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::COMPLIANCE;
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::COMPLIANCE;
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::COMPLIANCE;
   }
 
   // 记录遥控器挡位状态
