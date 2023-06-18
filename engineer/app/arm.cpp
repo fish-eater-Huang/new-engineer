@@ -199,14 +199,14 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
                   0};
   Matrixf<3, 3> R01(r01), R12(r12), R23(r23);
   Matrixf<3, 3> R36 = (R01 * R12 * R23).trans() * R06;
-  if (fabs(R36[0][2]) > 1e-8f) {
+  if (fabs(R36[0][2]) > 0.05f) {
     // R36(1,3)≠0，更新456关节角度
     q[4][0] = atan2f(
         -R36[0][2] / fabs(R36[0][2]) * R36.block<2, 1>(0, 2).norm(), R36[2][2]);
     q[3][0] = atan2f(-R36[1][2] / sinf(q[4][0]), -R36[0][2] / sinf(q[4][0]));
     q[5][0] = atan2f(-R36[2][1] / sinf(q[4][0]), R36[2][0] / sinf(q[4][0]));
   }
-
+  
   return q;
 }
 

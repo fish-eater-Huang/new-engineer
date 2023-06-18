@@ -123,16 +123,20 @@ void robotControl(void) {
   // 遥控器挡位左上右上
   if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(-rc.channel_.r_col * rcctrl::arm_position_rate,
-               rc.channel_.r_row * rcctrl::arm_position_rate,
-               rc.channel_.l_col * rcctrl::arm_position_rate, 0, 0, 0);
+    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
+               -rc.channel_.l_row * rcctrl::arm_position_rate,
+               -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
+               -rc.channel_.r_row * rcctrl::arm_direction_rate,
+               -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(0, 0, 0, rc.channel_.l_row * rcctrl::arm_direction_rate,
-               -rc.channel_.l_col * rcctrl::arm_direction_rate,
-               rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
+    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
+               -rc.channel_.l_row * rcctrl::arm_position_rate, 0,
+               -rc.channel_.r_row * rcctrl::arm_direction_rate,
+               -rc.channel_.r_col * rcctrl::arm_direction_rate,
+               -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
