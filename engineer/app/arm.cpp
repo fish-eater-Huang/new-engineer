@@ -44,7 +44,8 @@ void Arm::init(void) {
 
   fdb_.T = arm_.fkine(fdb_.q);
   R0_ = robotics::t2r(arm_.fkine(matrixf::zeros<6, 1>()));
-  R0_ = Matrixf<3, 3>((float[9]){0, 0, 1, 0, -1, 0, 1, 0, 0});
+  float r0[9] = {0, 0, 1, 0, -1, 0, 1, 0, 0};
+  R0_ = Matrixf<3, 3>(r0);
   Matrixf<3, 1> p_fdb = robotics::t2p(fdb_.T);
   fdb_.x = p_fdb[0][0];
   fdb_.y = p_fdb[1][0];
@@ -206,7 +207,7 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
     q[3][0] = atan2f(-R36[1][2] / sinf(q[4][0]), -R36[0][2] / sinf(q[4][0]));
     q[5][0] = atan2f(-R36[2][1] / sinf(q[4][0]), R36[2][0] / sinf(q[4][0]));
   }
-  
+
   return q;
 }
 
