@@ -65,10 +65,53 @@ IMU board_imu(boardimu::param.dt, boardimu::param.kg, boardimu::param.km,
               boardimu::param.accel_bias, boardimu::param.mag_bias,
               boardimu::param.accel_sen, &boardimu::readSensor);
 
-// 外置IMU
-namespace extimu {
-// todo
-}  // namespace extimu
+// 控制器IMU(外置，can通信传输yaw，pitch，roll数据)
+namespace controllerimu {
+
+// imu参数
+struct Param {
+  // 姿态解算算法参数
+  const float dt = 1e-3f;
+  const float kg = 0;
+  const float km = 0;
+  const float g_thres = 0.3f;
+
+  // 传感器方向变换矩阵(对应不同安装方向，默认为I(3))
+  const float R_imu[3][3] = {{1.0f, 0.0f, 0.0f},
+                             {0.0f, 1.0f, 0.0f},
+                             {0.0f, 0.0f, 1.0f}};
+  const float R_mag[3][3] = {{1.0f, 0.0f, 0.0f},
+                             {0.0f, 1.0f, 0.0f},
+                             {0.0f, 0.0f, 1.0f}};
+
+  // 传感器偏移
+  const float gyro_bias[3] = {0, 0, 0};
+  const float accel_bias[3] = {0, 0, 0};
+  const float mag_bias[3] = {0, 0, 0};
+  // 加速度计比例
+  const float accel_sen = 1;
+} param;
+
+}  // namespace controllerimu
+
+// 控制器IMU
+IMU controller_imu[3] = {
+    IMU(controllerimu::param.dt, controllerimu::param.kg,
+        controllerimu::param.km, controllerimu::param.g_thres,
+        controllerimu::param.R_imu, controllerimu::param.R_mag,
+        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
+        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
+    IMU(controllerimu::param.dt, controllerimu::param.kg,
+        controllerimu::param.km, controllerimu::param.g_thres,
+        controllerimu::param.R_imu, controllerimu::param.R_mag,
+        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
+        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
+    IMU(controllerimu::param.dt, controllerimu::param.kg,
+        controllerimu::param.km, controllerimu::param.g_thres,
+        controllerimu::param.R_imu, controllerimu::param.R_mag,
+        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
+        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
+};
 
 // 初始化板载IMU传感器
 void boardimu::initSensor(imu::RawData_t& raw_data) {

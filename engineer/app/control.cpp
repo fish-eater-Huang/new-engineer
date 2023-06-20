@@ -13,6 +13,7 @@
 #include "iwdg.h"
 
 #include "app/arm.h"
+#include "app/board_comm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "base/bsp/bsp_buzzer.h"
@@ -28,9 +29,10 @@ void robotControl(void);
 void boardLedHandle(void);
 
 extern RC rc;
-extern IMU board_imu;
 extern Arm arm;
 
+uint8_t board_id = 0;
+ArmController arm_controller(controller_imu);
 BoardLed led;
 
 // 上电状态
@@ -73,6 +75,8 @@ void controlLoop(void) {
     allMotorsOn();   // 电机上电
     robotControl();  // 机器人控制
   }
+
+  arm_controller.handle();
   boardLedHandle();
 }
 
@@ -140,6 +144,7 @@ void robotControl(void) {
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
+    arm.mode_ = Arm::Mode_e::MANIPULATION;
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
@@ -151,7 +156,15 @@ void robotControl(void) {
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+      arm_controller.setOffset(arm.fdb_.x - arm_controller.ref_.x,
+                               arm.fdb_.y - arm_controller.ref_.y,
+                               arm.fdb_.z - arm_controller.ref_.z);
+    }
+    arm.mode_ = Arm::Mode_e::MANIPULATION;
+    arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
+               arm_controller.ref_.z, arm_controller.ref_.yaw,
+               arm_controller.ref_.pitch, arm_controller.ref_.roll);
   }
 
   // 记录遥控器挡位状态
@@ -217,4 +230,48 @@ void boardLedHandle(void) {
     }
   }
 #endif
+}
+
+// 机械臂控制器构造函数
+ArmController::ArmController(IMU imu[3]) {
+  imu_[0] = &imu[0];
+  imu_[1] = &imu[1];
+  imu_[2] = &imu[2];
+}
+
+// 设置机械臂控制器位置偏置值
+void ArmController::setOffset(float dx, float dy, float dz) {
+  offset_.x = dx;
+  offset_.y = dy;
+  offset_.z = dz;
+}
+
+// 机械臂控制器处理函数
+void ArmController::handle(void) {
+  // 目标姿态
+  ref_.yaw = math::deg2rad(imu_[2]->yaw());
+  ref_.pitch = math::deg2rad(imu_[2]->pitch());
+  ref_.roll = math::deg2rad(imu_[2]->roll());
+  // 目标位置
+  Matrixf<3, 1> p11 = matrixf::zeros<3, 1>();
+  p11[0][0] = para_.l[0];  // [l1;0;0]
+  Matrixf<3, 1> p22 = matrixf::zeros<3, 1>();
+  p22[0][0] = para_.l[1];  // [l2;0;0]
+  float rpy1[3] = {math::deg2rad(imu_[0]->yaw()),
+                   math::deg2rad(imu_[0]->pitch()),
+                   math::deg2rad(imu_[0]->roll())};
+  float rpy2[3] = {math::deg2rad(imu_[1]->yaw()),
+                   math::deg2rad(imu_[1]->pitch()),
+                   math::deg2rad(imu_[1]->roll())};
+  Matrixf<3, 3> R01 = robotics::rpy2r(rpy1);
+  Matrixf<3, 3> R02 = robotics::rpy2r(rpy2);
+  Matrixf<3, 1> p = R01 * p11 + R02 * p22;
+  // 目标位置+偏置
+  ref_.x = p[0][0] + offset_.x;
+  ref_.y = p[1][0] + offset_.y;
+  ref_.z = p[2][0] + offset_.z;
+  // 目标状态T矩阵
+  float ref_p[3] = {ref_.x, ref_.y, ref_.z};
+  float ref_rpy[3] = {ref_.yaw, ref_.pitch, ref_.roll};
+  ref_.T = robotics::rp2t(robotics::rpy2r(ref_rpy), ref_p);
 }
