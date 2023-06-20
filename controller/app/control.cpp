@@ -12,7 +12,7 @@
 
 #include "iwdg.h"
 
-#include "app/arm.h"
+#include "app/board_comm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "base/bsp/bsp_buzzer.h"
@@ -29,8 +29,9 @@ void boardLedHandle(void);
 
 extern RC rc;
 extern IMU board_imu;
-extern Arm arm;
+extern BoardComm board_comm;
 
+uint8_t board_id = 3;
 BoardLed led;
 
 // 上电状态
@@ -47,10 +48,7 @@ RC::RCSwitch last_rc_switch;
 float extra_power_max = 0;
 
 // 遥控器控制
-namespace rcctrl {
-const float arm_position_rate = 5e-7f;
-const float arm_direction_rate = 3e-6f;
-}  // namespace rcctrl
+namespace rcctrl {}  // namespace rcctrl
 
 // 控制初始化
 void controlInit(void) {
@@ -60,8 +58,8 @@ void controlInit(void) {
 
 // 控制主循环
 void controlLoop(void) {
-  iwdgHandler(rc.connect_.check());
-  robotPowerStateFSM(!rc.connect_.check() || rc.switch_.r == RC::DOWN);
+  iwdgHandler(1);
+  robotPowerStateFSM(0);
 
   if (robot_state == STOP) {
     allMotorsStopShutoff();
@@ -108,7 +106,6 @@ void robotPowerStateFSM(bool stop_flag) {
 // 重置各功能状态
 void robotReset(void) {
   robot_init_flag = false;
-  arm.mode_ = Arm::Mode_e::STOP;
   last_rc_switch = rc.switch_;
 }
 
@@ -120,39 +117,9 @@ bool robotStartup(void) {
 
 // 机器人控制
 void robotControl(void) {
-  // 遥控器挡位左上右上
-  if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
-               -rc.channel_.l_row * rcctrl::arm_position_rate,
-               -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
-               -rc.channel_.r_row * rcctrl::arm_direction_rate,
-               -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
-  }
-  // 遥控器挡位左中右上
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
-               -rc.channel_.l_row * rcctrl::arm_position_rate, 0,
-               -rc.channel_.r_row * rcctrl::arm_direction_rate,
-               -rc.channel_.r_col * rcctrl::arm_direction_rate,
-               -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
-  }
-  // 遥控器挡位左下右上
-  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
-  }
-  // 遥控器挡位左上右中
-  else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
-  }
-  // 遥控器挡位左中右中
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
-  }
-  // 遥控器挡位左下右中
-  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
-  }
+  board_comm.imu_msg_[board_id - 1].yaw = board_imu.yaw() * 32767 / 180;
+  board_comm.imu_msg_[board_id - 1].pitch = board_imu.pitch() * 32767 / 180;
+  board_comm.imu_msg_[board_id - 1].roll = board_imu.roll() * 32767 / 180;
 
   // 记录遥控器挡位状态
   last_rc_switch = rc.switch_;
@@ -169,25 +136,7 @@ void boardLedHandle(void) {
     led.setModeBreath();
   } else if (robot_state == WORKING) {
     led.setColor(0, 0, 255);  // blue
-    if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左上右上
-      led.setModeBlink(1);
-    } else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左中右上
-      led.setModeBlink(2);
-    } else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左下右上
-      led.setModeBlink(3);
-    } else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左上右中
-      led.setModeBlink(4);
-    } else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左中右中
-      led.setModeBlink(5);
-    } else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左下右中
-      led.setModeBlink(6);
-    }
+    led.setModeBlink(board_id);
   }
   led.handle();
 #elif defined DBA

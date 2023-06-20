@@ -159,7 +159,7 @@
           <Type>0</Type>
           <LineNumber>103</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134247620</Address>
+          <Address>134247692</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -196,6 +196,16 @@
           <count>4</count>
           <WinNumber>1</WinNumber>
           <ItemText>rc,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>arm_controller</ItemText>
+        </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>board_comm</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>

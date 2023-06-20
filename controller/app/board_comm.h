@@ -15,6 +15,12 @@
 #include "can.h"
 
 class BoardComm {
+  typedef struct ImuMsgPack {
+    int16_t yaw;
+    int16_t pitch;
+    int16_t roll;
+  } ImuMsgPack_t;
+
  public:
   BoardComm(CAN_HandleTypeDef* hcan);
 
@@ -37,15 +43,7 @@ class BoardComm {
  public:
   Connect connect_;
 
-  // board to capacity
-  struct TxMsg {
-    uint8_t reserve[8];
-  } tx_msg_;
-
-  // capacity to board
-  struct RxMsg {
-    uint8_t reserve[8];
-  } rx_msg_;
+  ImuMsgPack_t imu_msg_[3];
 
  private:
   CAN_HandleTypeDef* hcan_;
@@ -53,8 +51,7 @@ class BoardComm {
   uint8_t can_tx_data_[8];
   uint32_t can_tx_mail_box_;
 
-  const uint16_t master_id_ = 0x101;
-  const uint16_t slave_id_ = 0x102;
+  const uint16_t board_comm_id_base_ = 0x100;
 };
 
 #endif  // BOARD_COMM_H

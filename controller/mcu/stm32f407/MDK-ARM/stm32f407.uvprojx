@@ -767,11 +767,6 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\app\motor_monitor.cpp</FilePath>
             </File>
-            <File>
-              <FileName>arm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\arm.cpp</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>

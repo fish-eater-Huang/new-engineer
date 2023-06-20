@@ -14,7 +14,7 @@
 #include "cmsis_os.h"
 #include "hardware_config.h"
 
-#include "app/arm.h"
+#include "app/board_comm.h"
 #include "app/can_monitor.h"
 #include "app/control.h"
 #include "app/imu_monitor.h"
@@ -46,7 +46,7 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6);
+BoardComm board_comm(&hcan2);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -86,35 +86,6 @@ void imuTask(void const* argument) {
   }
 }
 
-osThreadId armTaskHandle;
-void armTask(void const* argument) {
-  osDelay(100);
-  arm.init();
-  for (;;) {
-    arm.handle();
-    osDelay(1);
-  }
-}
-
-osThreadId minipcCommTaskHandle;
-void minipcCommTask(void const* argument) {
-  uint32_t tick = osKernelSysTick();
-  cv_comm.init();
-  for (;;) {
-    cv_comm.txMonitor(&tick);
-  }
-}
-
-osThreadId refereeCommTaskHandle;
-void refereeCommTask(void const* argument) {
-  uint32_t tick = osKernelSysTick();
-  referee.init();
-  for (;;) {
-    referee.handle();
-    osDelayUntil(&tick, 10);
-  }
-}
-
 osThreadId serialToolTaskHandle;
 void serialToolTask(void const* argument) {
   uint32_t tick = osKernelSysTick();
@@ -137,15 +108,6 @@ void rtosTaskInit(void) {
 
   osThreadDef(imu_task, imuTask, osPriorityRealtime, 0, 512);
   imuTaskHandle = osThreadCreate(osThread(imu_task), NULL);
-
-  osThreadDef(arm_task, armTask, osPriorityNormal, 0, 1800);
-  armTaskHandle = osThreadCreate(osThread(arm_task), NULL);
-
-  osThreadDef(minipc_comm_task, minipcCommTask, osPriorityNormal, 0, 512);
-  minipcCommTaskHandle = osThreadCreate(osThread(minipc_comm_task), NULL);
-
-  osThreadDef(referee_comm_task, refereeCommTask, osPriorityNormal, 0, 512);
-  refereeCommTaskHandle = osThreadCreate(osThread(referee_comm_task), NULL);
 
   osThreadDef(serial_tool_task, serialToolTask, osPriorityLow, 0, 1024);
   serialToolTaskHandle = osThreadCreate(osThread(serial_tool_task), NULL);

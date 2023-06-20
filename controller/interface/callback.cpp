@@ -17,6 +17,7 @@
 
 #include "hardware_config.h"
 
+#include "app/board_comm.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
 #include "base/cap_comm/cap_comm.h"
@@ -27,6 +28,7 @@
 extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
+extern BoardComm board_comm;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -37,6 +39,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 
   motorsCanRxMsgHandle(hcan, rx_header, rx_data);
+  if(board_comm.canRxMsgCheck(hcan, rx_header)) {
+    board_comm.canRxMsgCallback(hcan, rx_header, rx_data);
+  }
 }
 
 // UART transmit callback
