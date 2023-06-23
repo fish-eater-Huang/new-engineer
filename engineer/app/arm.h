@@ -35,7 +35,7 @@ class Arm {
 
  private:
   // 逆运动学求解(解析形式)
-  Matrixf<6, 1> ikine(Matrixf<4, 4> T);
+  Matrixf<6, 1> ikine(Matrixf<4, 4> T, Matrixf<6, 1> q0);
 
   // 停止状态控制器(电机断电/阻尼模式)
   void stopController(void);

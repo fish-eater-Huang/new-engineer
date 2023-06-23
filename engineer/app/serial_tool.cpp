@@ -17,15 +17,15 @@
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
 extern IMU board_imu;
+extern Arm arm;
 
 // 数据发送封装，在robot.cpp中调用
 void SerialStudio::handle(void) {
-  txIMUData(board_imu);
+  // txIMUData(board_imu);
   // txMotorData(m1);
   // txGimbalData(gimbal);
   // txChassisData(chassis);
-  // txPowerLimitData(power_limit);
-  // txAutoaimData(autoaim);
+  txArmData(arm);
 
 #ifdef DEBUG_USB
   // USB auto reconnect in suspended state
@@ -106,6 +106,39 @@ void SerialStudio::txMotorData(Motor& motor) {
       motor.kf_data_.x[1],             // %9
       (float)motor.intensity_,         // %10
       motor.motor_data_.current,       // %11
+  };
+  txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
+}
+
+// 机械臂数据可视化/采集
+void SerialStudio::txArmData(Arm& arm) {
+  sys_time_ = (float)HAL_GetTick() * 1e-3f;
+  float txdata_pack[] = {
+      sys_time_,                        // %1
+      math::rad2deg(arm.ref_.q[0][0]),  // %2
+      math::rad2deg(arm.fdb_.q[0][0]),  // %3
+      math::rad2deg(arm.ref_.q[1][0]),  // %4
+      math::rad2deg(arm.fdb_.q[1][0]),  // %5
+      math::rad2deg(arm.ref_.q[2][0]),  // %6
+      math::rad2deg(arm.fdb_.q[2][0]),  // %7
+      math::rad2deg(arm.ref_.q[3][0]),  // %8
+      math::rad2deg(arm.fdb_.q[3][0]),  // %9
+      math::rad2deg(arm.ref_.q[4][0]),  // %10
+      math::rad2deg(arm.fdb_.q[4][0]),  // %11
+      math::rad2deg(arm.ref_.q[5][0]),  // %12
+      math::rad2deg(arm.fdb_.q[5][0]),  // %13
+      arm.ref_.x,                       // %14
+      arm.fdb_.x,                       // %15
+      arm.ref_.y,                       // %16
+      arm.fdb_.y,                       // %17
+      arm.ref_.z,                       // %18
+      arm.fdb_.z,                       // %19
+      math::rad2deg(arm.ref_.yaw),      // %20
+      math::rad2deg(arm.fdb_.yaw),      // %21
+      math::rad2deg(arm.ref_.pitch),    // %22
+      math::rad2deg(arm.fdb_.pitch),    // %23
+      math::rad2deg(arm.ref_.roll),     // %24
+      math::rad2deg(arm.fdb_.roll),     // %25
   };
   txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
 }

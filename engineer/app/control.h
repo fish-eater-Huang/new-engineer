@@ -41,15 +41,22 @@ class ArmController {
   } ref_;
 
   // 状态偏置
+  struct Raw_t {
+    float x, y, z;           // m
+    float yaw, pitch, roll;  // rad
+  } raw_;
+
+  // 状态偏置
   struct Offset_t {
-    float x, y, z;
+    float x, y, z;           // m
+    float yaw, pitch, roll;  // rad
   } offset_;
 
  private:
   IMU* imu_[3];
 
   struct Para {
-    float l[2] = {0.3f, 0.24f};  // {0.3f, 0.24f};
+    float l[2] = {0.3f, 0.24f};
   } para_;
 };
 

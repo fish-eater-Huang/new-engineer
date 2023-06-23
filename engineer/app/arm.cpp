@@ -128,16 +128,19 @@ void Arm::handle(void) {
 }
 
 // 逆运动学求解(解析形式)
-Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
-  static Matrixf<6, 1> q;
+Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T, Matrixf<6, 1> q0) {
+  Matrixf<6, 1> q = q0;
+
   // (1)
   Matrixf<3, 3> R06 = robotics::t2r(T);
   Matrixf<3, 1> o6 = robotics::t2p(T);
   Matrixf<3, 1> z6 = T.block<3, 1>(0, 2);
+
   // (2)
   Matrixf<3, 1> z5 = z6;
   Matrixf<3, 1> o5 = o6 - links_[5].dh_.d * z5;
-  // 处理奇异输入
+
+  // 处理奇异输入(肘部奇异&肩部奇异)
   float a2 = links_[1].dh_.a;
   float d2 = links_[1].dh_.d;
   float d4 = links_[3].dh_.d;
@@ -150,18 +153,21 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
     o5[1][0] = o5[1][0] / sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) *
                (a2 + d4) * 0.1f;
   }
-  // (3)
+
+  // (3)-θ1
   float xo5 = o5[0][0];
   float yo5 = o5[1][0];
   q[0][0] = atan2f(yo5, xo5);
-  // (4)
+
+  // (4)-θ3
   Matrixf<3, 1> o1 = matrixf::zeros<3, 1>();
   o1[2][0] = links_[0].dh_.d;
   Matrixf<3, 1> p15 = o5 - o1;
   float phi = acosf((a2 * a2 + d4 * d4 + d2 * d2 - p15.norm() * p15.norm()) /
                     (2 * a2 * d4));
   q[2][0] = PI / 2 - phi;
-  // (5)
+
+  // (5)-θ2
   Matrixf<3, 1> y1 = matrixf::zeros<3, 1>();
   y1[2][0] = -1;
   Matrixf<3, 1> x1 = matrixf::zeros<3, 1>();
@@ -170,6 +176,7 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
   float gamma =
       asinf(d4 * sinf(phi) / sqrtf(p15.norm() * p15.norm() - d2 * d2));
   q[1][0] = atan2f((y1.trans() * p15)[0][0], (x1.trans() * p15)[0][0]) - gamma;
+
   // (6)
   float r01[9] = {cosf(q[0][0]),
                   0,
@@ -200,13 +207,47 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T) {
                   0};
   Matrixf<3, 3> R01(r01), R12(r12), R23(r23);
   Matrixf<3, 3> R36 = (R01 * R12 * R23).trans() * R06;
-  if (fabs(R36[0][2]) > 0.05f) {
-    // R36(1,3)≠0，更新456关节角度
-    q[4][0] = atan2f(
-        -R36[0][2] / fabs(R36[0][2]) * R36.block<2, 1>(0, 2).norm(), R36[2][2]);
-    q[3][0] = atan2f(-R36[1][2] / sinf(q[4][0]), -R36[0][2] / sinf(q[4][0]));
-    q[5][0] = atan2f(-R36[2][1] / sinf(q[4][0]), R36[2][0] / sinf(q[4][0]));
+
+  // (7)-θ4
+  // 若无腕部奇异则更新θ4，否则保留θ4的值
+  if (R36.block<2, 1>(0, 2).norm() > 0.1f) {
+    float theta4[2];
+    theta4[0] = math::radNormalizePI(atan2f(R36[1][2], R36[0][2]));
+    theta4[1] = math::radNormalizePI(atan2f(R36[1][2], R36[0][2]) + PI);
+    if (fabs(theta4[0] - q[3][0]) < fabs(theta4[1] - q[3][0])) {
+      q[3][0] = theta4[0];
+    } else {
+      q[3][0] = theta4[1];
+    }
   }
+
+  // (8)-θ5
+  q[4][0] = atan2f(-math::sign(cosf(q[3][0])) * math::sign(R36[0][2]) *
+                       R36.block<2, 1>(0, 2).norm(),
+                   R36[2][2]);
+
+  // (9)-θ6
+  float r34[9] = {cosf(q[3][0]),
+                  0,
+                  sinf(q[3][0]),
+                  sinf(q[3][0]),
+                  0,
+                  -cos(q[3][0]),
+                  0,
+                  1,
+                  0};
+  float r45[9] = {cosf(q[4][0]),
+                  0,
+                  -sinf(q[4][0]),
+                  sinf(q[4][0]),
+                  0,
+                  cos(q[4][0]),
+                  0,
+                  -1,
+                  0};
+  Matrixf<3, 3> R34(r34), R45(r45);
+  Matrixf<3, 3> R56 = (R34 * R45).trans() * R36;
+  q[5][0] = atan2f(R56[1][0], R56[0][0]);
 
   return q;
 }
@@ -230,12 +271,20 @@ void Arm::stopController(void) {
 // 操作空间控制器(末端位姿)
 void Arm::manipulationController(void) {
   // 目标状态限制
+  // 位置边界限制
   ref_.x = math::limit(ref_.x, -0.5f, 0.5f);
   ref_.y = math::limit(ref_.y, -0.5f, 0.5f);
   ref_.z = math::limit(ref_.z, -0.5f, 0.5f);
+  // 位置差值限制
   ref_.x = math::limit(ref_.x, fdb_.x - 0.1f, fdb_.x + 0.1f);
   ref_.y = math::limit(ref_.y, fdb_.y - 0.1f, fdb_.y + 0.1f);
   ref_.z = math::limit(ref_.z, fdb_.z - 0.1f, fdb_.z + 0.1f);
+  // J1边界限制
+  if (fdb_.x < 0.05f && fdb_.y >= 0) {
+    ref_.y = math::limitMin(ref_.y, 0.02f);
+  } else if (fdb_.x < 0.05f && fdb_.y < 0) {
+    ref_.y = math::limitMax(ref_.y, -0.02f);
+  }
   //  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
   //  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
   //  ref_.roll = math::limit(ref_.roll, -45.0f, 45.0f);
@@ -252,11 +301,11 @@ void Arm::manipulationController(void) {
   ref_.T = robotics::rp2t(robotics::rpy2r(rpy_ref) * R0_, p_ref);
 
   // 逆运动学解析解
-  ref_.q = ikine(ref_.T);
+  ref_.q = ikine(ref_.T, fdb_.q);
   ref_.q[5][0] =
       math::loopLimit(ref_.q[5][0], fdb_.q[5][0] - PI, fdb_.q[5][0] + PI);
 
-  // // 自重补偿作为动力学前馈(取动力学方程位置项)
+  // 自重补偿作为动力学前馈(取动力学方程位置项)
   torq_ = arm_.rne(fdb_.q);
 
   // 电机控制

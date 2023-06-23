@@ -157,9 +157,9 @@ void robotControl(void) {
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm_controller.setOffset(arm.fdb_.x - arm_controller.ref_.x,
-                               arm.fdb_.y - arm_controller.ref_.y,
-                               arm.fdb_.z - arm_controller.ref_.z);
+      arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
+                               arm.fdb_.y - arm_controller.raw_.y,
+                               arm.fdb_.z - arm_controller.raw_.z);
     }
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
@@ -249,9 +249,13 @@ void ArmController::setOffset(float dx, float dy, float dz) {
 // 机械臂控制器处理函数
 void ArmController::handle(void) {
   // 目标姿态
-  ref_.yaw = math::deg2rad(imu_[2]->yaw());
-  ref_.pitch = math::deg2rad(imu_[2]->pitch());
-  ref_.roll = math::deg2rad(imu_[2]->roll());
+  raw_.yaw = math::deg2rad(imu_[2]->yaw());
+  raw_.pitch = math::deg2rad(imu_[2]->pitch());
+  raw_.roll = math::deg2rad(imu_[2]->roll());
+  ref_.yaw = raw_.yaw;  // todo
+  ref_.pitch = raw_.pitch;
+  ref_.roll = raw_.roll;
+
   // 目标位置
   Matrixf<3, 1> p11 = matrixf::zeros<3, 1>();
   p11[0][0] = para_.l[0];  // [l1;0;0]
@@ -266,10 +270,15 @@ void ArmController::handle(void) {
   Matrixf<3, 3> R01 = robotics::rpy2r(rpy1);
   Matrixf<3, 3> R02 = robotics::rpy2r(rpy2);
   Matrixf<3, 1> p = R01 * p11 + R02 * p22;
+  raw_.x = p[0][0];
+  raw_.y = p[1][0];
+  raw_.z = p[2][0];
+
   // 目标位置+偏置
-  ref_.x = p[0][0] + offset_.x;
-  ref_.y = p[1][0] + offset_.y;
-  ref_.z = p[2][0] + offset_.z;
+  ref_.x = raw_.x + offset_.x;
+  ref_.y = raw_.y + offset_.y;
+  ref_.z = raw_.z + offset_.z;
+
   // 目标状态T矩阵
   float ref_p[3] = {ref_.x, ref_.y, ref_.z};
   float ref_rpy[3] = {ref_.yaw, ref_.pitch, ref_.roll};

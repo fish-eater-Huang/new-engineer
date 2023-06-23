@@ -17,6 +17,7 @@
 #include "hardware_config.h"
 #include "usart.h"
 
+#include "app/arm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 
@@ -42,6 +43,8 @@ class SerialStudio {
   void txIMUData(IMU& imu);
   // 发送电机数据
   void txMotorData(Motor& motor);
+  // 发送机械臂数据
+  void txArmData(Arm& arm);
 
  private:
   UART_HandleTypeDef* huart_;

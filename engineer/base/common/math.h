@@ -48,8 +48,8 @@ float dps2rpm(const float& w);
 
 // Angle normalization(rad->[-PI,PI], deg->[-180,180])
 // 角度规范化(rad->[-PI,PI], deg->[-180,180])
-float radNormalizePI(float angle);
-float degNormalize180(float angle);
+float radNormalizePI(const float& angle);
+float degNormalize180(const float& angle);
 
 }  // namespace math
 
