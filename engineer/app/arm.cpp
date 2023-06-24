@@ -147,11 +147,11 @@ Matrixf<6, 1> Arm::ikine(Matrixf<4, 4> T, Matrixf<6, 1> q0) {
   if (o5.norm() > (a2 + d4) * 0.9f) {
     o5 = o5 / o5.norm() * (a2 + d4) * 0.9f;
   } else if (sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) <
-             (a2 + d4) * 0.1f) {
+             (a2 + d4) * 0.15f) {
     o5[0][0] = o5[0][0] / sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) *
-               (a2 + d4) * 0.1f;
+               (a2 + d4) * 0.15f;
     o5[1][0] = o5[1][0] / sqrtf(o5[0][0] * o5[0][0] + o5[1][0] * o5[1][0]) *
-               (a2 + d4) * 0.1f;
+               (a2 + d4) * 0.15f;
   }
 
   // (3)-θ1
@@ -271,19 +271,39 @@ void Arm::stopController(void) {
 // 操作空间控制器(末端位姿)
 void Arm::manipulationController(void) {
   // 目标状态限制
+  Matrixf<3, 1> z60 = fdb_.T.block<3, 1>(0, 2);
+  Matrixf<3, 1> p56 = links_[5].dh_.d * z60;
+  float x56 = p56[0][0];
+  float y56 = p56[1][0];
+  float z56 = p56[2][0];
   // 位置边界限制
-  ref_.x = math::limit(ref_.x, -0.5f, 0.5f);
-  ref_.y = math::limit(ref_.y, -0.5f, 0.5f);
-  ref_.z = math::limit(ref_.z, -0.5f, 0.5f);
+  float a2d4 = links_[1].dh_.a + links_[3].dh_.d;
+  ref_.x = math::limit(ref_.x, -a2d4 * 0.9f + x56, a2d4 * 0.9f + x56);
+  ref_.y = math::limit(ref_.y, -a2d4 * 0.9f + y56, a2d4 * 0.9f + y56);
+  ref_.z = math::limit(ref_.z, -a2d4 * 0.9f + z56, a2d4 * 0.9f + z56);
+  // 肘部奇异限位
+  float ref_p[3] = {ref_.x, ref_.y, ref_.z};
+  float o5_norm = (Matrixf<3, 1>(ref_p) - p56).norm();
+  if (o5_norm > a2d4 * 0.9f) {
+    ref_.x = (ref_.x - x56) / o5_norm * a2d4 * 0.9f + x56;
+    ref_.y = (ref_.y - y56) / o5_norm * a2d4 * 0.9f + y56;
+    ref_.z = (ref_.z - z56) / o5_norm * a2d4 * 0.9f + z56;
+  }
+  // 肩部奇异限位
+  float o5_rxy = (Matrixf<3, 1>(ref_p) - p56).block<2, 1>(0, 0).norm();
+  if (o5_rxy < a2d4 * 0.15f) {
+    ref_.x = (ref_.x - x56) / o5_rxy * a2d4 * 0.15f + x56;
+    ref_.y = (ref_.y - y56) / o5_rxy * a2d4 * 0.15f + y56;
+  }
   // 位置差值限制
   ref_.x = math::limit(ref_.x, fdb_.x - 0.1f, fdb_.x + 0.1f);
   ref_.y = math::limit(ref_.y, fdb_.y - 0.1f, fdb_.y + 0.1f);
   ref_.z = math::limit(ref_.z, fdb_.z - 0.1f, fdb_.z + 0.1f);
   // J1边界限制
-  if (fdb_.x < 0.05f && fdb_.y >= 0) {
-    ref_.y = math::limitMin(ref_.y, 0.02f);
-  } else if (fdb_.x < 0.05f && fdb_.y < 0) {
-    ref_.y = math::limitMax(ref_.y, -0.02f);
+  if (fdb_.x - x56 < 0.02f && fdb_.y - y56 >= 0) {
+    ref_.y = math::limitMin(ref_.y, 0.02f + y56);
+  } else if (fdb_.x - x56 < 0.02f && fdb_.y - y56 < 0) {
+    ref_.y = math::limitMax(ref_.y, -0.02f + y56);
   }
   //  ref_.yaw = math::limit(ref_.yaw, -PI / 2, PI / 2);
   //  ref_.pitch = math::limit(ref_.pitch, -60.0f, 0);
