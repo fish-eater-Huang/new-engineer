@@ -258,9 +258,9 @@ void ArmController::handle(void) {
 
   // 目标位置
   Matrixf<3, 1> p11 = matrixf::zeros<3, 1>();
-  p11[0][0] = para_.l[0];  // [l1;0;0]
+  p11[0][0] = param_.l[0];  // [l1;0;0]
   Matrixf<3, 1> p22 = matrixf::zeros<3, 1>();
-  p22[0][0] = para_.l[1];  // [l2;0;0]
+  p22[0][0] = param_.l[1];  // [l2;0;0]
   float rpy1[3] = {math::deg2rad(imu_[0]->yaw()),
                    math::deg2rad(imu_[0]->pitch()),
                    math::deg2rad(imu_[0]->roll())};
