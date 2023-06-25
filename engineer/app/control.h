@@ -55,9 +55,9 @@ class ArmController {
  private:
   IMU* imu_[3];
 
-  struct Para {
+  struct Param {
     float l[2] = {0.3f, 0.27f};
-  } para_;
+  } param_;
 };
 
 #endif  // CONTROL_H

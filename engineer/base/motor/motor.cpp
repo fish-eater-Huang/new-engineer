@@ -49,9 +49,8 @@ Motor::Motor(const Type_e& type, const float& ratio,
     info_.max_intensity = 10000;
   } else if (info_.type == Motor::GM6020) {
     info_.max_intensity = 30000;
-  } else if (info_.type == Motor::HT04) {
-    info_.max_intensity = 10;
-    // info_.max_intensity = 40;
+  } else if (info_.type == Motor::MIT) {
+    info_.max_intensity = 40;
   }
   mode_ = INIT;
   setFdbSrc(nullptr, nullptr);
