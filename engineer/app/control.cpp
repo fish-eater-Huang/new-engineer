@@ -132,6 +132,7 @@ void robotControl(void) {
                -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
+    arm.trajAbort();
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
@@ -141,18 +142,25 @@ void robotControl(void) {
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate,
                -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
+    arm.trajAbort();
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
+    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 1000);
+      arm.trajStart();
+    }
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
     arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    arm.trajAbort();
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
     arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    arm.trajAbort();
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
@@ -165,6 +173,7 @@ void robotControl(void) {
     arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
                arm_controller.ref_.z, arm_controller.ref_.yaw,
                arm_controller.ref_.pitch, arm_controller.ref_.roll);
+    arm.trajAbort();
   }
 
   // 记录遥控器挡位状态

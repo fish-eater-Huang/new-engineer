@@ -65,28 +65,6 @@ void Arm::init(void) {
   ref_.roll = fdb_.roll;
 }
 
-// 设置目标状态
-void Arm::setRef(float x, float y, float z, float yaw, float pitch,
-                 float roll) {
-  ref_.x = x;
-  ref_.y = y;
-  ref_.z = z;
-  ref_.yaw = yaw;
-  ref_.pitch = pitch;
-  ref_.roll = roll;
-}
-
-// 增量设置目标状态
-void Arm::addRef(float x, float y, float z, float yaw, float pitch,
-                 float roll) {
-  ref_.x += x;
-  ref_.y += y;
-  ref_.z += z;
-  ref_.yaw += yaw;
-  ref_.pitch += pitch;
-  ref_.roll += roll;
-}
-
 // 反馈状态解算，目标状态处理，运行控制器
 void Arm::handle(void) {
   // 获取关节角度&角速度
@@ -119,12 +97,81 @@ void Arm::handle(void) {
   if (mode_ == Arm::Mode_e::STOP) {
     stopController();
   } else if (mode_ == Arm::Mode_e::MANIPULATION) {
+    trajectoryPlanner();
     manipulationController();
   } else if (mode_ == Arm::Mode_e::JOINT) {
+    trajectoryPlanner();
     jointController();
   } else if (mode_ == Arm::Mode_e::COMPLIANCE) {
     complianceController();
   }
+}
+
+// 设置目标状态
+void Arm::setRef(const float& x, const float& y, const float& z,
+                 const float& yaw, const float& pitch, const float& roll) {
+  ref_.x = x;
+  ref_.y = y;
+  ref_.z = z;
+  ref_.yaw = yaw;
+  ref_.pitch = pitch;
+  ref_.roll = roll;
+}
+
+// 增量设置目标状态
+void Arm::addRef(const float& x, const float& y, const float& z,
+                 const float& yaw, const float& pitch, const float& roll) {
+  ref_.x += x;
+  ref_.y += y;
+  ref_.z += z;
+  ref_.yaw += yaw;
+  ref_.pitch += pitch;
+  ref_.roll += roll;
+}
+
+// 设置轨迹终点(末端位姿)+时间(ms)
+void Arm::trajSet(const float& x, const float& y, const float& z,
+                  const float& yaw, const float& pitch, const float& roll,
+                  uint32_t ticks) {
+  // 设置轨迹终点位姿
+  traj_.end.x = x;
+  traj_.end.y = y;
+  traj_.end.z = z;
+  traj_.end.yaw = yaw;
+  traj_.end.pitch = pitch;
+  traj_.end.roll = roll;
+  // 设置轨迹时长
+  traj_.ticks = ticks;
+}
+
+// 设置轨迹终点(关节坐标)+时间(ms)
+void Arm::trajSet(Matrixf<6, 1> q, uint32_t ticks) {
+  // 设置轨迹终点关节坐标
+  traj_.end.q = q;
+  // 设置轨迹时长
+  traj_.ticks = ticks;
+}
+
+// 开始轨迹
+void Arm::trajStart(void) {
+  // 设置轨迹起点为当前状态
+  traj_.start.q = fdb_.q;
+  traj_.start.x = fdb_.x;
+  traj_.start.y = fdb_.y;
+  traj_.start.z = fdb_.z;
+  traj_.start.yaw = fdb_.yaw;
+  traj_.start.pitch = fdb_.pitch;
+  traj_.start.roll = fdb_.roll;
+  // 设置轨迹开始时间为当前时间
+  traj_.tick_start = HAL_GetTick();
+  // 设置轨迹规划状态
+  traj_.state = true;
+}
+
+// 中止轨迹
+void Arm::trajAbort(void) {
+  // 设置轨迹规划状态
+  traj_.state = false;
 }
 
 // 逆运动学求解(解析形式)
@@ -402,4 +449,42 @@ void Arm::complianceController(void) {
   j4_->targetTorque() = torq_[3][0];
   j5_->targetTorque() = torq_[4][0];
   j6_->targetTorque() = torq_[5][0];
+}
+
+// 轨迹规划处理
+void Arm::trajectoryPlanner(void) {
+  if (traj_.state) {
+    float sigma = 1;
+    if (traj_.ticks > 1) {
+      sigma = (float)(HAL_GetTick() - traj_.tick_start) / (float)traj_.ticks;
+    }
+    traj_.sigma = math::limit(sigma, 0, 1);
+
+    if (mode_ == Arm::Mode_e::MANIPULATION) {
+      // 末端位置线性插值
+      ref_.x = traj_.sigma * traj_.end.x + (1 - traj_.sigma) * traj_.start.x;
+      ref_.y = traj_.sigma * traj_.end.y + (1 - traj_.sigma) * traj_.start.y;
+      ref_.z = traj_.sigma * traj_.end.z + (1 - traj_.sigma) * traj_.start.z;
+      // 末端姿态Slerp插值
+      float rpy_start[3] = {traj_.start.yaw, traj_.start.pitch,
+                            traj_.start.roll};
+      float rpy_end[3] = {traj_.end.yaw, traj_.end.pitch, traj_.end.roll};
+      traj_.start.R = robotics::rpy2r(rpy_start);
+      traj_.end.R = robotics::rpy2r(rpy_end);
+      traj_.r_theta = robotics::r2angvec(traj_.start.R.trans() * traj_.end.R);
+      float r_theta[4] = {traj_.r_theta[0][0], traj_.r_theta[1][0],
+                          traj_.r_theta[2][0],
+                          traj_.r_theta[3][0] * traj_.sigma};
+      Matrixf<3, 1> rpy_ref =
+          robotics::r2rpy(traj_.start.R * robotics::angvec2r(r_theta));
+      ref_.yaw = rpy_ref[0][0];
+      ref_.pitch = rpy_ref[1][0];
+      ref_.roll = rpy_ref[2][0];
+    } else if (mode_ == Arm::Mode_e::JOINT) {
+      // 关节坐标线性插值
+      ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
+    }
+  } else {
+    traj_.sigma = 0;
+  }
 }

@@ -207,16 +207,6 @@
           <WinNumber>1</WinNumber>
           <ItemText>board_comm</ItemText>
         </Ww>
-        <Ww>
-          <count>7</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>M1</ItemText>
-        </Ww>
-        <Ww>
-          <count>8</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>M2</ItemText>
-        </Ww>
       </WatchWindow1>
       <WatchWindow2>
         <Ww>

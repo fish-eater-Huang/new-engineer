@@ -122,7 +122,7 @@ void serialToolTask(void const* argument) {
   uint32_t tick = osKernelSysTick();
   for (;;) {
     serial_tool.handle();
-    osDelayUntil(&tick, 20);
+    osDelayUntil(&tick, 40);
   }
 }
 

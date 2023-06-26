@@ -24,20 +24,35 @@ class Arm {
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
 
-  // 设置目标状态
-  void setRef(float x, float y, float z, float yaw, float pitch, float roll);
-
-  // 增量设置目标状态
-  void addRef(float x, float y, float z, float yaw, float pitch, float roll);
-
   // 反馈状态解算，目标状态处理，运行控制器
   void handle(void);
+
+  // 设置目标状态
+  void setRef(const float& x, const float& y, const float& z, const float& yaw,
+              const float& pitch, const float& roll);
+
+  // 增量设置目标状态
+  void addRef(const float& x, const float& y, const float& z, const float& yaw,
+              const float& pitch, const float& roll);
+
+  // 设置轨迹终点(末端位姿)+时间(ms)
+  void trajSet(const float& x, const float& y, const float& z, const float& yaw,
+               const float& pitch, const float& roll, uint32_t ticks);
+
+  // 设置轨迹终点(关节坐标)+时间(ms)
+  void trajSet(Matrixf<6, 1> q, uint32_t ticks);
+
+  // 开始轨迹
+  void trajStart(void);
+
+  // 中止轨迹
+  void trajAbort(void);
 
  private:
   // 逆运动学求解(解析形式)
   Matrixf<6, 1> ikine(Matrixf<4, 4> T, Matrixf<6, 1> q0);
 
-  // 停止状态控制器(电机断电/阻尼模式)
+  // 停止状态控制器(电机断电)
   void stopController(void);
 
   // 操作空间控制器(末端位姿)
@@ -49,6 +64,9 @@ class Arm {
   // 柔顺控制器
   void complianceController(void);
 
+  // 轨迹规划器
+  void trajectoryPlanner(void);
+
  public:
   // 机械臂模型
   robotics::Link links_[6] = {
@@ -58,39 +76,34 @@ class Arm {
                      0, 0, 0, 0.83,              // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, 0.003, 0.049}),  // rc
                      matrixf::zeros<3, 3>()),                     // I
-
       // link2
       robotics::Link(0, 0, 0.266, 0,             // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 1.222,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){-0.06, 0, 0.062}),  // rc
                      matrixf::zeros<3, 3>()),                     // I
-
       // link3
       robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 0.538,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){-0.004, 0, 0.012}),  // rc
                      matrixf::zeros<3, 3>()),                      // I
-
       // link4
       robotics::Link(0, 0.28, 0, PI / 2,         // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 0.342,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, -0.327, 0.035}),  // rc
                      matrixf::zeros<3, 3>()),                      // I
-
       // link5
       robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 0.162,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, -0.02, 0}),  // rc
                      matrixf::zeros<3, 3>()),                 // I
-
       // link6
       robotics::Link(0, 0.07, 0, 0,              // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.12,              // offset,qmin,qmax,m
+                     0, 0, 0, 0.13,              // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, 0, -0.02}),  // rc
                      matrixf::zeros<3, 3>()),                 // I
   };
@@ -132,6 +145,34 @@ class Arm {
 
   // 前馈力矩
   Matrixf<6, 1> torq_;
+
+  // 轨迹规划
+  struct Traj_t {
+    // 轨迹规划运行状态
+    bool state;
+
+    // 轨迹起点
+    struct Start_t {
+      Matrixf<6, 1> q;         // rad
+      float x, y, z;           // m
+      float yaw, pitch, roll;  // rad
+      Matrixf<3, 3> R;
+    } start;
+
+    // 轨迹终点
+    struct End_t {
+      Matrixf<6, 1> q;         // rad
+      float x, y, z;           // m
+      float yaw, pitch, roll;  // rad
+      Matrixf<3, 3> R;
+    } end;
+
+    // 时间相关变量
+    uint32_t tick_start;
+    uint32_t ticks;
+    float sigma;
+    Matrixf<4, 1> r_theta;
+  } traj_;
 };
 
 #endif  // ARM_H
