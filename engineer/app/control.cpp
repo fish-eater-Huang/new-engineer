@@ -52,6 +52,7 @@ float extra_power_max = 0;
 namespace rcctrl {
 const float arm_position_rate = 5e-7f;
 const float arm_direction_rate = 3e-6f;
+const float arm_joint_rate = 3e-6f;
 }  // namespace rcctrl
 
 // 控制初始化
@@ -159,7 +160,12 @@ void robotControl(void) {
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    arm.mode_ = Arm::Mode_e::JOINT;
+    arm.addJointRef(-rc.channel_.l_row * rcctrl::arm_joint_rate,
+                    rc.channel_.l_col * rcctrl::arm_joint_rate,
+                    rc.channel_.dial_wheel * rcctrl::arm_joint_rate,
+                    rc.channel_.r_row * rcctrl::arm_joint_rate,
+                    -rc.channel_.r_col * rcctrl::arm_joint_rate, 0);
     arm.trajAbort();
   }
   // 遥控器挡位左下右中

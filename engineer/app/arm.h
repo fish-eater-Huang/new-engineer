@@ -35,6 +35,14 @@ class Arm {
   void addRef(const float& x, const float& y, const float& z, const float& yaw,
               const float& pitch, const float& roll);
 
+  // 设置关节目标状态
+  void setJointRef(const float& q1, const float& q2, const float& q3,
+                   const float& q4, const float& q5, const float& q6);
+
+  // 增量设置关节目标状态
+  void addJointRef(const float& q1, const float& q2, const float& q3,
+                   const float& q4, const float& q5, const float& q6);
+
   // 设置轨迹终点(末端位姿)+时间(ms)
   void trajSet(const float& x, const float& y, const float& z, const float& yaw,
                const float& pitch, const float& roll, uint32_t ticks);

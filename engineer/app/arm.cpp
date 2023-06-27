@@ -129,6 +129,28 @@ void Arm::addRef(const float& x, const float& y, const float& z,
   ref_.roll += roll;
 }
 
+// 设置关节目标状态
+void Arm::setJointRef(const float& q1, const float& q2, const float& q3,
+                      const float& q4, const float& q5, const float& q6) {
+  ref_.q[0][0] = q1;
+  ref_.q[1][0] = q2;
+  ref_.q[2][0] = q3;
+  ref_.q[3][0] = q4;
+  ref_.q[4][0] = q5;
+  ref_.q[5][0] = q6;
+}
+
+// 增量设置关节目标状态
+void Arm::addJointRef(const float& q1, const float& q2, const float& q3,
+                      const float& q4, const float& q5, const float& q6) {
+  ref_.q[0][0] += q1;
+  ref_.q[1][0] += q2;
+  ref_.q[2][0] += q3;
+  ref_.q[3][0] += q4;
+  ref_.q[4][0] += q5;
+  ref_.q[5][0] += q6;
+}
+
 // 设置轨迹终点(末端位姿)+时间(ms)
 void Arm::trajSet(const float& x, const float& y, const float& z,
                   const float& yaw, const float& pitch, const float& roll,
@@ -398,7 +420,22 @@ void Arm::manipulationController(void) {
 
 // 关节空间控制器(关节角度)
 void Arm::jointController(void) {
-  // todo
+  // 关节限位
+  ref_.q[0][0] = math::limit(ref_.q[0][0], -PI * 0.95f, PI * 0.95f);
+  ref_.q[1][0] = math::limit(ref_.q[1][0], -PI, 0);
+  ref_.q[2][0] = math::limit(ref_.q[2][0], -PI * 0.5f, math::deg2rad(80));
+  ref_.q[3][0] = math::limit(ref_.q[3][0], -PI, PI);
+  ref_.q[4][0] = math::limit(ref_.q[4][0], -PI, PI);
+  // ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
+
+  // 正运动学
+  ref_.T = fdb_.T;
+  ref_.x = fdb_.x;
+  ref_.y = fdb_.y;
+  ref_.z = fdb_.z;
+  ref_.yaw = fdb_.yaw;
+  ref_.pitch = fdb_.pitch;
+  ref_.roll = fdb_.roll;
 
   // 电机控制
   j1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
