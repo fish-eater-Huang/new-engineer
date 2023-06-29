@@ -44,10 +44,7 @@ Matrixf<3, 3> robotics::rpy2r(Matrixf<3, 1> rpy) {
 
 Matrixf<4, 1> robotics::r2angvec(Matrixf<3, 3> R) {
   float theta = acosf(math::limit(0.5f * (R.trace() - 1), -1, 1));
-  if (theta == 0) {
-    float angvec[4] = {0, 0, 0, theta};  // θ=0||PI, return[0;θ]
-    return Matrixf<4, 1>(angvec);
-  } else if (theta == PI) {
+  if (theta == 0 || theta == PI) {
     float angvec[4] = {
         (1 + R[0][0] - R[1][1] - R[2][2]) / 4.0f,  // rx=(1+R11-R22-R33)/4
         (1 - R[0][0] + R[1][1] - R[2][2]) / 4.0f,  // ry=(1-R11+R22-R33)/4

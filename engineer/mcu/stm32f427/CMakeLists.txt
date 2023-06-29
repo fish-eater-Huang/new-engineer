@@ -70,7 +70,7 @@ add_link_options(${mcu_link_options})
 # driver library
 add_library(${PROJECT_NAME}_driver STATIC ${driver_src})
 
-# send compile option to
+# send compile option to parent file
 set(mcu_def ${mcu_def} PARENT_SCOPE)
 set(mcu_include ${mcu_include} PARENT_SCOPE)
 set(mcu_src ${src} PARENT_SCOPE)

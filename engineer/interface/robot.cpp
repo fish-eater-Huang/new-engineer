@@ -15,6 +15,7 @@
 #include "hardware_config.h"
 
 #include "app/arm.h"
+#include "app/board_comm.h"
 #include "app/can_monitor.h"
 #include "app/control.h"
 #include "app/imu_monitor.h"
@@ -46,7 +47,8 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &JSM3);
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6);
+BoardComm board_comm(&hcan2);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -120,7 +122,7 @@ void serialToolTask(void const* argument) {
   uint32_t tick = osKernelSysTick();
   for (;;) {
     serial_tool.handle();
-    osDelayUntil(&tick, 20);
+    osDelayUntil(&tick, 40);
   }
 }
 

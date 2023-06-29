@@ -787,6 +787,11 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\base\motor\driver\dji_motor_driver.cpp</FilePath>
             </File>
+            <File>
+              <FileName>mit_motor_driver.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\base\motor\driver\mit_motor_driver.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

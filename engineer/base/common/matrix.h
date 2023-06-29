@@ -184,7 +184,7 @@ class Matrixf {
   float trace(void) {
     float res = 0;
     for (int i = 0; i < fmin(_rows, _cols); i++) {
-      res += *this[i][i];
+      res += (*this)[i][i];
     }
     return res;
   }

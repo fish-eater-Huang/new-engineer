@@ -120,10 +120,10 @@ float math::dps2rpm(const float& w) {
 
 // Angle normalization(rad->[-PI,PI], deg->[-180,180])
 // 角度规范化(rad->[-PI,PI], deg->[-180,180])
-float math::radNormalizePI(float angle) {
+float math::radNormalizePI(const float& angle) {
   return math::loopLimit(angle, -PI, PI);
 }
 
-float math::degNormalize180(float angle) {
+float math::degNormalize180(const float& angle) {
   return math::loopLimit(angle, -180.f, 180.f);
 }

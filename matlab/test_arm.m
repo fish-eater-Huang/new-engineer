@@ -11,8 +11,8 @@ arm = SerialLink(arm_L,"name","es");
 arm.offset = [0,0,0,0,0,0];
 
 % joint variable
-q = [0,0,0,0,0,0];
-% q = [0.1,0.2,0.3,0.4,0.5,0.6];
+% q = [0,0,0,0,0,0];
+q = [0.1,0.2,0.3,0.4,0.5,0.6];
 q_D1 = [0,0,0,0,0,0];
 q_D2 = [0,0,0,0,0,0];
 
@@ -24,7 +24,7 @@ J = arm.jacob0(q);
 
 % inverse kinematic
 q_ikine = arm.ikine(T);
-q_ikine_self = p560_ikine(T.T,arm.d,arm.a);
+q_ikine_self = p560_ikine(T.T,arm.d,arm.a,zeros(6,1));
 
 % inverse dynamic
 torq = arm.rne(q,q_D1,q_D2);
@@ -40,11 +40,14 @@ qt = zeros(6,size(t,2));
 figure(2); view(3);
 for i = 1:size(t,2)
   Rt = [0,0,1;0,-1,0;1,0,0];
-  pt(:,i) = [0.2;0.5*sin(t(i));0.1];
+  pt(:,i) = [0.3;0;0.5*sin(t(i))];
   Tt = [Rt,pt(:,i);zeros(1,3),1];
-  qt(:,i) = p560_ikine(Tt,arm.d,arm.a)';
+  if i == 1
+    qt(:,i) = p560_ikine(Tt,arm.d,arm.a,zeros(6,1));
+  else
+    qt(:,i) = p560_ikine(Tt,arm.d,arm.a,qt(:,i-1));
+  end  
   arm.plot(qt(:,i)');
-%   pause(0.1);
 end
 
 figure(3);

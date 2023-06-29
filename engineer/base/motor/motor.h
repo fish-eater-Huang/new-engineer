@@ -25,6 +25,7 @@ class Motor {
     M2006,
     GM6020,
     // other motor
+    MIT,
     HT04,
     LK9025
   } Type_e;
