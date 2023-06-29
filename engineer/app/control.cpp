@@ -24,6 +24,8 @@
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
 #include "base/common/math.h"
+#include "base/cv_comm/cv_comm.h"
+#include "base/referee_comm/referee_comm.h"
 #include "base/remote/remote.h"
 #include "base/servo/servo.h"
 
@@ -36,9 +38,15 @@ void boardLedHandle(void);
 
 extern RC rc;
 extern Arm arm;
+extern ArmController arm_controller;
+extern CVComm cv_comm;
+extern RefereeComm referee;
+extern ServoZX361D pump_servo[];
 
 uint8_t board_id = 0;
-ArmController arm_controller(controller_imu);
+// Pump pump_arm(&PM_ARM, &pump_servo[0], 500, 1000);
+// Pump pump_l(&PM_L, &pump_servo[1], 500, 1000);
+// Pump pump_r(&PM_R, &pump_servo[2], 500, 1000);
 BoardLed led;
 
 // 上电状态

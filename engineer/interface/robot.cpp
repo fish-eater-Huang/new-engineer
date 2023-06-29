@@ -15,6 +15,7 @@
 #include "hardware_config.h"
 
 #include "app/arm.h"
+#include "app/arm_controller.h"
 #include "app/board_comm.h"
 #include "app/can_monitor.h"
 #include "app/client_ui.h"
@@ -46,7 +47,8 @@ UI ui(REFEREE_UART, &referee, ui_func, sizeof(ui_func) / sizeof(void*));
 RefereeComm referee;
 #endif  // REFEREE_UART
 #ifdef SERVO_UART
-ServoZX361D gate_servo(SERVO_UART);
+ServoZX361D pump_servo[3] = {ServoZX361D(SERVO_UART), ServoZX361D(SERVO_UART),
+                             ServoZX361D(SERVO_UART)};
 #else
 ServoZX361D pump_servo[3];
 #endif  // SERVO_UART
@@ -57,6 +59,8 @@ SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
 Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6);
+ArmController arm_controller(controller_imu);
+
 BoardComm board_comm(&hcan2);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
