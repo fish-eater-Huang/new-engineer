@@ -37,6 +37,8 @@ class RefereeComm {
   // UART端口校验
   bool uartCheck(UART_HandleTypeDef* huart) { return huart == huart_; }
 
+  UART_HandleTypeDef* getHuart() const;
+
  public:
   Connect connect_;
 

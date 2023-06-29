@@ -772,6 +772,26 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\app\arm.cpp</FilePath>
             </File>
+            <File>
+              <FileName>chassis.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\chassis.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>client_ui.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\client_ui.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>gimbal.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\gimbal.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>pump.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\pump.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -846,6 +866,11 @@
               <FileName>referee_comm.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\base\referee_comm\referee_comm.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>referee_ui.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\base\referee_comm\referee_ui.cpp</FilePath>
             </File>
           </Files>
         </Group>

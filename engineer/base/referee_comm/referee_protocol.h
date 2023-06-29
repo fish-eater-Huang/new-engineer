@@ -331,8 +331,8 @@ typedef struct {
 // 图形数据
 typedef struct {
   uint8_t graphic_name[3];
-  uint32_t operate_tpye : 3;
-  uint32_t graphic_tpye : 3;
+  uint32_t operate_type : 3;
+  uint32_t graphic_type : 3;
   uint32_t layer : 4;
   uint32_t color : 4;
   uint32_t start_angle : 9;
@@ -343,7 +343,7 @@ typedef struct {
   uint32_t radius : 10;
   uint32_t end_x : 11;
   uint32_t end_y : 11;
-} graphic_data_struct_t;
+} __packed graphic_data_struct_t;
 
 // 客户端绘制一个图形
 typedef struct {

@@ -10,6 +10,7 @@
 
 #include "base/referee_comm/referee_comm.h"
 #include "base/common/crc.h"
+#include "base/referee_comm/referee_ui.h"
 
 const uint32_t referee_comm_timout = 1000;  // ms
 
@@ -32,7 +33,7 @@ void RefereeComm::handle(void) {
 // // Data transmit 数据发送
 void RefereeComm::txMsg(void) {
   if (huart_ != nullptr) {
-    HAL_UART_Receive_IT(huart_, tx_.buf, tx_.pack_size);
+    HAL_UART_Transmit_IT(huart_, tx_.buf, tx_.pack_size);
   }
 }
 
@@ -205,4 +206,8 @@ void RefereeComm::rxCallback(void) {
   if (huart_ != nullptr) {
     HAL_UART_Receive_IT(huart_, rx_.byte, 1);
   }
+}
+
+UART_HandleTypeDef* RefereeComm::getHuart() const {
+  return huart_;
 }

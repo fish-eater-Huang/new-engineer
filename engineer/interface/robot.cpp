@@ -17,6 +17,7 @@
 #include "app/arm.h"
 #include "app/board_comm.h"
 #include "app/can_monitor.h"
+#include "app/client_ui.h"
 #include "app/control.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
@@ -24,7 +25,9 @@
 #include "base/cap_comm/cap_comm.h"
 #include "base/cv_comm/cv_comm.h"
 #include "base/referee_comm/referee_comm.h"
+#include "base/referee_comm/referee_ui.h"
 #include "base/remote/remote.h"
+#include "base/servo/servo.h"
 
 #ifdef RC_UART
 RC rc(RC_UART);
@@ -38,9 +41,15 @@ CVComm cv_comm;
 #endif  // CV_UART
 #ifdef REFEREE_UART
 RefereeComm referee(REFEREE_UART);
+UI ui(REFEREE_UART, &referee, ui_func, sizeof(ui_func) / sizeof(void*));
 #else
 RefereeComm referee;
 #endif  // REFEREE_UART
+#ifdef SERVO_UART
+ServoZX361D gate_servo(SERVO_UART);
+#else
+ServoZX361D pump_servo[3];
+#endif  // SERVO_UART
 #ifdef DEBUG_UART
 SerialStudio serial_tool(DEBUG_UART);
 #else
@@ -109,11 +118,12 @@ void minipcCommTask(void const* argument) {
 
 osThreadId refereeCommTaskHandle;
 void refereeCommTask(void const* argument) {
-  uint32_t tick = osKernelSysTick();
   referee.init();
+  ui.init();
   for (;;) {
     referee.handle();
-    osDelayUntil(&tick, 10);
+    ui.handle();
+    osDelay(1);
   }
 }
 

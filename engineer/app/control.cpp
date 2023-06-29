@@ -14,12 +14,17 @@
 
 #include "app/arm.h"
 #include "app/board_comm.h"
+#include "app/chassis.h"
+#include "app/gimbal.h"
 #include "app/imu_monitor.h"
+#include "app/mine.h"
 #include "app/motor_monitor.h"
+#include "app/pump.h"
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
 #include "base/common/math.h"
 #include "base/remote/remote.h"
+#include "base/servo/servo.h"
 
 void iwdgHandler(bool iwdg_refresh_flag);
 void robotPowerStateFSM(bool stop_flag);
