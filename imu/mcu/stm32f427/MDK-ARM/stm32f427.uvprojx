@@ -767,11 +767,6 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\app\motor_monitor.cpp</FilePath>
             </File>
-            <File>
-              <FileName>arm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\arm.cpp</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -811,36 +806,6 @@
               <FileName>bsp_led.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\base\bsp\bsp_led.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>base/cv_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>cv_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\cv_comm\cv_comm.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>base/cap_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>cap_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\cap_comm\cap_comm.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>base/referee_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>referee_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\referee_comm\referee_comm.cpp</FilePath>
             </File>
           </Files>
         </Group>
