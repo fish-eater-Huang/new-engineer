@@ -10,16 +10,20 @@
 
 #include "app/board_comm.h"
 #include <string.h>
+#include "app/imu_monitor.h"
 
 extern uint8_t board_id;
 
-const uint32_t board_comm_timeout = 1000;
-
 BoardComm::BoardComm(CAN_HandleTypeDef* hcan)
-    : connect_(board_comm_timeout), hcan_(hcan) {}
+    : imu1_connect_(1000),
+      imu2_connect_(1000),
+      imu3_connect_(1000),
+      hcan_(hcan) {}
 
 void BoardComm::handle(void) {
-  connect_.check();
+  imu1_connect_.check();
+  imu2_connect_.check();
+  imu3_connect_.check();
 }
 
 // Transmit data
@@ -28,7 +32,7 @@ void BoardComm::canTxMsg(void) {
   can_tx_header_.IDE = CAN_ID_STD;
   can_tx_header_.RTR = CAN_RTR_DATA;
   can_tx_header_.DLC = 8;
-  can_tx_header_.StdId = board_id;
+  can_tx_header_.StdId = board_id + board_comm_id_base_;
   memcpy(can_tx_data_, &imu_msg_[board_id - 1], sizeof(ImuMsgPack_t));
   // transmit
   HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_, &can_tx_mail_box_);
@@ -48,7 +52,20 @@ bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
 void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                  CAN_RxHeaderTypeDef rx_header,
                                  uint8_t rx_data[8]) {
+  if (rx_header.StdId < board_comm_id_base_ + 1 ||
+      rx_header.StdId > board_comm_id_base_ + 3) {
+    return;
+  }
+
   uint8_t rx_id = rx_header.StdId - board_comm_id_base_;
+
   memcpy(&imu_msg_[rx_id - 1], rx_data, sizeof(ImuMsgPack_t));
-  connect_.refresh();
+
+  if (rx_id == 1) {
+    imu1_connect_.refresh();
+  } else if (rx_id == 2) {
+    imu2_connect_.refresh();
+  } else if (rx_id == 3) {
+    imu3_connect_.refresh();
+  }
 }

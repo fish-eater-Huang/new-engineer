@@ -60,8 +60,8 @@ SerialStudio serial_tool;
 
 BoardComm board_comm(&hcan2);
 
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &ext_imu[0], &ext_imu[1],
-        &board_comm);
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &ext_imu[0],
+        &ext_imu[1], &board_comm);
 ArmController arm_controller(ext_imu, &board_comm);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/

@@ -20,9 +20,6 @@
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
-#include "base/cap_comm/cap_comm.h"
-#include "base/cv_comm/cv_comm.h"
-#include "base/referee_comm/referee_comm.h"
 #include "base/remote/remote.h"
 
 #ifdef RC_UART
@@ -30,16 +27,6 @@ RC rc(RC_UART);
 #else
 RC rc;
 #endif  // RC_UART
-#ifdef CV_UART
-CVComm cv_comm(CV_UART);
-#else
-CVComm cv_comm;
-#endif  // CV_UART
-#ifdef REFEREE_UART
-RefereeComm referee(REFEREE_UART);
-#else
-RefereeComm referee;
-#endif  // REFEREE_UART
 #ifdef DEBUG_UART
 SerialStudio serial_tool(DEBUG_UART);
 #else

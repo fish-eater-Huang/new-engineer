@@ -52,10 +52,10 @@ bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
 void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                  CAN_RxHeaderTypeDef rx_header,
                                  uint8_t rx_data[8]) {
-   if (rx_header.StdId < board_comm_id_base_ + 1 ||
-       rx_header.StdId > board_comm_id_base_ + 3) {
-     return;
-   }
+  if (rx_header.StdId < board_comm_id_base_ + 1 ||
+      rx_header.StdId > board_comm_id_base_ + 3) {
+    return;
+  }
 
   uint8_t rx_id = rx_header.StdId - board_comm_id_base_;
 

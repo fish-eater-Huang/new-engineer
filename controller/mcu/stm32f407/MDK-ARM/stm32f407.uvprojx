@@ -785,16 +785,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>base/cap_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>cap_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\cap_comm\cap_comm.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>base/common</GroupName>
           <Files>
             <File>
@@ -845,16 +835,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>base/cv_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>cv_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\cv_comm\cv_comm.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>base/imu</GroupName>
           <Files>
             <File>
@@ -896,16 +876,6 @@
               <FileName>dji_motor_driver.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\base\motor\driver\dji_motor_driver.cpp</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>base/referee_comm</GroupName>
-          <Files>
-            <File>
-              <FileName>referee_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\base\referee_comm\referee_comm.cpp</FilePath>
             </File>
           </Files>
         </Group>

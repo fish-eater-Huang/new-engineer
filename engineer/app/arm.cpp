@@ -15,10 +15,11 @@
 
 // 构造函数
 Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-         IMU* imu2, IMU* imu3, BoardComm* imu_comm)
+         IMU* imu0, IMU* imu2, IMU* imu3, BoardComm* imu_comm)
     : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
   init_.is_finish = false;
   init_.method = Arm::Init_t::Method_e::LINK_IMU;
+  init_.imu0 = imu0;
   init_.imu2 = imu2;
   init_.imu3 = imu3;
   init_.imu_comm = imu_comm;
@@ -55,26 +56,28 @@ void Arm::init(void) {
     }
     // 检测陀螺仪连接状态 todo
     if (!(init_.imu_comm->imu2_connect_.check() &&
-          init_.imu_comm->imu1_connect_.check())) {
-      // 若未检测到陀螺仪则切换为手动初始化
+          init_.imu_comm->imu1_connect_.check()) ||
+        !(fabs(init_.imu0->pitch()) < 10.0f &&
+          fabs(init_.imu0->roll()) < 10.0f)) {
+      // 若未检测到陀螺仪或link0陀螺仪不水平则切换为手动初始化
       init_.method = Arm::Init_t::Method_e::MANUAL;
       return;
     }
 
     // 根据陀螺仪角度初始化关节电机角度
-    float rpy2[3] = {math::deg2rad(init_.imu2->euler_deg_.yaw),
-                     math::deg2rad(init_.imu2->euler_deg_.pitch),
-                     math::deg2rad(init_.imu2->euler_deg_.roll)};
-    float rpy3[3] = {math::deg2rad(init_.imu3->euler_deg_.yaw),
-                     math::deg2rad(init_.imu3->euler_deg_.pitch),
-                     math::deg2rad(init_.imu3->euler_deg_.roll)};
+    float rpy2[3] = {math::deg2rad(init_.imu2->yaw()),
+                     math::deg2rad(init_.imu2->pitch()),
+                     math::deg2rad(init_.imu2->roll())};
+    float rpy3[3] = {math::deg2rad(init_.imu3->yaw()),
+                     math::deg2rad(init_.imu3->pitch()),
+                     math::deg2rad(init_.imu3->roll())};
     Matrixf<3, 3> Rw2 = robotics::rpy2r(rpy2);
     Matrixf<3, 3> Rw3 = robotics::rpy2r(rpy3);
     q_init_deg[1] = math::rad2deg(
         math::loopLimit(atan2f(Rw2[2][0], -Rw2[2][2]), -PI * 1.5f, PI * 0.5f));
     q_init_deg[2] = math::rad2deg(math::loopLimit(
-        atan2f(-Rw3[2][2], -Rw3[2][0]) - math::deg2rad(q_init_deg[1]),
-        -PI, PI));
+        atan2f(-Rw3[2][2], -Rw3[2][0]) - math::deg2rad(q_init_deg[1]), -PI,
+        PI));
 
     // 设置电机反馈角度
     j1_->resetFeedbackAngle(q_init_deg[0]);
