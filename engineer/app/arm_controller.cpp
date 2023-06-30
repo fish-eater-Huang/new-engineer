@@ -11,7 +11,8 @@
 #include "app/arm_controller.h"
 
 // 机械臂控制器构造函数
-ArmController::ArmController(IMU imu[3]) {
+ArmController::ArmController(IMU imu[3], BoardComm* comm)
+    : comm_(comm), connect_(1000) {
   imu_[0] = &imu[0];
   imu_[1] = &imu[1];
   imu_[2] = &imu[2];
@@ -26,6 +27,13 @@ void ArmController::setOffset(float dx, float dy, float dz) {
 
 // 机械臂控制器处理函数
 void ArmController::handle(void) {
+  // 检测控制器连接状态
+  if (comm_->imu1_connect_.check() && comm_->imu2_connect_.check() &&
+      comm_->imu3_connect_.check()) {
+    connect_.refresh();
+  }
+  connect_.check();
+
   // 目标姿态
   raw_.yaw = math::deg2rad(imu_[2]->yaw());
   raw_.pitch = math::deg2rad(imu_[2]->pitch());

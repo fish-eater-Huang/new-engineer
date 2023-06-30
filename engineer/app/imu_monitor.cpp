@@ -66,7 +66,7 @@ IMU board_imu(boardimu::param.dt, boardimu::param.kg, boardimu::param.km,
               boardimu::param.accel_sen, &boardimu::readSensor);
 
 // 控制器IMU(外置，can通信传输yaw，pitch，roll数据)
-namespace controllerimu {
+namespace extimu {
 
 // imu参数
 struct Param {
@@ -92,25 +92,22 @@ struct Param {
   const float accel_sen = 1;
 } param;
 
-}  // namespace controllerimu
+}  // namespace extimu
 
-// 控制器IMU
-IMU controller_imu[3] = {
-    IMU(controllerimu::param.dt, controllerimu::param.kg,
-        controllerimu::param.km, controllerimu::param.g_thres,
-        controllerimu::param.R_imu, controllerimu::param.R_mag,
-        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
-        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
-    IMU(controllerimu::param.dt, controllerimu::param.kg,
-        controllerimu::param.km, controllerimu::param.g_thres,
-        controllerimu::param.R_imu, controllerimu::param.R_mag,
-        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
-        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
-    IMU(controllerimu::param.dt, controllerimu::param.kg,
-        controllerimu::param.km, controllerimu::param.g_thres,
-        controllerimu::param.R_imu, controllerimu::param.R_mag,
-        controllerimu::param.gyro_bias, controllerimu::param.accel_bias,
-        controllerimu::param.mag_bias, controllerimu::param.accel_sen),
+// 外置IMU
+IMU ext_imu[3] = {
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
 };
 
 // 初始化板载IMU传感器

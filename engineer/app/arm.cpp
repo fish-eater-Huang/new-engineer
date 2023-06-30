@@ -11,23 +11,24 @@
 
 #include "app/arm.h"
 #include "base/common/math.h"
+#include "tim.h"
 
 // 构造函数
-Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6)
+Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
+         IMU* imu2, IMU* imu3, BoardComm* imu_comm)
     : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
-  init();
+  init_.is_finish = false;
+  init_.method = Arm::Init_t::Method_e::LINK_IMU;
+  init_.imu2 = imu2;
+  init_.imu3 = imu3;
+  init_.imu_comm = imu_comm;
+  init_.imu2_connect = Connect(1000);
+  init_.imu3_connect = Connect(1000);
 }
 
 // 初始化关节角度
 void Arm::init(void) {
-  // 初始角度设置
-  float q_init_deg[6] = {0, -180.0f, 80.0f, 0, 95.0f, 0};
-  j1_->resetFeedbackAngle(q_init_deg[0]);
-  j2_->resetFeedbackAngle(q_init_deg[1]);
-  j3_->resetFeedbackAngle(q_init_deg[2]);
-  j4_->resetFeedbackAngle(q_init_deg[3]);
-  j5_->resetFeedbackAngle(q_init_deg[4]);
-  j6_->resetFeedbackAngle(q_init_deg[5]);
+  // 设置电机反馈数据源
   j1_->setFdbSrc(&j1_->kfAngle(), &j1_->kfSpeed());
   j2_->setFdbSrc(&j2_->kfAngle(), &j2_->kfSpeed());
   j3_->setFdbSrc(&j3_->kfAngle(), &j3_->kfSpeed());
@@ -35,13 +36,66 @@ void Arm::init(void) {
   j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
   j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
 
+  // 初始角度设置
+  // 手动初始化（移至初始化位置开机）
+  float q_init_deg[6] = {0, -180.0f, 80.0f, 0, 95.0f, 0};
+  if (init_.method == Arm::Init_t::Method_e::MANUAL) {
+    j1_->resetFeedbackAngle(q_init_deg[0]);
+    j2_->resetFeedbackAngle(q_init_deg[1]);
+    j3_->resetFeedbackAngle(q_init_deg[2]);
+    j4_->resetFeedbackAngle(q_init_deg[3]);
+    j5_->resetFeedbackAngle(q_init_deg[4]);
+    j6_->resetFeedbackAngle(q_init_deg[5]);
+  }
+  // 使用IMU初始化关节电机角度
+  else if (init_.method == Arm::Init_t::Method_e::LINK_IMU) {
+    // 等待陀螺仪上电 & 重力补偿收敛
+    if (HAL_GetTick() < 2000) {
+      return;
+    }
+    // 检测陀螺仪连接状态 todo
+    if (!(init_.imu_comm->imu2_connect_.check() &&
+          init_.imu_comm->imu1_connect_.check())) {
+      // 若未检测到陀螺仪则切换为手动初始化
+      init_.method = Arm::Init_t::Method_e::MANUAL;
+      return;
+    }
+
+    // 根据陀螺仪角度初始化关节电机角度
+    float rpy2[3] = {math::deg2rad(init_.imu2->euler_deg_.yaw),
+                     math::deg2rad(init_.imu2->euler_deg_.pitch),
+                     math::deg2rad(init_.imu2->euler_deg_.roll)};
+    float rpy3[3] = {math::deg2rad(init_.imu3->euler_deg_.yaw),
+                     math::deg2rad(init_.imu3->euler_deg_.pitch),
+                     math::deg2rad(init_.imu3->euler_deg_.roll)};
+    Matrixf<3, 3> Rw2 = robotics::rpy2r(rpy2);
+    Matrixf<3, 3> Rw3 = robotics::rpy2r(rpy3);
+    q_init_deg[1] = math::rad2deg(
+        math::loopLimit(atan2f(Rw2[2][0], -Rw2[2][2]), -PI * 1.5f, PI * 0.5f));
+    q_init_deg[2] = math::rad2deg(math::loopLimit(
+        atan2f(-Rw3[2][2], -Rw3[2][0]) - math::deg2rad(q_init_deg[1]),
+        -PI, PI));
+
+    // 设置电机反馈角度
+    j1_->resetFeedbackAngle(q_init_deg[0]);
+    j2_->resetFeedbackAngle(q_init_deg[1]);
+    j3_->resetFeedbackAngle(q_init_deg[2]);
+    j4_->resetFeedbackAngle(q_init_deg[3]);
+    j5_->resetFeedbackAngle(q_init_deg[4]);
+    j6_->resetFeedbackAngle(q_init_deg[5]);
+  }
+  // 使用编码器初始化关节电机角度
+  else if (init_.method == Arm::Init_t::Method_e::MANUAL) {
+    // todo
+  }
+
+  // 更新反馈状态
   float q[6];
   for (int i = 0; i < 6; i++) {
     q[i] = math::deg2rad(q_init_deg[i]);
   }
   fdb_.q = Matrixf<6, 1>(q);
   fdb_.q_D1 = matrixf::zeros<6, 1>();
-
   fdb_.T = arm_.fkine(fdb_.q);
   R0_ = robotics::t2r(arm_.fkine(matrixf::zeros<6, 1>()));
   float r0[9] = {0, 0, 1, 0, -1, 0, 1, 0, 0};
@@ -55,6 +109,7 @@ void Arm::init(void) {
   fdb_.pitch = rpy_fdb[1][0];
   fdb_.roll = rpy_fdb[2][0];
 
+  // 更新目标状态
   ref_.q = fdb_.q;
   ref_.T = fdb_.T;
   ref_.x = fdb_.x;
@@ -63,10 +118,26 @@ void Arm::init(void) {
   ref_.yaw = fdb_.yaw;
   ref_.pitch = fdb_.pitch;
   ref_.roll = fdb_.roll;
+
+  init_.is_finish = true;
 }
 
 // 反馈状态解算，目标状态处理，运行控制器
 void Arm::handle(void) {
+  // 检测电机连接状态
+  if (!(j1_->connect_.check() && j2_->connect_.check() &&
+        j3_->connect_.check() && j4_->connect_.check() &&
+        j5_->connect_.check() && j6_->connect_.check())) {
+    // 电机离线重新初始化
+    init_.is_finish = false;
+  }
+
+  // 初始化处理
+  if (!init_.is_finish) {
+    init();
+    return;
+  }
+
   // 获取关节角度&角速度
   fdb_.q[0][0] = math::deg2rad(j1_->realAngle());
   fdb_.q[1][0] = math::deg2rad(j2_->realAngle());

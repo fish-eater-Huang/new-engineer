@@ -11,9 +11,9 @@
 #ifndef CHASSIS_H
 #define CHASSIS_H
 
-#include "app/motor_monitor.h"
 #include "base/common/filter.h"
 #include "base/common/pid.h"
+#include "base/motor/motor.h"
 
 // chassis locomotion status
 // 底盘运动状态

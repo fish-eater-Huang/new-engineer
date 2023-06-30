@@ -58,10 +58,11 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6);
-ArmController arm_controller(controller_imu);
-
 BoardComm board_comm(&hcan2);
+
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &ext_imu[0], &ext_imu[1],
+        &board_comm);
+ArmController arm_controller(ext_imu, &board_comm);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -103,7 +104,7 @@ void imuTask(void const* argument) {
 
 osThreadId armTaskHandle;
 void armTask(void const* argument) {
-  osDelay(100);
+  osDelay(2000);
   arm.init();
   for (;;) {
     arm.handle();

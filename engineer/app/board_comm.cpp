@@ -14,13 +14,16 @@
 
 extern uint8_t board_id;
 
-const uint32_t board_comm_timeout = 1000;
-
 BoardComm::BoardComm(CAN_HandleTypeDef* hcan)
-    : connect_(board_comm_timeout), hcan_(hcan) {}
+    : imu1_connect_(1000),
+      imu2_connect_(1000),
+      imu3_connect_(1000),
+      hcan_(hcan) {}
 
 void BoardComm::handle(void) {
-  connect_.check();
+  imu1_connect_.check();
+  imu2_connect_.check();
+  imu3_connect_.check();
 }
 
 // Transmit data
@@ -39,8 +42,9 @@ void BoardComm::canTxMsg(void) {
 // 校验接收信息的CAN通道和ID
 bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
                               CAN_RxHeaderTypeDef rx_header) {
-  return hcan == hcan_ && (rx_header.StdId >= board_comm_id_base_ + 1 ||
-                           rx_header.StdId <= board_comm_id_base_ + 3);
+  // return hcan == hcan_ && (rx_header.StdId >= board_comm_id_base_ + 1 ||
+  //                          rx_header.StdId <= board_comm_id_base_ + 3);
+  return hcan == hcan_ && (rx_header.StdId >= 1 || rx_header.StdId <= 3);
 }
 
 // Receive feedback data message callback. Called in
@@ -49,13 +53,24 @@ bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
 void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                  CAN_RxHeaderTypeDef rx_header,
                                  uint8_t rx_data[8]) {
+  //  if (rx_header.StdId < board_comm_id_base_ + 1 ||
+  //      rx_header.StdId > board_comm_id_base_ + 3) {
+  //    return;
+  //  }
+
   uint8_t rx_id = rx_header.StdId - board_comm_id_base_;
+
   memcpy(&imu_msg_[rx_id - 1], rx_data, sizeof(ImuMsgPack_t));
-  controller_imu[rx_id - 1].yaw() =
-      (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
-  controller_imu[rx_id - 1].pitch() =
+  ext_imu[rx_id - 1].yaw() = (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
+  ext_imu[rx_id - 1].pitch() =
       (float)imu_msg_[rx_id - 1].pitch * 180.f / 32767.f;
-  controller_imu[rx_id - 1].roll() =
-      (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
-  connect_.refresh();
+  ext_imu[rx_id - 1].roll() = (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
+
+  if (rx_id == 1) {
+    imu1_connect_.refresh();
+  } else if (rx_id == 2) {
+    imu2_connect_.refresh();
+  } else if (rx_id == 3) {
+    imu3_connect_.refresh();
+  }
 }

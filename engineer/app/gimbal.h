@@ -11,8 +11,8 @@
 #ifndef GIMBAL_H
 #define GIMBAL_H
 
-#include "app/imu_monitor.h"
-#include "app/motor_monitor.h"
+#include "base/imu/imu.h"
+#include "base/motor/motor.h"
 
 // 云台反馈模式(imu/编码器)
 typedef enum GimbalFdbMode {
@@ -92,6 +92,16 @@ class Gimbal {
     bool yaw_finish;
     bool pitch_finish;
   } init_status_;
+};
+
+// 大yaw平台
+class Platform {
+ public:
+  Platform(Motor* motor, IMU* imu);
+
+ private:
+  Motor* motor_;  // 电机指针
+  IMU* imu_;      // imu指针
 };
 
 extern const float yaw_zero_ecd, pitch_zero_ecd;
