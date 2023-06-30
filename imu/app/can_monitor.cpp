@@ -15,7 +15,6 @@
 
 #include "app/board_comm.h"
 #include "app/motor_monitor.h"
-#include "base/cap_comm/cap_comm.h"
 
 extern DJIMotorDriver dji_motor_driver;
 extern BoardComm board_comm;

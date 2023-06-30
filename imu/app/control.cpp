@@ -31,7 +31,7 @@ extern RC rc;
 extern IMU board_imu;
 extern BoardComm board_comm;
 
-uint8_t board_id = 3;
+uint8_t board_id = 1;
 BoardLed led;
 
 // 上电状态

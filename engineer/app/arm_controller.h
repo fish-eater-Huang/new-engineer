@@ -11,14 +11,16 @@
 #ifndef ARM_CONTROLLER_H
 #define ARM_CONTROLLER_H
 
-#include "app/imu_monitor.h"
+#include "app/board_comm.h"  // todo
+#include "base/common/connect.h"
+#include "base/imu/imu.h"
 #include "base/robotics/robotics.h"
 
 // 机械臂控制器(3*imu)
 class ArmController {
  public:
   // 构造函数
-  ArmController(IMU imu[3]);
+  ArmController(IMU imu[3], BoardComm* comm);
 
   // 设置偏置值
   void setOffset(float dx, float dy, float dz);
@@ -27,6 +29,8 @@ class ArmController {
   void handle(void);
 
  public:
+  Connect connect_;
+
   // 目标状态
   struct Ref_t {
     Matrixf<4, 4> T;
@@ -49,6 +53,7 @@ class ArmController {
 
  private:
   IMU* imu_[3];
+  BoardComm* comm_;  // todo
 
   struct Param {
     float l[2] = {0.3f, 0.27f};

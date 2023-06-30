@@ -23,17 +23,17 @@ const float gimbal_speed_max = 1800;
 const float gimbal_init_angle_thres = 5;
 
 // Gimbal angle limit 云台角度限位
-// const float yaw_min = -60;
-// const float yaw_max = 60;
-const float pitch_min = -40;
-const float pitch_max = 25;
+const float yaw_min = -60;
+const float yaw_max = 60;
+const float pitch_min = -90;
+const float pitch_max = 90;
 
 Gimbal::Gimbal(Motor* gm_yaw, Motor* gm_pitch, IMU* imu)
     : gm_yaw_(gm_yaw), gm_pitch_(gm_pitch), imu_(imu) {
   init_status_.yaw_finish = false;
   init_status_.pitch_finish = false;
-  // limit_.yaw_min = yaw_min;
-  // limit_.yaw_max = yaw_max;
+  limit_.yaw_min = yaw_min;
+  limit_.yaw_max = yaw_max;
   limit_.pitch_min = pitch_min;
   limit_.pitch_max = pitch_max;
   setMode(ENCODER_MODE);
@@ -96,8 +96,8 @@ void Gimbal::setMode(GimbalFdbMode_e mode) {
     gm_yaw_->setFdbSrc(&imu_->yaw(), &imu_->wzWorld());
     gm_pitch_->setFdbSrc(&imu_->pitch(), &imu_->wySensor());
   } else if (mode_ != mode && mode == ENCODER_MODE) {
-    gm_yaw_->setFdbSrc(&gm_yaw_->motor_data_.angle, &imu_->wzWorld());
-    gm_pitch_->setFdbSrc(&gm_pitch_->motor_data_.angle, &imu_->wySensor());
+    gm_yaw_->setFdbSrc(&gm_yaw_->kfAngle(), &gm_yaw_->kfSpeed());
+    gm_pitch_->setFdbSrc(&gm_pitch_->kfAngle(), &gm_pitch_->kfSpeed());
   }
   mode_ = mode;
 }

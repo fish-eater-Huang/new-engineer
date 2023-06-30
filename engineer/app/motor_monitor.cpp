@@ -134,8 +134,8 @@ namespace m8112 {
 const float p_min = -12.5f;
 const float p_max = 12.5f;
 // velocity limit(rad/s)
-const float v_min = -45;
-const float v_max = 45;
+const float v_min = -30;
+const float v_max = 30;
 // PD param limit
 const float kp_min = 0;
 const float kp_max = 500;
@@ -148,6 +148,27 @@ const float t_ff_max = 10;
 const float t_min = -10;
 const float t_max = 10;
 }  // namespace m8112
+
+// 4310电机参数
+namespace m4310 {
+// position limit(rad)
+const float p_min = -12.5f;
+const float p_max = 12.5f;
+// velocity limit(rad/s)
+const float v_min = -30;
+const float v_max = 30;
+// PD param limit
+const float kp_min = 0;
+const float kp_max = 500;
+const float kv_min = 0;
+const float kv_max = 5;
+// feedforward torque limit(N·m)
+const float t_ff_min = -7;
+const float t_ff_max = 7;
+// feedback torque limit(N·m)
+const float t_min = -7;
+const float t_max = 7;
+}  // namespace m4310
 
 // MIT协议电机
 MITMotorDriver mit_motor_driver[] = {

@@ -41,8 +41,7 @@ class BoardComm {
                         uint8_t rx_data[8]);
 
  public:
-  Connect connect_;
-
+  Connect imu1_connect_, imu2_connect_, imu3_connect_;
   ImuMsgPack_t imu_msg_[3];
 
  private:

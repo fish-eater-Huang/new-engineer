@@ -184,15 +184,20 @@ void robotControl(void) {
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
-                               arm.fdb_.y - arm_controller.raw_.y,
-                               arm.fdb_.z - arm_controller.raw_.z);
-    }
     arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
-               arm_controller.ref_.z, arm_controller.ref_.yaw,
-               arm_controller.ref_.pitch, arm_controller.ref_.roll);
+
+    if (arm_controller.connect_.check()) {
+      if (rc.switch_.l != last_rc_switch.l ||
+          rc.switch_.r != last_rc_switch.r) {
+        arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
+                                 arm.fdb_.y - arm_controller.raw_.y,
+                                 arm.fdb_.z - arm_controller.raw_.z);
+      }
+      arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
+                 arm_controller.ref_.z, arm_controller.ref_.yaw,
+                 arm_controller.ref_.pitch, arm_controller.ref_.roll);
+    }
+
     arm.trajAbort();
   }
 
