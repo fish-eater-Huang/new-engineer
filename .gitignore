@@ -5,6 +5,7 @@
 .vscode/.cortex-debug*
 
 # CLion
+.idea
 
 # Matlab
 slprj
@@ -15,6 +16,7 @@ slprj
 *DebugConfig*
 *RTE*
 *uvguix*
+.MDK-ARM/
 
 *.o
 *.d
