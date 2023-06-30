@@ -32,7 +32,7 @@ void BoardComm::canTxMsg(void) {
   can_tx_header_.IDE = CAN_ID_STD;
   can_tx_header_.RTR = CAN_RTR_DATA;
   can_tx_header_.DLC = 8;
-  can_tx_header_.StdId = board_id;
+  can_tx_header_.StdId = board_id + board_comm_id_base_;
   memcpy(can_tx_data_, &imu_msg_[board_id - 1], sizeof(ImuMsgPack_t));
   // transmit
   HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_, &can_tx_mail_box_);
@@ -42,9 +42,8 @@ void BoardComm::canTxMsg(void) {
 // 校验接收信息的CAN通道和ID
 bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
                               CAN_RxHeaderTypeDef rx_header) {
-  // return hcan == hcan_ && (rx_header.StdId >= board_comm_id_base_ + 1 ||
-  //                          rx_header.StdId <= board_comm_id_base_ + 3);
-  return hcan == hcan_ && (rx_header.StdId >= 1 || rx_header.StdId <= 3);
+  return hcan == hcan_ && (rx_header.StdId >= board_comm_id_base_ + 1 ||
+                           rx_header.StdId <= board_comm_id_base_ + 3);
 }
 
 // Receive feedback data message callback. Called in
@@ -53,10 +52,10 @@ bool BoardComm::canRxMsgCheck(CAN_HandleTypeDef* hcan,
 void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                  CAN_RxHeaderTypeDef rx_header,
                                  uint8_t rx_data[8]) {
-  //  if (rx_header.StdId < board_comm_id_base_ + 1 ||
-  //      rx_header.StdId > board_comm_id_base_ + 3) {
-  //    return;
-  //  }
+   if (rx_header.StdId < board_comm_id_base_ + 1 ||
+       rx_header.StdId > board_comm_id_base_ + 3) {
+     return;
+   }
 
   uint8_t rx_id = rx_header.StdId - board_comm_id_base_;
 
