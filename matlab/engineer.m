@@ -1,12 +1,12 @@
 clear; clc; close all;
 
 % arm
-arm_L(1) = Link("d",0,"a",0,"alpha",-pi/2,"m",0.83,"r",[0,0.003,0.049],"I",zeros(3));
-arm_L(2) = Link("d",0,"a",0.266,"alpha",0,"m",1.222,"r",[-0.06,0,0.062],"I",zeros(3));
-arm_L(3) = Link("d",0,"a",0,"alpha",-pi/2,"m",0.538,"r",[-0.004,0,0.012],"I",zeros(3));
-arm_L(4) = Link("d",0.28,"a",0,"alpha",pi/2,"m",0.342,"r",[0,-0.327,0.035],"I",zeros(3));
-arm_L(5) = Link("d",0,"a",0,"alpha",-pi/2,"m",0.162,"r",[0,-0.02,0],"I",zeros(3));
-arm_L(6) = Link("d",0.07,"a",0,"alpha",0,"m",0.12,"r",[0,0,-0.015],"I",zeros(3));
+arm_L(1) = Link("d",0,"a",0,"alpha",-pi/2,"m",0.586,"r",[0,0.056,0.025],"I",zeros(3));
+arm_L(2) = Link("d",0,"a",0.48,"alpha",0,"m",5.73,"r",[-0.248,0,0.071],"I",zeros(3));
+arm_L(3) = Link("d",0,"a",0,"alpha",-pi/2,"m",1.334,"r",[0.002,0.01,0.101],"I",zeros(3));
+arm_L(4) = Link("d",0.5125,"a",0,"alpha",pi/2,"m",1.447,"r",[-0.008,-0.128,0],"I",zeros(3));
+arm_L(5) = Link("d",0,"a",0,"alpha",-pi/2,"m",0.105,"r",[0,0,0.012],"I",zeros(3));
+arm_L(6) = Link("d",0.025,"a",0,"alpha",0,"m",0,"r",[0,0,0],"I",zeros(3));
 arm = SerialLink(arm_L,"name","arm");
 arm.offset = [0,0,0,0,0,0];
 
@@ -40,7 +40,7 @@ qt = zeros(6,size(t,2));
 figure(2); view(3);
 for i = 1:size(t,2)
   Rt = [0,0,1;0,-1,0;1,0,0];
-  pt(:,i) = [0.3;0;0.5*sin(t(i))];
+  pt(:,i) = [0.4;0;0.7*sin(t(i))];
   Tt = [Rt,pt(:,i);zeros(1,3),1];
   if i == 1
     qt(:,i) = p560_ikine(Tt,arm.d,arm.a,zeros(6,1));

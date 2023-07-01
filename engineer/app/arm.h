@@ -84,39 +84,39 @@ class Arm {
       // link1
       robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.83,              // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, 0.003, 0.049}),  // rc
+                     0, 0, 0, 0.586,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, 0.056, 0.025}),  // rc
                      matrixf::zeros<3, 3>()),                     // I
       // link2
-      robotics::Link(0, 0, 0.266, 0,             // theta,d,a,alpha
+      robotics::Link(0, 0, 0.48, 0,              // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 1.222,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){-0.06, 0, 0.062}),  // rc
-                     matrixf::zeros<3, 3>()),                     // I
+                     0, 0, 0, 5.73,              // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){-0.248, 0, 0.071}),  // rc
+                     matrixf::zeros<3, 3>()),                      // I
       // link3
       robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.538,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){-0.004, 0, 0.012}),  // rc
-                     matrixf::zeros<3, 3>()),                      // I
+                     0, 0, 0, 1.334,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0.002, 0.01, 0.101}),  // rc
+                     matrixf::zeros<3, 3>()),                        // I
       // link4
-      robotics::Link(0, 0.28, 0, PI / 2,         // theta,d,a,alpha
+      robotics::Link(0, 0.5125, 0, PI / 2,       // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.342,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, -0.327, 0.035}),  // rc
-                     matrixf::zeros<3, 3>()),                      // I
+                     0, 0, 0, 1.447,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){-0.008, -0.128, 0}),  // rc
+                     matrixf::zeros<3, 3>()),                       // I
       // link5
       robotics::Link(0, 0, 0, -PI / 2,           // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.162,             // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, -0.02, 0}),  // rc
+                     0, 0, 0, 0.105,             // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, 0, 0.012}),  // rc
                      matrixf::zeros<3, 3>()),                 // I
       // link6
-      robotics::Link(0, 0.07, 0, 0,              // theta,d,a,alpha
-                     robotics::Joint_Type_e::R,  // joint type
-                     0, 0, 0, 0.13,              // offset,qmin,qmax,m
-                     Matrixf<3, 1>((float[3]){0, 0, -0.02}),  // rc
-                     matrixf::zeros<3, 3>()),                 // I
+      robotics::Link(0, 0.025, 0, 0,                      // theta,d,a,alpha
+                     robotics::Joint_Type_e::R,           // joint type
+                     0, 0, 0, 0,                          // offset,qmin,qmax,m
+                     Matrixf<3, 1>((float[3]){0, 0, 0}),  // rc
+                     matrixf::zeros<3, 3>()),             // I
   };
 
   robotics::Serial_Link<6> arm_;
@@ -133,6 +133,11 @@ class Arm {
       ENCODER,
       LINK_IMU,
     } method;
+
+    // J456电机零点
+    const float j4_zero = 0;
+    const float j5_zero = 0;
+    const float j6_zero = 0;
 
     // 板间通信指针
     BoardComm* imu_comm;
@@ -152,6 +157,9 @@ class Arm {
     JOINT,
     COMPLIANCE,
   } mode_;
+
+  // J6减速比
+  const float ratio6_ = -27.f / 62.f;
 
   // 目标状态
   struct Ref_t {

@@ -16,6 +16,13 @@
 #include "base/imu/imu.h"
 #include "base/robotics/robotics.h"
 
+// 控制器通信类
+class ControllerComm {
+ public:
+  ControllerComm(/* args */);
+
+};
+
 // 机械臂控制器(3*imu)
 class ArmController {
  public:
