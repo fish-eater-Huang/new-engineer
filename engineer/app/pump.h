@@ -18,11 +18,13 @@ class Pump {
  public:
   typedef enum ValveState {
     CLOSE,
-    OPEN,
+    OPEN_1,
+    OPEN_2,
   } ValveState_e;
 
  public:
-  Pump(Motor* motor, ServoZX361D* servo, uint16_t pmw_hold, uint16_t pwm_loose);
+  Pump(Motor* motor, ServoZX361D* servo, uint16_t pmw_close, float pwm_open_1,
+       float pwm_open_2);
 
   // 设置阀门状态
   void setValve(ValveState_e state);
@@ -32,7 +34,7 @@ class Pump {
   // 气泵工作
   void work(void);
   // 气泵关闭
-  void off(void);
+  void off(uint8_t i);
 
  private:
   Motor* motor_;
@@ -40,9 +42,10 @@ class Pump {
 
   ValveState_e valve_state_;
 
-  float speed_;         // 电机转速
-  uint16_t pwm_close_;  // 阀门关闭舵机PWM
-  uint16_t pwm_open_;   // 阀门开启舵机PWM
+  float speed_;          // 电机转速
+  uint16_t pwm_close_;   // 阀门关闭舵机PWM
+  uint16_t pwm_open_1_;  // 阀门开启舵机PWM
+  uint16_t pwm_open_2_;  // 阀门开启舵机PWM
 };
 
 #endif  // PUMP_H
