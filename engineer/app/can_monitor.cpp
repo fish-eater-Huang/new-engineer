@@ -47,12 +47,34 @@ void canFilterInit(void) {
 // CAN通信发送管理
 void canTxMonitor(void) {
   // note: 每个通道一次只能发送3个包
-  dji_motor_driver.canTxMsg(1, djimotor::ID_1_4);  // can1, id: 0x200
-  dji_motor_driver.canTxMsg(1, djimotor::ID_5_8);  // can1, id: 0x1ff
-  mit_motor_driver[0].canTxMsg();
 
-  dji_motor_driver.canTxMsg(2, djimotor::ID_1_4);  // can2, id: 0x200
-  dji_motor_driver.canTxMsg(2, djimotor::ID_5_8);  // can2, id: 0x1ff
+  // CAN1
+  if (HAL_GetTick() % 2 == 0) {
+    dji_motor_driver.canTxMsg(1, djimotor::ID_1_4);
+  }
+  
+  if (HAL_GetTick() % 2 == 0) {
+    mit_motor_driver[0].canTxMsg();
+    mit_motor_driver[1].canTxMsg();
+  } else if (HAL_GetTick() % 2 == 1) {
+    mit_motor_driver[2].canTxMsg();
+    mit_motor_driver[3].canTxMsg();
+  }
+
+  // CAN2
+  if (HAL_GetTick() % 2 == 0) {
+    dji_motor_driver.canTxMsg(2, djimotor::ID_1_4);
+  } else if (HAL_GetTick() % 2 == 1) {
+    dji_motor_driver.canTxMsg(2, djimotor::ID_5_8);
+  }
+
+  if (HAL_GetTick() % 3 == 0) {
+    mit_motor_driver[4].canTxMsg();
+  } else if (HAL_GetTick() % 3 == 1) {
+    mit_motor_driver[5].canTxMsg();
+  } else if (HAL_GetTick() % 3 == 2) {
+    mit_motor_driver[6].canTxMsg();
+  }
 
   osDelay(1);
 }

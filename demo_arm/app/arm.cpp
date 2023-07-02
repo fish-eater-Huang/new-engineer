@@ -29,14 +29,6 @@ Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
 
 // 初始化关节角度
 void Arm::init(void) {
-  // 设置电机反馈数据源
-  j1_->setFdbSrc(&j1_->kfAngle(), &j1_->kfSpeed());
-  j2_->setFdbSrc(&j2_->kfAngle(), &j2_->kfSpeed());
-  j3_->setFdbSrc(&j3_->kfAngle(), &j3_->kfSpeed());
-  j4_->setFdbSrc(&j4_->kfAngle(), &j4_->kfSpeed());
-  j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
-  j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
-
   // 初始角度设置
   // 手动初始化（移至初始化位置开机）
   float q_init_deg[6] = {0, -180.0f, 80.0f, 0, 95.0f, 0};
@@ -121,6 +113,14 @@ void Arm::init(void) {
   ref_.yaw = fdb_.yaw;
   ref_.pitch = fdb_.pitch;
   ref_.roll = fdb_.roll;
+
+  // 设置电机反馈数据源
+  j1_->setFdbSrc(&j1_->kfAngle(), &j1_->kfSpeed());
+  j2_->setFdbSrc(&j2_->kfAngle(), &j2_->kfSpeed());
+  j3_->setFdbSrc(&j3_->kfAngle(), &j3_->kfSpeed());
+  j4_->setFdbSrc(&j4_->kfAngle(), &j4_->kfSpeed());
+  j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
+  j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
 
   init_.is_finish = true;
 }

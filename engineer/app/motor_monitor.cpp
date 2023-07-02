@@ -15,76 +15,83 @@
 // Motor parameter config
 // 电机参数配置
 
+// 底盘电机
+const PID chassis_wheel_spid(40, 1, 10, 1000, 16384);
+Motor CMFL(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
+           PID(), PID(chassis_wheel_spid));             // ppid, spid
+Motor CMFR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
+           PID(), PID(chassis_wheel_spid));             // ppid, spid
+Motor CMBL(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
+           PID(), PID(chassis_wheel_spid));             // ppid, spid
+Motor CMBR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
+           PID(), PID(chassis_wheel_spid));             // ppid, spid
+
+// 云台电机
+Motor GMY(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
+          PID(30, 0.05, 10, 50, 360),                    // ppid
+          PID(30, 0.05, 200, 1000, 16384),               // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
+          PID(30, 0.05, 10, 50, 360),                    // ppid
+          PID(30, 0.05, 200, 1000, 16384),               // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+
+// J0转轴电机
+Motor JM0(Motor::MIT, -1, Motor::POSITION_SPEED,         // type, ratio, method
+          PID(20, 0.05, 10, 10, 360),                    // ppid
+          PID(1e-2, 0, 1.5e-2, 0, 7),                    // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+
 // 机械臂关节电机
-float j1Model(const float& torque, const float& speed = 0) {
-  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
-}
-Motor JM1(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(20, 0.1, 5, 10, 120),                     // ppid
-          PID(200, 0.1, 20, 1000, 16384),               // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j1Model);                                     // model
+Motor JM1(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor JM2(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor JM3(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor JM4(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor JM5(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+// Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio,
+// method
+//           PID(20, 0.05, 10, 10, 360),                    // ppid
+//           PID(1e-2, 0, 1.5e-2, 0, 7),                    // spid
+//           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
-float j2Model(const float& torque, const float& speed = 0) {
-  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
-}
-Motor JM2(Motor::M3508, -100, Motor::POSITION_SPEED,    // type, ratio, method
-          PID(20, 0.1, 5, 10, 120),                     // ppid
-          PID(200, 0.1, 20, 1000, 16384),               // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j2Model);                                     // model
-
-float j3Model(const float& torque, const float& speed = 0) {
-  return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
-}
-Motor JM3(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(20, 0.1, 5, 10, 120),                     // ppid
-          PID(200, 0.1, 20, 1000, 16384),               // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j3Model);                                     // model
-
-float j4Model(const float& torque, const float& speed = 0) {
-  return torque * 2.73e3f;  // 8192*19.2/(3*19.2) ~= 2.73e3
-}
-Motor JM4(Motor::M3508, 19.2032f, Motor::POSITION_SPEED,  // type, ratio, method
-          PID(20, 0.05, 5, 10, 180),                      // ppid
-          PID(50, 0.05, 10, 1000, 16384),                 // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),    // kf
-          j4Model);                                       // model
-
-float j5Model(const float& torque, const float& speed = 0) {
-  return torque * 5.24e4f;  // 8192*19.2/(3*1) ~= 5.24e4
-}
-Motor JM5(Motor::M3508, 1, Motor::POSITION_SPEED,       // type, ratio, method
-          PID(30, 0.05, 10, 50, 360),                   // ppid
-          PID(30, 0.05, 200, 1000, 16384),              // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j5Model);                                     // model
-
-float j6Model(const float& torque, const float& speed = 0) {
-  return torque * 5.24e4f;  // 8192*19.2/(3*1) ~= 5.24e4
-}
-Motor JM6(Motor::M3508, -1, Motor::POSITION_SPEED,      // type, ratio, method
-          PID(20, 0.05, 10, 10, 360),                   // ppid
-          PID(5, 0.02, 20, 1000, 16384),                // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
-          j6Model);                                     // model
-
-Motor M1(Motor::MIT, 1, Motor::TORQUE,  // type, ratio, method
-         PID(), PID(), true);           // ppid, spid, use kf
-
-Motor M2(Motor::MIT, 1, Motor::TORQUE,  // type, ratio, method
-         PID(), PID(), true);           // ppid, spid, use kf
+// 气泵电机
+// const PID pump_spid(30, 0.05, 200, 1000, 16384);
+const PID pump_spid(0, 0, 0, 0, 0);
+Motor PM_ARM(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
+             PID(), pump_spid);              // ppid, spid
+Motor PM_L(Motor::M3508, 1, Motor::SPEED,    // type, ratio, method
+           PID(), pump_spid);                // ppid, spid
+Motor PM_R(Motor::M3508, 1, Motor::SPEED,    // type, ratio, method
+           PID(), pump_spid);                // ppid, spid
 
 // DJI Motor id config, M3508/M2006: 1~8, GM6020: 5~11
 // DJI电机ID配置，M3508，M2006可配置范围为1~8，GM6020可配置范围为5~11
 Motor* can1_dji_motor[11] = {
-    &JM1,     // id:1
-    &JM2,     // id:2
-    &JM3,     // id:3
-    &JM4,     // id:4
-    &JM5,     // id:5
-    &JM6,     // id:6
+    &CMFL,    // id:1
+    &CMFR,    // id:2
+    &CMBL,    // id:3
+    &CMBR,    // id:4
+    nullptr,  // id:5
+    nullptr,  // id:6
     nullptr,  // id:7
     nullptr,  // id:8
     nullptr,  // id:9
@@ -92,12 +99,12 @@ Motor* can1_dji_motor[11] = {
     nullptr   // id:11
 };
 Motor* can2_dji_motor[11] = {
-    nullptr,  // id:1
-    nullptr,  // id:2
-    nullptr,  // id:3
+    &PM_ARM,  // id:1
+    &PM_L,    // id:2
+    &PM_R,    // id:3
     nullptr,  // id:4
-    nullptr,  // id:5
-    nullptr,  // id:6
+    &GMY,     // id:5
+    &GMP,     // id:6
     nullptr,  // id:7
     nullptr,  // id:8
     nullptr,  // id:9
@@ -172,14 +179,34 @@ const float t_max = 7;
 
 // MIT协议电机
 MITMotorDriver mit_motor_driver[] = {
-    MITMotorDriver(&M1, &hcan1, 0x11, 0x01, m8112::p_min, m8112::p_max,
+    MITMotorDriver(&JM0, &hcan1, 0x10, 0x00, ht04::p_min, ht04::p_max,
+                   ht04::v_min, ht04::v_max, ht04::kp_min, ht04::kp_max,
+                   ht04::kv_min, ht04::kv_max, ht04::t_ff_min, ht04::t_ff_max,
+                   ht04::t_min, ht04::t_max),
+    MITMotorDriver(&JM1, &hcan1, 0x11, 0x01, m8112::p_min, m8112::p_max,
                    m8112::v_min, m8112::v_max, m8112::kp_min, m8112::kp_max,
                    m8112::kv_min, m8112::kv_max, m8112::t_ff_min,
                    m8112::t_ff_max, m8112::t_min, m8112::t_max),
-    MITMotorDriver(&M2, &hcan1, 0x12, 0x02, m8112::p_min, m8112::p_max,
+    MITMotorDriver(&JM2, &hcan1, 0x12, 0x02, m8112::p_min, m8112::p_max,
                    m8112::v_min, m8112::v_max, m8112::kp_min, m8112::kp_max,
                    m8112::kv_min, m8112::kv_max, m8112::t_ff_min,
-                   m8112::t_ff_max, m8112::t_min, m8112::t_max)};
+                   m8112::t_ff_max, m8112::t_min, m8112::t_max),
+    MITMotorDriver(&JM3, &hcan1, 0x13, 0x03, m8112::p_min, m8112::p_max,
+                   m8112::v_min, m8112::v_max, m8112::kp_min, m8112::kp_max,
+                   m8112::kv_min, m8112::kv_max, m8112::t_ff_min,
+                   m8112::t_ff_max, m8112::t_min, m8112::t_max),
+    MITMotorDriver(&JM4, &hcan2, 0x14, 0x04, m4310::p_min, m4310::p_max,
+                   m4310::v_min, m4310::v_max, m4310::kp_min, m4310::kp_max,
+                   m4310::kv_min, m4310::kv_max, m4310::t_ff_min,
+                   m4310::t_ff_max, m4310::t_min, m4310::t_max),
+    MITMotorDriver(&JM5, &hcan2, 0x15, 0x05, m4310::p_min, m4310::p_max,
+                   m4310::v_min, m4310::v_max, m4310::kp_min, m4310::kp_max,
+                   m4310::kv_min, m4310::kv_max, m4310::t_ff_min,
+                   m4310::t_ff_max, m4310::t_min, m4310::t_max),
+    MITMotorDriver(&JM6, &hcan2, 0x16, 0x06, m4310::p_min, m4310::p_max,
+                   m4310::v_min, m4310::v_max, m4310::kp_min, m4310::kp_max,
+                   m4310::kv_min, m4310::kv_max, m4310::t_ff_min,
+                   m4310::t_ff_max, m4310::t_min, m4310::t_max)};
 
 // 电机停转速度上限(dps)
 const float motor_stop_rotate_speed_thres = 1200;
