@@ -12,6 +12,7 @@
 #define BOARD_COMM_H
 
 #include "base/common/connect.h"
+#include "base/imu/imu.h"
 #include "can.h"
 
 class BoardComm {
@@ -22,7 +23,7 @@ class BoardComm {
   } ImuMsgPack_t;
 
  public:
-  BoardComm(CAN_HandleTypeDef* hcan);
+  BoardComm(CAN_HandleTypeDef* hcan, IMU* imu1, IMU* imu2, IMU* imu3);
 
   void handle(void);
 
@@ -42,15 +43,18 @@ class BoardComm {
 
  public:
   Connect imu1_connect_, imu2_connect_, imu3_connect_;
-  ImuMsgPack_t imu_msg_[3];
 
  private:
   CAN_HandleTypeDef* hcan_;
+  IMU *imu1_, *imu2_, *imu3_;
+
   CAN_TxHeaderTypeDef can_tx_header_;
   uint8_t can_tx_data_[8];
   uint32_t can_tx_mail_box_;
 
   const uint16_t board_comm_id_base_ = 0x100;
+
+  ImuMsgPack_t imu_msg_[3];
 };
 
 #endif  // BOARD_COMM_H

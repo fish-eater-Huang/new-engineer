@@ -37,7 +37,7 @@ endif()
 project(RM_frame C CXX ASM)
 
 # select board type
-set(mcu "stm32f407")
+set(mcu "stm32f427")
 message(STATUS "MCU: ${mcu}")
 
 # mcu subdirectory

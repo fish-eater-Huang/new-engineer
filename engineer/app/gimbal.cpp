@@ -109,8 +109,8 @@ void J0Gimbal::handle(void) {
   gm_pitch_->setAngle(ref_.pitch);
 }
 
-ArmGimbal::ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu, Arm* arm)
-    : jm0_(jm0), gm_pitch_(gm_pitch), j0_imu_(j0_imu), arm_(arm) {}
+ArmGimbal::ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu)
+    : jm0_(jm0), gm_pitch_(gm_pitch), j0_imu_(j0_imu) {}
 
 // J0初始化
 void ArmGimbal::initJ0(void) {
@@ -126,7 +126,6 @@ void ArmGimbal::initJ0(void) {
 // yaw, pitch初始化
 void ArmGimbal::initGM(void) {
   init_.pitch_finish = false;
-  gm_pitch_->setFdbSrc(&fdb_.pitch, &fdb_.pitch_speed);
 }
 
 // 全部初始化
@@ -162,10 +161,8 @@ void ArmGimbal::handle(void) {
         gm_pitch_->targetAngle() - gm_pitch_->realAngle() < -10) {
       // 初始化完成
       gm_pitch_->motor_data_.angle = init_.pitch_angle;
-      gm_pitch_->resetFeedbackAngle(gm_pitch_->motor_data_.angle +
-                                    math::rad2deg(arm_->fdb_.q[1][0]) +
-                                    math::rad2deg(arm_->fdb_.q[2][0]) + 90);
-      ref_.pitch = 0;
+      gm_pitch_->resetFeedbackAngle(gm_pitch_->motor_data_.angle);
+      ref_.pitch = 0;  // todo
       init_.pitch_finish = true;
     }
   }
@@ -182,13 +179,8 @@ void ArmGimbal::handle(void) {
   // 读取电机反馈
   fdb_.j0 = jm0_->realAngle();
   fdb_.j0_speed = jm0_->realSpeed();
-  // fdb_.pitch = gm_pitch_->realAngle();
-  // fdb_.pitch_speed = gm_pitch_->realSpeed();
-  fdb_.pitch = gm_pitch_->kfAngle() + math::rad2deg(arm_->fdb_.q[1][0]) +
-               math::rad2deg(arm_->fdb_.q[2][0]) + 90;
-  fdb_.pitch_speed = gm_pitch_->kfSpeed() +
-                     math::radps2dps(arm_->fdb_.q_D1[1][0]) +
-                     math::radps2dps(arm_->fdb_.q_D1[2][0]);
+  fdb_.pitch = gm_pitch_->realAngle();
+  fdb_.pitch_speed = gm_pitch_->realSpeed();
 
   // 设置电机控制目标角度
   jm0_->setAngle(ref_.j0);

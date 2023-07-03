@@ -95,7 +95,21 @@ struct Param {
 }  // namespace extimu
 
 // 外置IMU
-IMU ext_imu[3] = {
+IMU arm_imu[3] = {
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
+    IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
+        extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
+        extimu::param.gyro_bias, extimu::param.accel_bias,
+        extimu::param.mag_bias, extimu::param.accel_sen),
+};
+IMU controller_imu[3] = {
     IMU(extimu::param.dt, extimu::param.kg, extimu::param.km,
         extimu::param.g_thres, extimu::param.R_imu, extimu::param.R_mag,
         extimu::param.gyro_bias, extimu::param.accel_bias,

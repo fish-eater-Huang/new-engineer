@@ -29,7 +29,7 @@ class RefereeComm {
   // Handle data, check connection 处理数据，检查连接状态
   void handle(void);
 
-  // // Data transmit 数据发送
+  // Data transmit 数据发送
   void txMsg(void);
 
   // Data receive callback 接收中断

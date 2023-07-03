@@ -11,7 +11,6 @@
 #ifndef GIMBAL_H
 #define GIMBAL_H
 
-#include "app/arm.h"
 #include "base/imu/imu.h"
 #include "base/motor/motor.h"
 
@@ -90,7 +89,7 @@ class J0Gimbal {
 // 机械臂云台类
 class ArmGimbal {
  public:
-  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu, Arm* arm);
+  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu);
 
   // J0初始化
   void initJ0(void);
@@ -150,8 +149,6 @@ class ArmGimbal {
   Motor *jm0_, *gm_pitch_;
   // imu指针
   IMU* j0_imu_;
-  // 机械臂指针
-  Arm* arm_;
 };
 
 #endif  // GIMBAL_H
