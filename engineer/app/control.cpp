@@ -77,7 +77,7 @@ void controlInit(void) {
 
 // 控制主循环
 void controlLoop(void) {
-  iwdgHandler(rc.connect_.check());
+  iwdgHandler(1);
   robotPowerStateFSM(!rc.connect_.check() || rc.switch_.r == RC::DOWN);
 
   if (robot_state == STOP) {

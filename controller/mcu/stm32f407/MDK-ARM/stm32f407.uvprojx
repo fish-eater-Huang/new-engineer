@@ -758,29 +758,9 @@
               <FilePath>..\..\..\app\imu_monitor.cpp</FilePath>
             </File>
             <File>
-              <FileName>chassis.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\chassis.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>gimbal.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\gimbal.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>arm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\arm.cpp</FilePath>
-            </File>
-            <File>
               <FileName>arm_controller.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>pump.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\pump.cpp</FilePath>
             </File>
             <File>
               <FileName>board_comm.cpp</FileName>
@@ -796,11 +776,6 @@
               <FileName>serial_tool.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\serial_tool.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>mine.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\mine.cpp</FilePath>
             </File>
           </Files>
         </Group>

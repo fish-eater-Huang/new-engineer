@@ -12,15 +12,10 @@
 
 #include "iwdg.h"
 
-#include "app/arm.h"
 #include "app/arm_controller.h"
 #include "app/board_comm.h"
-#include "app/chassis.h"
-#include "app/gimbal.h"
 #include "app/imu_monitor.h"
-#include "app/mine.h"
 #include "app/motor_monitor.h"
-#include "app/pump.h"
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
 #include "base/common/math.h"
@@ -37,16 +32,10 @@ void robotControl(void);
 void boardLedHandle(void);
 
 extern RC rc;
-extern Arm arm;
+extern BoardComm imu_comm;
 extern ArmController arm_controller;
-extern CVComm cv_comm;
-extern RefereeComm referee;
-extern ServoZX361D pump_servo[];
 
 uint8_t board_id = 0;
-// Pump pump_arm(&PM_ARM, &pump_servo[0], 500, 1000);
-// Pump pump_l(&PM_L, &pump_servo[1], 500, 1000);
-// Pump pump_r(&PM_R, &pump_servo[2], 500, 1000);
 BoardLed led;
 
 // 上电状态
@@ -77,8 +66,8 @@ void controlInit(void) {
 
 // 控制主循环
 void controlLoop(void) {
-  iwdgHandler(rc.connect_.check());
-  robotPowerStateFSM(!rc.connect_.check() || rc.switch_.r == RC::DOWN);
+  iwdgHandler(1);
+  robotPowerStateFSM(0);
 
   if (robot_state == STOP) {
     allMotorsStopShutoff();
@@ -127,7 +116,6 @@ void robotPowerStateFSM(bool stop_flag) {
 // 重置各功能状态
 void robotReset(void) {
   robot_init_flag = false;
-  arm.mode_ = Arm::Mode_e::STOP;
   last_rc_switch = rc.switch_;
 }
 
@@ -139,66 +127,25 @@ bool robotStartup(void) {
 
 // 机器人控制
 void robotControl(void) {
-  // 遥控器挡位左上右上
-  if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
-               -rc.channel_.l_row * rcctrl::arm_position_rate,
-               -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
-               -rc.channel_.r_row * rcctrl::arm_direction_rate,
-               -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
-    arm.trajAbort();
+  // 设置控制器串口发送数据
+  arm_controller.comm_->tx_data_.controller_state = true;
+  arm_controller.comm_->tx_data_.imu_connect[0] =
+      imu_comm.imu1_connect_.check();
+  arm_controller.comm_->tx_data_.imu_connect[1] =
+      imu_comm.imu2_connect_.check();
+  arm_controller.comm_->tx_data_.imu_connect[2] =
+      imu_comm.imu3_connect_.check();
+  for (int i = 0; i < 3; i++) {
+    arm_controller.comm_->tx_data_.imu[i].yaw = math::degNormalize180(
+        arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw);
+    arm_controller.comm_->tx_data_.imu[i].pitch =
+        arm_controller.imu_[i]->pitch();
+    arm_controller.comm_->tx_data_.imu[i].roll = arm_controller.imu_[i]->roll();
   }
-  // 遥控器挡位左中右上
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
-               -rc.channel_.l_row * rcctrl::arm_position_rate, 0,
-               -rc.channel_.r_row * rcctrl::arm_direction_rate,
-               -rc.channel_.r_col * rcctrl::arm_direction_rate,
-               -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
-    arm.trajAbort();
-  }
-  // 遥控器挡位左下右上
-  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 1000);
-      arm.trajStart();
-    }
-  }
-  // 遥控器挡位左上右中
-  else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
-    arm.trajAbort();
-  }
-  // 遥控器挡位左中右中
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::JOINT;
-    arm.addJointRef(-rc.channel_.l_row * rcctrl::arm_joint_rate,
-                    rc.channel_.l_col * rcctrl::arm_joint_rate,
-                    rc.channel_.dial_wheel * rcctrl::arm_joint_rate,
-                    rc.channel_.r_row * rcctrl::arm_joint_rate,
-                    -rc.channel_.r_col * rcctrl::arm_joint_rate, 0);
-    arm.trajAbort();
-  }
-  // 遥控器挡位左下右中
-  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
 
-    if (arm_controller.state_) {
-      if (rc.switch_.l != last_rc_switch.l ||
-          rc.switch_.r != last_rc_switch.r) {
-        arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
-                                 arm.fdb_.y - arm_controller.raw_.y,
-                                 arm.fdb_.z - arm_controller.raw_.z);
-      }
-      arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
-                 arm_controller.ref_.z, arm_controller.ref_.yaw,
-                 arm_controller.ref_.pitch, arm_controller.ref_.roll);
-    }
-
-    arm.trajAbort();
+  // 设置yaw零点
+  if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin) == GPIO_PIN_SET) {
+    arm_controller.setYawZero();
   }
 
   // 记录遥控器挡位状态

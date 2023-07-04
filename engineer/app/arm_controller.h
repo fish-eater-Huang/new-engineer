@@ -118,6 +118,9 @@ class ArmController {
   // 设置偏置值
   void setOffset(float dx, float dy, float dz);
 
+  // 设置yaw零点
+  void setYawZero(void);
+
   // 控制器处理函数
   void handle(void);
 

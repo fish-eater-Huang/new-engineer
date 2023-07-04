@@ -14,7 +14,6 @@
 #include "cmsis_os.h"
 #include "hardware_config.h"
 
-#include "app/arm.h"
 #include "app/arm_controller.h"
 #include "app/board_comm.h"
 #include "app/can_monitor.h"
@@ -35,11 +34,6 @@ RC rc(RC_UART);
 #else
 RC rc;
 #endif  // RC_UART
-#ifdef CV_UART
-CVComm cv_comm(CV_UART);
-#else
-CVComm cv_comm;
-#endif  // CV_UART
 #ifdef REFEREE_UART
 RefereeComm referee(REFEREE_UART);
 UI ui(REFEREE_UART, &referee, ui_func, sizeof(ui_func) / sizeof(void*));
@@ -51,12 +45,6 @@ ControllerComm controller_comm(CONTROLLER_UART);
 #else
 ControllerComm controller_comm;
 #endif  // CONTROLLER_UART
-#ifdef SERVO_UART
-ServoZX361D pump_servo[3] = {ServoZX361D(SERVO_UART), ServoZX361D(SERVO_UART),
-                             ServoZX361D(SERVO_UART)};
-#else
-ServoZX361D pump_servo[3];
-#endif  // SERVO_UART
 #ifdef DEBUG_UART
 SerialStudio serial_tool(DEBUG_UART);
 #else
@@ -64,10 +52,9 @@ SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
 // imu通信（CAN）
-BoardComm imu_comm(&hcan2, &arm_imu[0], &arm_imu[1], &arm_imu[2]);
-// 机械臂
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &arm_imu[0],
-        &arm_imu[1], &imu_comm);
+BoardComm imu_comm(&hcan2, &controller_imu[0], &controller_imu[1],
+                   &controller_imu[2]);
+
 // 机械臂控制器
 ArmController arm_controller(&controller_comm, controller_imu);
 
@@ -106,25 +93,6 @@ void imuTask(void const* argument) {
   for (;;) {
     imu::handleAll();
     osDelay(1);
-  }
-}
-
-osThreadId armTaskHandle;
-void armTask(void const* argument) {
-  osDelay(2000);
-  arm.init();
-  for (;;) {
-    arm.handle();
-    osDelay(1);
-  }
-}
-
-osThreadId minipcCommTaskHandle;
-void minipcCommTask(void const* argument) {
-  uint32_t tick = osKernelSysTick();
-  cv_comm.init();
-  for (;;) {
-    cv_comm.txMonitor(&tick);
   }
 }
 
@@ -171,12 +139,6 @@ void rtosTaskInit(void) {
 
   osThreadDef(imu_task, imuTask, osPriorityRealtime, 0, 512);
   imuTaskHandle = osThreadCreate(osThread(imu_task), NULL);
-
-  osThreadDef(arm_task, armTask, osPriorityNormal, 0, 1800);
-  armTaskHandle = osThreadCreate(osThread(arm_task), NULL);
-
-  osThreadDef(minipc_comm_task, minipcCommTask, osPriorityNormal, 0, 512);
-  minipcCommTaskHandle = osThreadCreate(osThread(minipc_comm_task), NULL);
 
   osThreadDef(referee_comm_task, refereeCommTask, osPriorityNormal, 0, 512);
   refereeCommTaskHandle = osThreadCreate(osThread(referee_comm_task), NULL);

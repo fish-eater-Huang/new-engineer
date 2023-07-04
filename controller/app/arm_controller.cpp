@@ -12,7 +12,7 @@
 #include "base/common/crc.h"
 
 ControllerComm::ControllerComm(UART_HandleTypeDef* huart)
-    : connect_(1000), unpack_step_(WAIT) {}
+    : huart_(huart), connect_(1000), unpack_step_(WAIT) {}
 
 // 初始化，打开UART接收
 void ControllerComm::init(void) {
@@ -193,6 +193,11 @@ void ArmController::setOffset(float dx, float dy, float dz) {
   offset_.z = dz;
 }
 
+// 设置yaw零点
+void ArmController::setYawZero(void) {
+  offset_.yaw = raw_.yaw;
+}
+
 // 机械臂控制器处理函数
 void ArmController::handle(void) {
   // 检测控制器连接状态
@@ -214,7 +219,7 @@ void ArmController::handle(void) {
   raw_.yaw = math::deg2rad(imu_[2]->yaw());
   raw_.pitch = math::deg2rad(imu_[2]->pitch());
   raw_.roll = math::deg2rad(imu_[2]->roll());
-  ref_.yaw = raw_.yaw;  // todo
+  ref_.yaw = math::radNormalizePI(raw_.yaw - math::deg2rad(offset_.yaw));
   ref_.pitch = raw_.pitch;
   ref_.roll = raw_.roll;
 

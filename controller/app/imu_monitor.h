@@ -45,6 +45,6 @@ void handleAll(void);
 
 }  // namespace imu
 
-extern IMU board_imu, arm_imu[], controller_imu[];
+extern IMU board_imu, controller_imu[];
 
 #endif  // IMU_MONITOR_H
