@@ -1,0 +1,437 @@
+{
+    "frameEnd": "",
+    "frameParser": "/* \n * @brief Frame parsing function, you can modify this to suit your needs.\n * \n * By customizing this code, you can use a single JSON project file to \n * process different kinds of frames that are sent by the microcontroller \n * or any data source that is connected to Serial Studio. Frame parsing code\n * is specific to every JSON project that you create.\n *\n * @param frame      string with the latest received frame.\n * @param separator  data separator sequence defined by the JSON project.\n *\n * @note.            only data that is *inside* the data delimiters will\n *                   be processed by the frame parser.\n *\n * @note             you can safely declare global variables outside the\n *                   @c parse() function.\n */\nfunction parse(frame, separator) {\n    return frame.split(separator);\n}",
+    "frameStart": "",
+    "groups": [
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "time",
+                    "units": "s",
+                    "value": "%1",
+                    "widget": ""
+                }
+            ],
+            "title": "time",
+            "widget": ""
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%2",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%3",
+                    "widget": ""
+                }
+            ],
+            "title": "q1",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%4",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%5",
+                    "widget": ""
+                }
+            ],
+            "title": "q2",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%6",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%7",
+                    "widget": ""
+                }
+            ],
+            "title": "q3",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%8",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%9",
+                    "widget": ""
+                }
+            ],
+            "title": "q4",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%10",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%11",
+                    "widget": ""
+                }
+            ],
+            "title": "q5",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%12",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%13",
+                    "widget": ""
+                }
+            ],
+            "title": "q6",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "m",
+                    "value": "%14",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "m",
+                    "value": "%15",
+                    "widget": ""
+                }
+            ],
+            "title": "x",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "m",
+                    "value": "%16",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "m",
+                    "value": "%17",
+                    "widget": ""
+                }
+            ],
+            "title": "y",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "m",
+                    "value": "%18",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "m",
+                    "value": "%19",
+                    "widget": ""
+                }
+            ],
+            "title": "z",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%20",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%21",
+                    "widget": ""
+                }
+            ],
+            "title": "yaw",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%22",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%23",
+                    "widget": ""
+                }
+            ],
+            "title": "pitch",
+            "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "ref",
+                    "units": "°",
+                    "value": "%24",
+                    "widget": ""
+                },
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "fdb",
+                    "units": "°",
+                    "value": "%25",
+                    "widget": ""
+                }
+            ],
+            "title": "roll",
+            "widget": "multiplot"
+        }
+    ],
+    "separator": "",
+    "title": "arm"
+}
