@@ -21,9 +21,11 @@ extern "C" {
 // 遥控器串口
 #define RC_UART &huart3
 // 视觉通信串口
-#define CV_UART &huart1
+// #define CV_UART &huart1
 // 裁判系统通信串口
 #define REFEREE_UART &huart6
+// 控制器串口
+#define CONTROLLER_UART &huart1
 // 调试串口
 // #define DEBUG_UART &huart1
 #define DEBUG_USB

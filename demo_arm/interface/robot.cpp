@@ -46,6 +46,11 @@ UI ui(REFEREE_UART, &referee, ui_func, sizeof(ui_func) / sizeof(void*));
 #else
 RefereeComm referee;
 #endif  // REFEREE_UART
+#ifdef CONTROLLER_UART
+ControllerComm controller_comm(CONTROLLER_UART);
+#else
+ControllerComm controller_comm;
+#endif  // CONTROLLER_UART
 #ifdef SERVO_UART
 ServoZX361D pump_servo[3] = {ServoZX361D(SERVO_UART), ServoZX361D(SERVO_UART),
                              ServoZX361D(SERVO_UART)};
@@ -58,11 +63,13 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-BoardComm board_comm(&hcan2);
-
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &ext_imu[0],
-        &ext_imu[1], &board_comm);
-ArmController arm_controller(ext_imu, &board_comm);
+// imu通信（CAN）
+BoardComm imu_comm(&hcan2, &arm_imu[0], &arm_imu[1], &arm_imu[2]);
+// 机械臂
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &arm_imu[0],
+        &arm_imu[1], &imu_comm);
+// 机械臂控制器
+ArmController arm_controller(&controller_comm, controller_imu);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -132,6 +139,16 @@ void refereeCommTask(void const* argument) {
   }
 }
 
+osThreadId ctrlCommTaskHandle;
+void ctrlCommTask(void const* argument) {
+  controller_comm.init();
+  uint32_t tick = osKernelSysTick();
+  for (;;) {
+    controller_comm.handle();
+    osDelayUntil(&tick, 40);
+  }
+}
+
 osThreadId serialToolTaskHandle;
 void serialToolTask(void const* argument) {
   uint32_t tick = osKernelSysTick();
@@ -163,6 +180,9 @@ void rtosTaskInit(void) {
 
   osThreadDef(referee_comm_task, refereeCommTask, osPriorityNormal, 0, 512);
   refereeCommTaskHandle = osThreadCreate(osThread(referee_comm_task), NULL);
+
+  osThreadDef(ctrl_comm_task, ctrlCommTask, osPriorityNormal, 0, 256);
+  ctrlCommTaskHandle = osThreadCreate(osThread(ctrl_comm_task), NULL);
 
   osThreadDef(serial_tool_task, serialToolTask, osPriorityLow, 0, 1024);
   serialToolTaskHandle = osThreadCreate(osThread(serial_tool_task), NULL);

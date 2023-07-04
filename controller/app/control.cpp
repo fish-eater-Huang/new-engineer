@@ -137,14 +137,14 @@ void robotControl(void) {
       imu_comm.imu3_connect_.check();
   for (int i = 0; i < 3; i++) {
     arm_controller.comm_->tx_data_.imu[i].yaw = math::degNormalize180(
-        arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw);
+        arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw[i]);
     arm_controller.comm_->tx_data_.imu[i].pitch =
         arm_controller.imu_[i]->pitch();
     arm_controller.comm_->tx_data_.imu[i].roll = arm_controller.imu_[i]->roll();
   }
 
   // 设置yaw零点
-  if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin) == GPIO_PIN_SET) {
+  if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin) == GPIO_PIN_RESET) {
     arm_controller.setYawZero();
   }
 
@@ -155,32 +155,20 @@ void robotControl(void) {
 // 板载LED指示灯效果
 void boardLedHandle(void) {
 #ifdef DBC
-  if (robot_state == STOP) {
-    led.setColor(255, 0, 0);  // red
-    led.setModeOn();
-  } else if (robot_state == STARTUP) {
-    led.setColor(150, 150, 0);  // yellow
-    led.setModeBreath();
-  } else if (robot_state == WORKING) {
+  if (imu_comm.imu1_connect_.check() && imu_comm.imu2_connect_.check() &&
+      imu_comm.imu3_connect_.check()) {
+    // imu全部连接
     led.setColor(0, 0, 255);  // blue
-    if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左上右上
+    led.setModeOn();
+  } else {
+    // imu离线
+    led.setColor(255, 0, 0);  // red
+    if (!imu_comm.imu1_connect_.check()) {
       led.setModeBlink(1);
-    } else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左中右上
+    } else if (!imu_comm.imu2_connect_.check()) {
       led.setModeBlink(2);
-    } else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
-      // 遥控器挡位左下右上
+    } else if (!imu_comm.imu3_connect_.check()) {
       led.setModeBlink(3);
-    } else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左上右中
-      led.setModeBlink(4);
-    } else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左中右中
-      led.setModeBlink(5);
-    } else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-      // 遥控器挡位左下右中
-      led.setModeBlink(6);
     }
   }
   led.handle();

@@ -18,7 +18,7 @@ Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
          IMU* imu0, IMU* imu2, IMU* imu3, BoardComm* imu_comm)
     : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
   init_.is_finish = false;
-  init_.method = Arm::Init_t::Method_e::LINK_IMU;
+  init_.method = Arm::Init_t::Method_e::MANUAL;
   init_.imu0 = imu0;
   init_.imu2 = imu2;
   init_.imu3 = imu3;
@@ -80,7 +80,7 @@ void Arm::init(void) {
     j6_->resetFeedbackAngle(q_init_deg[5]);
   }
   // 使用编码器初始化关节电机角度
-  else if (init_.method == Arm::Init_t::Method_e::MANUAL) {
+  else if (init_.method == Arm::Init_t::Method_e::ENCODER) {
     // todo
   }
 

@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/Users/thinkpad/Desktop/home/sjtu/Robomaster/program/RM_Engineer/exchange_station/mcu/stm32f407/Inc
+HeaderPath=C:/Users/thinkpad/Desktop/home/sjtu/Robomaster/program/RM_Engineer/engineer/mcu/stm32f407/Inc
 HeaderFiles=gpio.h;adc.h;can.h;dma.h;i2c.h;iwdg.h;spi.h;sys.h;tim.h;usart.h;stm32f4xx_it.h;stm32f4xx_hal_conf.h;main.h;FreeRTOSConfig.h;usb_otg.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;
-SourcePath=C:/Users/thinkpad/Desktop/home/sjtu/Robomaster/program/RM_Engineer/exchange_station/mcu/stm32f407/Src
+SourcePath=C:/Users/thinkpad/Desktop/home/sjtu/Robomaster/program/RM_Engineer/engineer/mcu/stm32f407/Src
 SourceFiles=gpio.c;adc.c;can.c;dma.c;i2c.c;iwdg.c;spi.c;sys.c;tim.c;usart.c;stm32f4xx_it.c;stm32f4xx_hal_msp.c;main.c;freertos.c;stm32f4xx_hal_timebase_tim.c;usb_otg.c;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_cdc_if.c;
 
 [PreviousLibFiles]

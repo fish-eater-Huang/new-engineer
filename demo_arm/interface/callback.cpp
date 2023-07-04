@@ -17,6 +17,7 @@
 
 #include "hardware_config.h"
 
+#include "app/arm_controller.h"
 #include "app/board_comm.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
@@ -28,7 +29,8 @@
 extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
-extern BoardComm board_comm;
+extern BoardComm imu_comm;
+extern ControllerComm controller_comm;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -39,8 +41,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 
   motorsCanRxMsgHandle(hcan, rx_header, rx_data);
-  if (board_comm.canRxMsgCheck(hcan, rx_header)) {
-    board_comm.canRxMsgCallback(hcan, rx_header, rx_data);
+  if (imu_comm.canRxMsgCheck(hcan, rx_header)) {
+    imu_comm.canRxMsgCallback(hcan, rx_header, rx_data);
   }
 }
 
@@ -59,6 +61,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   }
   if (referee.uartCheck(huart)) {
     referee.rxCallback();
+  }
+  if (controller_comm.uartCheck(huart)) {
+    controller_comm.rxCallback();
   }
   if (serial_tool.uartCheck(huart)) {
     serial_tool.uartRxCallback();

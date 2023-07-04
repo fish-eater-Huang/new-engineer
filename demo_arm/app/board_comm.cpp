@@ -10,15 +10,17 @@
 
 #include "app/board_comm.h"
 #include <string.h>
-#include "app/imu_monitor.h"
 
 extern uint8_t board_id;
 
-BoardComm::BoardComm(CAN_HandleTypeDef* hcan)
-    : imu1_connect_(1000),
+BoardComm::BoardComm(CAN_HandleTypeDef* hcan, IMU* imu1, IMU* imu2, IMU* imu3)
+    : hcan_(hcan),
+      imu1_(imu1),
+      imu2_(imu2),
+      imu3_(imu3),
+      imu1_connect_(1000),
       imu2_connect_(1000),
-      imu3_connect_(1000),
-      hcan_(hcan) {}
+      imu3_connect_(1000) {}
 
 void BoardComm::handle(void) {
   imu1_connect_.check();
@@ -60,16 +62,21 @@ void BoardComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
   uint8_t rx_id = rx_header.StdId - board_comm_id_base_;
 
   memcpy(&imu_msg_[rx_id - 1], rx_data, sizeof(ImuMsgPack_t));
-  ext_imu[rx_id - 1].yaw() = (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
-  ext_imu[rx_id - 1].pitch() =
-      (float)imu_msg_[rx_id - 1].pitch * 180.f / 32767.f;
-  ext_imu[rx_id - 1].roll() = (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
 
   if (rx_id == 1) {
+    imu1_->yaw() = (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
+    imu1_->pitch() = (float)imu_msg_[rx_id - 1].pitch * 180.f / 32767.f;
+    imu1_->roll() = (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
     imu1_connect_.refresh();
   } else if (rx_id == 2) {
+    imu2_->yaw() = (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
+    imu2_->pitch() = (float)imu_msg_[rx_id - 1].pitch * 180.f / 32767.f;
+    imu2_->roll() = (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
     imu2_connect_.refresh();
   } else if (rx_id == 3) {
+    imu3_->yaw() = (float)imu_msg_[rx_id - 1].yaw * 180.f / 32767.f;
+    imu3_->pitch() = (float)imu_msg_[rx_id - 1].pitch * 180.f / 32767.f;
+    imu3_->roll() = (float)imu_msg_[rx_id - 1].roll * 180.f / 32767.f;
     imu3_connect_.refresh();
   }
 }

@@ -24,7 +24,7 @@ void ControllerComm::init(void) {
 // 处理数据，检查连接状态
 void ControllerComm::handle(void) {
   connect_.check();
-  txMsg();
+  // txMsg();
 }
 
 // 数据发送
@@ -195,7 +195,9 @@ void ArmController::setOffset(float dx, float dy, float dz) {
 
 // 设置yaw零点
 void ArmController::setYawZero(void) {
-  offset_.yaw = raw_.yaw;
+  for (int i = 0; i < 3; i++) {
+    offset_.yaw[i] = imu_[i]->yaw();
+  }
 }
 
 // 机械臂控制器处理函数
@@ -219,7 +221,7 @@ void ArmController::handle(void) {
   raw_.yaw = math::deg2rad(imu_[2]->yaw());
   raw_.pitch = math::deg2rad(imu_[2]->pitch());
   raw_.roll = math::deg2rad(imu_[2]->roll());
-  ref_.yaw = math::radNormalizePI(raw_.yaw - math::deg2rad(offset_.yaw));
+  ref_.yaw = raw_.yaw;
   ref_.pitch = raw_.pitch;
   ref_.roll = raw_.roll;
 

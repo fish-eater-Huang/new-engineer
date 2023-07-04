@@ -186,7 +186,7 @@ void robotControl(void) {
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
 
-    if (arm_controller.connect_.check()) {
+    if (arm_controller.state_) {
       if (rc.switch_.l != last_rc_switch.l ||
           rc.switch_.r != last_rc_switch.r) {
         arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,

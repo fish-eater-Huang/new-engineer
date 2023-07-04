@@ -149,8 +149,8 @@ class ArmController {
 
   // 状态偏置
   struct Offset_t {
-    float x, y, z;           // m
-    float yaw, pitch, roll;  // rad
+    float x, y, z;  // m
+    float yaw[3];   // deg
   } offset_;
 
  private:
