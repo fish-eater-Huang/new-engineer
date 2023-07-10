@@ -783,9 +783,19 @@
               <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
             </File>
             <File>
+              <FileName>encoder.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\encoder.cpp</FilePath>
+            </File>
+            <File>
               <FileName>pump.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\pump.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>mine.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\mine.cpp</FilePath>
             </File>
             <File>
               <FileName>client_ui.cpp</FileName>
@@ -796,11 +806,6 @@
               <FileName>serial_tool.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\serial_tool.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>mine.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\mine.cpp</FilePath>
             </File>
           </Files>
         </Group>

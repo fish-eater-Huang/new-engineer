@@ -783,6 +783,11 @@
               <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
             </File>
             <File>
+              <FileName>encoder.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\encoder.cpp</FilePath>
+            </File>
+            <File>
               <FileName>pump.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\pump.cpp</FilePath>

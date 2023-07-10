@@ -18,6 +18,7 @@
 #include "hardware_config.h"
 
 #include "app/arm_controller.h"
+#include "app/encoder.h"
 #include "app/imu_comm.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
@@ -30,6 +31,7 @@ extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
 extern ImuComm imu_comm;
+extern EncoderComm encoder;
 extern ControllerComm controller_comm;
 extern SerialStudio serial_tool;
 
@@ -43,6 +45,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   motorsCanRxMsgHandle(hcan, rx_header, rx_data);
   if (imu_comm.canRxMsgCheck(hcan, rx_header)) {
     imu_comm.canRxMsgCallback(hcan, rx_header, rx_data);
+  }
+  if (encoder.canRxMsgCheck(hcan, rx_header)) {
+    encoder.canRxMsgCallback(hcan, rx_header, rx_data);
   }
 }
 
