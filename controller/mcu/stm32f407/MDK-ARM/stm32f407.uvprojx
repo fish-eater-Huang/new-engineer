@@ -758,14 +758,14 @@
               <FilePath>..\..\..\app\imu_monitor.cpp</FilePath>
             </File>
             <File>
+              <FileName>imu_comm.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\imu_comm.cpp</FilePath>
+            </File>
+            <File>
               <FileName>arm_controller.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>board_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\board_comm.cpp</FilePath>
             </File>
             <File>
               <FileName>client_ui.cpp</FileName>

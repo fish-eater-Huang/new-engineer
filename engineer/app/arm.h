@@ -12,7 +12,7 @@
 #ifndef ARM_H
 #define ARM_H
 
-#include "app/board_comm.h"
+#include "app/imu_comm.h"
 #include "base/imu/imu.h"
 #include "base/motor/motor.h"
 #include "base/robotics/robotics.h"
@@ -22,7 +22,7 @@ class Arm {
  public:
   // 构造函数
   Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-      IMU* imu0, IMU* imu2, IMU* imu3, BoardComm* imu_comm);
+      IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm);
 
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
@@ -140,7 +140,7 @@ class Arm {
     const float j6_zero = 0;
 
     // 板间通信指针
-    BoardComm* imu_comm;
+    ImuComm* imu_comm;
     // 定位imu指针
     IMU *imu0, *imu2, *imu3;
     // imu连接状态

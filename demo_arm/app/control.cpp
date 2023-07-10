@@ -14,9 +14,9 @@
 
 #include "app/arm.h"
 #include "app/arm_controller.h"
-#include "app/board_comm.h"
 #include "app/chassis.h"
 #include "app/gimbal.h"
+#include "app/imu_comm.h"
 #include "app/imu_monitor.h"
 #include "app/mine.h"
 #include "app/motor_monitor.h"

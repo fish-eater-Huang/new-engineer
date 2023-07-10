@@ -1148,8 +1148,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\app\arm_controller.cpp</PathWithFileName>
-      <FilenameWithoutPath>arm_controller.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\app\imu_comm.cpp</PathWithFileName>
+      <FilenameWithoutPath>imu_comm.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>
@@ -1160,8 +1160,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\..\..\app\board_comm.cpp</PathWithFileName>
-      <FilenameWithoutPath>board_comm.cpp</FilenameWithoutPath>
+      <PathWithFileName>..\..\..\app\arm_controller.cpp</PathWithFileName>
+      <FilenameWithoutPath>arm_controller.cpp</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

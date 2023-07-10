@@ -743,29 +743,9 @@
               <FilePath>..\..\..\app\control.cpp</FilePath>
             </File>
             <File>
-              <FileName>arm_controller.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
-            </File>
-            <File>
               <FileName>can_monitor.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\can_monitor.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>board_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\board_comm.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>serial_tool.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\serial_tool.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>imu_monitor.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\imu_monitor.cpp</FilePath>
             </File>
             <File>
               <FileName>motor_monitor.cpp</FileName>
@@ -773,9 +753,29 @@
               <FilePath>..\..\..\app\motor_monitor.cpp</FilePath>
             </File>
             <File>
+              <FileName>imu_monitor.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\imu_monitor.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>imu_comm.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\imu_comm.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>arm_controller.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\arm_controller.cpp</FilePath>
+            </File>
+            <File>
               <FileName>client_ui.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\client_ui.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>serial_tool.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\serial_tool.cpp</FilePath>
             </File>
           </Files>
         </Group>

@@ -13,7 +13,7 @@
 #include "can.h"
 #include "cmsis_os.h"
 
-#include "app/board_comm.h"
+#include "app/imu_comm.h"
 #include "app/motor_monitor.h"
 #include "base/cap_comm/cap_comm.h"
 
@@ -52,7 +52,7 @@ void canTxMonitor(void) {
   if (HAL_GetTick() % 2 == 0) {
     dji_motor_driver.canTxMsg(1, djimotor::ID_1_4);
   }
-  
+
   if (HAL_GetTick() % 2 == 0) {
     mit_motor_driver[0].canTxMsg();
     mit_motor_driver[1].canTxMsg();

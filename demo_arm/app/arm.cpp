@@ -15,7 +15,7 @@
 
 // 构造函数
 Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-         IMU* imu0, IMU* imu2, IMU* imu3, BoardComm* imu_comm)
+         IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm)
     : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
   init_.is_finish = false;
   init_.method = Arm::Init_t::Method_e::MANUAL;

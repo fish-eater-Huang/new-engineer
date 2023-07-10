@@ -1,21 +1,21 @@
 /**
  ******************************************************************************
- * @file    board_comm.cpp/h
- * @brief   Board communication(CAN). 板间通信(CAN)
+ * @file    imu_comm.cpp/h
+ * @brief   IMU communication(CAN). IMU通信(CAN)
  ******************************************************************************
  * Copyright (c) 2023 Team JiaoLong-SJTU
  * All rights reserved.
  ******************************************************************************
  */
 
-#ifndef BOARD_COMM_H
-#define BOARD_COMM_H
+#ifndef IMU_COMM_H
+#define IMU_COMM_H
 
 #include "base/common/connect.h"
 #include "base/imu/imu.h"
 #include "can.h"
 
-class BoardComm {
+class ImuComm {
   typedef struct ImuMsgPack {
     int16_t yaw;
     int16_t pitch;
@@ -23,7 +23,7 @@ class BoardComm {
   } ImuMsgPack_t;
 
  public:
-  BoardComm(CAN_HandleTypeDef* hcan, IMU* imu1, IMU* imu2, IMU* imu3);
+  ImuComm(CAN_HandleTypeDef* hcan, IMU* imu1, IMU* imu2, IMU* imu3);
 
   void handle(void);
 
@@ -52,9 +52,9 @@ class BoardComm {
   uint8_t can_tx_data_[8];
   uint32_t can_tx_mail_box_;
 
-  const uint16_t board_comm_id_base_ = 0x100;
+  const uint16_t imu_comm_id_base_ = 0x100;
 
   ImuMsgPack_t imu_msg_[3];
 };
 
-#endif  // BOARD_COMM_H
+#endif  // IMU_COMM_H

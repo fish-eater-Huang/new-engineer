@@ -16,7 +16,7 @@
 
 #include "app/arm.h"
 #include "app/arm_controller.h"
-#include "app/board_comm.h"
+#include "app/imu_comm.h"
 #include "app/can_monitor.h"
 #include "app/client_ui.h"
 #include "app/control.h"
@@ -64,7 +64,7 @@ SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
 // imu通信（CAN）
-BoardComm imu_comm(&hcan2, &arm_imu[0], &arm_imu[1], &arm_imu[2]);
+ImuComm imu_comm(&hcan2, &arm_imu[0], &arm_imu[1], &arm_imu[2]);
 // 机械臂
 Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &arm_imu[0],
         &arm_imu[1], &imu_comm);

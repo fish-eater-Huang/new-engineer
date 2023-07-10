@@ -768,6 +768,11 @@
               <FilePath>..\..\..\app\imu_monitor.cpp</FilePath>
             </File>
             <File>
+              <FileName>imu_comm.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\app\imu_comm.cpp</FilePath>
+            </File>
+            <File>
               <FileName>arm.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\arm.cpp</FilePath>
@@ -781,11 +786,6 @@
               <FileName>pump.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\..\..\app\pump.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>board_comm.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\..\..\app\board_comm.cpp</FilePath>
             </File>
             <File>
               <FileName>serial_tool.cpp</FileName>

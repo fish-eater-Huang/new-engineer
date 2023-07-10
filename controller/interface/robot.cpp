@@ -15,10 +15,10 @@
 #include "hardware_config.h"
 
 #include "app/arm_controller.h"
-#include "app/board_comm.h"
 #include "app/can_monitor.h"
 #include "app/client_ui.h"
 #include "app/control.h"
+#include "app/imu_comm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
@@ -52,8 +52,8 @@ SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
 // imu通信（CAN）
-BoardComm imu_comm(&hcan2, &controller_imu[0], &controller_imu[1],
-                   &controller_imu[2]);
+ImuComm imu_comm(&hcan2, &controller_imu[0], &controller_imu[1],
+                 &controller_imu[2]);
 
 // 机械臂控制器
 ArmController arm_controller(&controller_comm, controller_imu);

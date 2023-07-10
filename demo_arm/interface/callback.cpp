@@ -18,7 +18,7 @@
 #include "hardware_config.h"
 
 #include "app/arm_controller.h"
-#include "app/board_comm.h"
+#include "app/imu_comm.h"
 #include "app/motor_monitor.h"
 #include "app/serial_tool.h"
 #include "base/cap_comm/cap_comm.h"
@@ -29,7 +29,7 @@
 extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
-extern BoardComm imu_comm;
+extern ImuComm imu_comm;
 extern ControllerComm controller_comm;
 extern SerialStudio serial_tool;
 

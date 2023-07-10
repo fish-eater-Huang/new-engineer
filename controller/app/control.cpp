@@ -13,7 +13,7 @@
 #include "iwdg.h"
 
 #include "app/arm_controller.h"
-#include "app/board_comm.h"
+#include "app/imu_comm.h"
 #include "app/imu_monitor.h"
 #include "app/motor_monitor.h"
 #include "base/bsp/bsp_buzzer.h"
@@ -32,7 +32,7 @@ void robotControl(void);
 void boardLedHandle(void);
 
 extern RC rc;
-extern BoardComm imu_comm;
+extern ImuComm imu_comm;
 extern ArmController arm_controller;
 
 uint8_t board_id = 0;
