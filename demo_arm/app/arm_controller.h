@@ -15,6 +15,7 @@
 
 #include "base/common/connect.h"
 #include "base/common/fifo_buffer.h"
+#include "base/common/filter.h"
 #include "base/imu/imu.h"
 #include "base/referee_comm/referee_protocol.h"
 #include "base/robotics/robotics.h"
@@ -24,12 +25,19 @@
 
 const uint16_t controller_cmd_id = 0x302;
 
+namespace imucomm {
+// IMU数据类型转换，int16->float
+float int16_2_float(const int16_t& deg);
+// IMU数据类型转换，float->int16
+int16_t float_2_int16(const float& deg);
+}  // namespace imucomm
+
 // 控制器通信类
 class ControllerComm {
   typedef struct ImuStatus {
-    float yaw;
-    float pitch;
-    float roll;
+    int16_t yaw;
+    int16_t pitch;
+    int16_t roll;
   } ImuStatus_t;
 
  public:
@@ -55,6 +63,7 @@ class ControllerComm {
   struct TxData_t {
     bool controller_state;
     bool imu_connect[3];
+    bool reserve[4];
     ImuStatus_t imu[3];
   } __packed tx_data_;
 
@@ -62,6 +71,7 @@ class ControllerComm {
   struct RxData_t {
     bool controller_state;
     bool imu_connect[3];
+    bool reserve[4];
     ImuStatus_t imu[3];
   } __packed rx_data_;
 
@@ -136,12 +146,22 @@ class ArmController {
   // 目标状态
   struct Ref_t {
     Matrixf<4, 4> T;
-
     float x, y, z;           // m
     float yaw, pitch, roll;  // rad
+    // 目标状态滤波
+    LowPassFilter x_filter, y_filter, z_filter;
+    LowPassFilter yaw_filter, pitch_filter, roll_filter;
+
+    Ref_t(const float& k)
+        : x_filter(k),
+          y_filter(k),
+          z_filter(k),
+          yaw_filter(k),
+          pitch_filter(k),
+          roll_filter(k) {}
   } ref_;
 
-  // 状态偏置
+  // 未处理状态
   struct Raw_t {
     float x, y, z;           // m
     float yaw, pitch, roll;  // rad
@@ -153,8 +173,8 @@ class ArmController {
     float yaw[3];   // deg
   } offset_;
 
- private:
-  struct Param {
+  // 参数
+  struct Param_t {
     float l[2] = {0.3f, 0.27f};
   } param_;
 };

@@ -11,6 +11,16 @@
 #include "app/arm_controller.h"
 #include "base/common/crc.h"
 
+// IMU数据类型转换，int16->float
+float imucomm::int16_2_float(const int16_t& deg) {
+  return (deg * 180.f / 32767.f);
+}
+
+// IMU数据类型转换，float->int16
+int16_t imucomm::float_2_int16(const float& deg) {
+  return (deg / 180.f * 32767.f);
+}
+
 ControllerComm::ControllerComm(UART_HandleTypeDef* huart)
     : huart_(huart), connect_(1000), unpack_step_(WAIT) {}
 
@@ -180,7 +190,8 @@ void ControllerComm::rxCallback(void) {
 }
 
 // 机械臂控制器构造函数
-ArmController::ArmController(ControllerComm* comm, IMU imu[3]) : comm_(comm) {
+ArmController::ArmController(ControllerComm* comm, IMU imu[3])
+    : comm_(comm), ref_(0.05f) {
   imu_[0] = &imu[0];
   imu_[1] = &imu[1];
   imu_[2] = &imu[2];
@@ -191,6 +202,9 @@ void ArmController::setOffset(float dx, float dy, float dz) {
   offset_.x = dx;
   offset_.y = dy;
   offset_.z = dz;
+  ref_.x_filter.reset(raw_.x + offset_.x);
+  ref_.y_filter.reset(raw_.y + offset_.y);
+  ref_.z_filter.reset(raw_.z + offset_.z);
 }
 
 // 设置yaw零点
@@ -208,9 +222,9 @@ void ArmController::handle(void) {
     // 更新imu数据
     for (int i = 0; i < 3; i++) {
       if (comm_->rx_data_.imu_connect[i]) {
-        imu_[i]->yaw() = comm_->rx_data_.imu[i].yaw;
-        imu_[i]->pitch() = comm_->rx_data_.imu[i].pitch;
-        imu_[i]->roll() = comm_->rx_data_.imu[i].roll;
+        imu_[i]->yaw() = imucomm::int16_2_float(comm_->rx_data_.imu[i].yaw);
+        imu_[i]->pitch() = imucomm::int16_2_float(comm_->rx_data_.imu[i].pitch);
+        imu_[i]->roll() = imucomm::int16_2_float(comm_->rx_data_.imu[i].roll);
       }
     }
   } else {

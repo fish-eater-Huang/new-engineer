@@ -48,5 +48,5 @@ void canTxMonitor(void) {
   // note: 每个通道一次只能发送3个包
   board_comm.canTxMsg();
 
-  osDelay(1);
+  osDelay(10);
 }

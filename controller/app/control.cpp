@@ -136,11 +136,13 @@ void robotControl(void) {
   arm_controller.comm_->tx_data_.imu_connect[2] =
       imu_comm.imu3_connect_.check();
   for (int i = 0; i < 3; i++) {
-    arm_controller.comm_->tx_data_.imu[i].yaw = math::degNormalize180(
-        arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw[i]);
+    arm_controller.comm_->tx_data_.imu[i].yaw =
+        imucomm::float_2_int16(math::degNormalize180(
+            arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw[i]));
     arm_controller.comm_->tx_data_.imu[i].pitch =
-        arm_controller.imu_[i]->pitch();
-    arm_controller.comm_->tx_data_.imu[i].roll = arm_controller.imu_[i]->roll();
+        imucomm::float_2_int16(arm_controller.imu_[i]->pitch());
+    arm_controller.comm_->tx_data_.imu[i].roll =
+        imucomm::float_2_int16(arm_controller.imu_[i]->roll());
   }
 
   // 设置yaw零点
