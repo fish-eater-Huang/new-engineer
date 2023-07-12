@@ -48,10 +48,8 @@ class Arm {
 
   // 设置轨迹终点(末端位姿)+时间(ms)
   void trajSet(const float& x, const float& y, const float& z, const float& yaw,
-               const float& pitch, const float& roll, uint32_t ticks);
-
-  // 设置轨迹终点(关节坐标)+时间(ms)
-  void trajSet(Matrixf<6, 1> q, uint32_t ticks);
+               const float& pitch, const float& roll, const float& speed,
+               const float& rotate_speed);
 
   // 开始轨迹
   void trajStart(void);
@@ -189,6 +187,7 @@ class Arm {
       float x, y, z;           // m
       float yaw, pitch, roll;  // rad
       Matrixf<3, 3> R;
+      uint32_t tick;
     } start;
 
     // 轨迹终点
@@ -197,12 +196,18 @@ class Arm {
       float x, y, z;           // m
       float yaw, pitch, roll;  // rad
       Matrixf<3, 3> R;
+      uint32_t tick;
     } end;
 
+    // 速度
+    float speed;         // 速度(m/s)
+    float rotate_speed;  // 角速度(rad/s)
+
     // 时间相关变量
-    uint32_t tick_start;
     uint32_t ticks;
     float sigma;
+
+    // 旋转向量
     Matrixf<4, 1> r_theta;
   } traj_;
 };

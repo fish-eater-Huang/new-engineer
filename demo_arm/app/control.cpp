@@ -163,7 +163,7 @@ void robotControl(void) {
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 1000);
+      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 0.3, 3);
       arm.trajStart();
     }
   }

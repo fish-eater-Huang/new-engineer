@@ -217,19 +217,23 @@ void ArmController::setYawZero(void) {
 // 机械臂控制器处理函数
 void ArmController::handle(void) {
   // 检测控制器连接状态
+  bool state = false;
   if (comm_->connect_.check()) {
-    state_ = comm_->rx_data_.controller_state;
+    state = comm_->rx_data_.controller_state;
     // 更新imu数据
     for (int i = 0; i < 3; i++) {
       if (comm_->rx_data_.imu_connect[i]) {
         imu_[i]->yaw() = imucomm::int16_2_float(comm_->rx_data_.imu[i].yaw);
         imu_[i]->pitch() = imucomm::int16_2_float(comm_->rx_data_.imu[i].pitch);
         imu_[i]->roll() = imucomm::int16_2_float(comm_->rx_data_.imu[i].roll);
+      } else {
+        state = false;
       }
     }
   } else {
     state_ = false;
   }
+  state_ = state;
 
   // 目标姿态
   raw_.yaw = math::deg2rad(imu_[2]->yaw());

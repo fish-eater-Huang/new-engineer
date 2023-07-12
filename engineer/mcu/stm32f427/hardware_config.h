@@ -23,9 +23,9 @@ extern "C" {
 // 视觉通信串口
 #define CV_UART &huart3
 // 裁判系统通信串口
-#define REFEREE_UART &huart6
+#define REFEREE_UART &huart8
 // 自定义控制器通信串口
-#define CONTROLLER_UART &huart8
+#define CONTROLLER_UART &huart6
 // 舵机串口
 #define SERVO_UART &huart7
 // 调试串口
