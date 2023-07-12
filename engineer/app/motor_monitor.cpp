@@ -43,35 +43,36 @@ Motor JM0(Motor::MIT, -1, Motor::POSITION_SPEED,         // type, ratio, method
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 机械臂关节电机
-Motor JM1(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-Motor JM2(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-Motor JM3(Motor::MIT, 90, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+float jm123Model(const float& torque, const float& speed = 0) {
+  return torque * 0.027f;
+}
+Motor JM1(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
+          PID(5, 0, 2, 100, 90),                     // ppid
+          PID(2e-2, 0, 0, 0, 5),                         // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
+          jm123Model);                                   // model
+Motor JM2(Motor::MIT, 25, Motor::POSITION_SPEED,         // type, ratio, method
+          PID(20, 0.1, 5, 100, 120),                     // ppid
+          PID(3e-2, 0, 0, 0, 5),                         // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
+          jm123Model);                                   // model
+Motor JM3(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
+          PID(20, 0.1, 5, 100, 120),                     // ppid
+          PID(3e-2, 0, 0, 0, 5),                         // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
+          jm123Model);                                   // model
 Motor JM4(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
+          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(6e-3, 0, 1.5e-2, 0, 3),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM5(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
+          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
+          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-// Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio,
-// method
-//           PID(20, 0.05, 10, 10, 360),                    // ppid
-//           PID(1e-2, 0, 1.5e-2, 0, 7),                    // spid
-//           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 气泵电机
 // const PID pump_spid(30, 0.05, 200, 1000, 16384);

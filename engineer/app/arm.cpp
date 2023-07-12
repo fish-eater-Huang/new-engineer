@@ -31,7 +31,7 @@ Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
 void Arm::init(void) {
   // 初始角度设置
   // 手动初始化（移至初始化位置开机）
-  float j_init_deg[6] = {0, -165.0f, 65.0f, 0, 0, 0};
+  float j_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
 
   // 检测编码器连接状态
   if (init_.encoder->connect_.check()) {
@@ -129,7 +129,7 @@ void Arm::handle(void) {
   fdb_.q[3][0] = math::deg2rad(jm4_->realAngle());
   fdb_.q[4][0] = math::deg2rad((jm5_->realAngle() - jm6_->realAngle()) * 0.5f);
   fdb_.q[5][0] =
-      math::deg2rad((jm6_->realAngle() + jm6_->realAngle()) * ratio6_);
+      math::deg2rad((jm5_->realAngle() + jm6_->realAngle()) * ratio6_);
   fdb_.q_D1[0][0] = math::dps2radps(jm1_->realSpeed());
   fdb_.q_D1[1][0] = math::dps2radps(jm2_->realSpeed());
   fdb_.q_D1[2][0] = math::dps2radps(jm3_->realSpeed());
@@ -465,11 +465,21 @@ void Arm::manipulationController(void) {
 
   // 逆运动学解析解
   ref_.q = ikine(ref_.T, fdb_.q);
-  // 关节角度处理
-  ref_.q[0][0] = math::loopLimit(ref_.q[5][0], -PI * 0.8f, PI * 0.8f);
-  ref_.q[4][0] = math::loopLimit(ref_.q[5][0], -PI * 0.5f, PI * 0.5f);
-  // ref_.q[5][0] =
-  //     math::loopLimit(ref_.q[5][0], fdb_.q[5][0] - PI, fdb_.q[5][0] + PI);
+
+  // 关节限位
+  float j_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
+  ref_.q[0][0] =
+      math::limit(ref_.q[0][0], math::deg2rad(-150), math::deg2rad(150));
+  ref_.q[1][0] =
+      math::limit(ref_.q[1][0], math::deg2rad(-170), math::deg2rad(0));
+  ref_.q[2][0] =
+      math::limit(ref_.q[2][0], math::deg2rad(-90), math::deg2rad(70));
+  ref_.q[3][0] =
+      math::limit(ref_.q[3][0], math::deg2rad(-180), math::deg2rad(180));
+  ref_.q[4][0] =
+      math::limit(ref_.q[4][0], math::deg2rad(-90), math::deg2rad(70));
+  ref_.q[5][0] =
+      math::limit(ref_.q[5][0], math::deg2rad(-180), math::deg2rad(180));
 
   // 自重补偿作为动力学前馈(取动力学方程位置项)
   torq_ = arm_.rne(fdb_.q);
@@ -496,12 +506,12 @@ void Arm::manipulationController(void) {
 // 关节空间控制器(关节角度)
 void Arm::jointController(void) {
   // 关节限位
-  ref_.q[0][0] = math::limit(ref_.q[0][0], -PI * 0.95f, PI * 0.95f);
+  ref_.q[0][0] = math::limit(ref_.q[0][0], -PI * 0.8f, PI * 0.8f);
   ref_.q[1][0] = math::limit(ref_.q[1][0], -PI, 0);
   ref_.q[2][0] = math::limit(ref_.q[2][0], -PI * 0.5f, math::deg2rad(80));
   ref_.q[3][0] = math::limit(ref_.q[3][0], -PI, PI);
-  ref_.q[4][0] = math::limit(ref_.q[4][0], -PI, PI);
-  // ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
+  ref_.q[4][0] = math::limit(ref_.q[4][0], -PI * 0.5f, PI * 0.4f);
+  ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
 
   // 正运动学
   ref_.T = fdb_.T;
@@ -511,6 +521,9 @@ void Arm::jointController(void) {
   ref_.yaw = fdb_.yaw;
   ref_.pitch = fdb_.pitch;
   ref_.roll = fdb_.roll;
+
+  // 自重补偿作为动力学前馈(取动力学方程位置项)
+  torq_ = arm_.rne(fdb_.q);
 
   // 电机控制
   jm1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;

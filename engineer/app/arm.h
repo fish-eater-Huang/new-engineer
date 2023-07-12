@@ -131,9 +131,9 @@ class Arm {
     const float jm1_zero = 0;
     const float jm2_zero = 0;
     const float jm3_zero = 0;
-    const float jm4_zero = 0;
-    const float jm5_zero = 0;
-    const float jm6_zero = 0;
+    const float jm4_zero = 40.0;
+    const float jm5_zero = -142.0;
+    const float jm6_zero = -170.0;
 
     // 编码器指针
     EncoderComm* encoder;
@@ -148,7 +148,7 @@ class Arm {
   } mode_;
 
   // J6减速比
-  const float ratio6_ = -27.f / 62.f;
+  const float ratio6_ = -27.f / 62.f / 2.f;
 
   // 目标状态
   struct Ref_t {

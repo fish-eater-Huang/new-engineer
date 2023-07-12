@@ -64,7 +64,7 @@ float extra_power_max = 0;
 
 // 遥控器控制
 namespace rcctrl {
-const float arm_position_rate = 5e-7f;
+const float arm_position_rate = 7e-7f;
 const float arm_direction_rate = 3e-6f;
 const float arm_joint_rate = 3e-6f;
 }  // namespace rcctrl

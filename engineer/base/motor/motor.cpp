@@ -186,21 +186,36 @@ void Motor::setAngleSpeed(const float& target_angle, const float& ff_speed,
                           const float& ff_intensity) {
   control_data_.target_angle = target_angle;
   control_data_.feedforward_speed = ff_speed;
-  control_data_.feedforward_intensity = ff_intensity;
+  if (model_ != nullptr) {
+    control_data_.feedforward_intensity =
+        model_(ff_intensity, control_data_.fdb_speed);
+  } else {
+    control_data_.feedforward_intensity = ff_intensity;
+  }
 }
 
 // Set target angle, feedforward intensity
 // 设置目标角度，输出前馈
 void Motor::setAngle(const float& target_angle, const float& ff_intensity) {
   control_data_.target_angle = target_angle;
-  control_data_.feedforward_intensity = ff_intensity;
+  if (model_ != nullptr) {
+    control_data_.feedforward_intensity =
+        model_(ff_intensity, control_data_.fdb_speed);
+  } else {
+    control_data_.feedforward_intensity = ff_intensity;
+  }
 }
 
 // Set target speed, feedforward intensity
 // 设置目标角速度，输出前馈
 void Motor::setSpeed(const float& target_speed, const float& ff_intensity) {
   control_data_.target_speed = target_speed;
-  control_data_.feedforward_intensity = ff_intensity;
+  if (model_ != nullptr) {
+    control_data_.feedforward_intensity =
+        model_(ff_intensity, control_data_.fdb_speed);
+  } else {
+    control_data_.feedforward_intensity = ff_intensity;
+  }
 }
 
 // Set control feedback data source (important! unit: deg, dps)
