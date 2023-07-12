@@ -32,5 +32,8 @@ void EncoderComm::canRxMsgCallback(CAN_HandleTypeDef* hcan,
                                    CAN_RxHeaderTypeDef rx_header,
                                    uint8_t rx_data[8]) {
   memcpy(&rx_data_, rx_data, sizeof(rx_data_));
+  for (int i = 0; i < 3; i++) {
+    deg_[i] = (float)rx_data_.ecd[i] * 360.f / 65535.f;
+  }
   connect_.refresh();
 }

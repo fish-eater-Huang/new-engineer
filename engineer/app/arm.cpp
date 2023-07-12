@@ -14,83 +14,54 @@
 #include "tim.h"
 
 // 构造函数
-Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-         IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm)
-    : j1_(j1), j2_(j2), j3_(j3), j4_(j4), j5_(j5), j6_(j6), arm_(links_) {
+Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
+         EncoderComm* encoder)
+    : jm1_(jm1),
+      jm2_(jm2),
+      jm3_(jm3),
+      jm4_(jm4),
+      jm5_(jm5),
+      jm6_(jm6),
+      arm_(links_) {
   init_.is_finish = false;
-  init_.method = Arm::Init_t::Method_e::LINK_IMU;
-  init_.imu0 = imu0;
-  init_.imu2 = imu2;
-  init_.imu3 = imu3;
-  init_.imu_comm = imu_comm;
-  init_.imu2_connect = Connect(1000);
-  init_.imu3_connect = Connect(1000);
+  init_.encoder = encoder;
 }
 
 // 初始化关节角度
 void Arm::init(void) {
   // 初始角度设置
   // 手动初始化（移至初始化位置开机）
-  float j_init_deg[6] = {
-      0,  // todo
-      -180.0f,
-      80.0f,
-      math::degNormalize180(j4_->motor_data_.ecd_angle - init_.j4_zero),
-      math::degNormalize180(j5_->motor_data_.ecd_angle - init_.j5_zero),
-      math::degNormalize180(j6_->motor_data_.ecd_angle - init_.j6_zero)};
+  float j_init_deg[6] = {0, -165.0f, 65.0f, 0, 0, 0};
+
+  // 检测编码器连接状态
+  if (init_.encoder->connect_.check()) {
+    j_init_deg[0] =
+        math::loopLimit(init_.encoder->deg_[0] - init_.jm1_zero, -180, 180);
+    j_init_deg[1] =
+        math::loopLimit(init_.encoder->deg_[1] - init_.jm2_zero, -180, 180);
+    j_init_deg[2] =
+        math::loopLimit(init_.encoder->deg_[2] - init_.jm3_zero, -180, 180);
+  }
+  if (jm4_->connect_.check()) {
+    j_init_deg[3] = math::loopLimit(
+        jm4_->motor_data_.ecd_angle - init_.jm4_zero, -180, 180);
+  }
+  if (jm5_->connect_.check()) {
+    j_init_deg[4] = math::loopLimit(
+        jm5_->motor_data_.ecd_angle - init_.jm5_zero, -180, 180);
+  }
+  if (jm6_->connect_.check()) {
+    j_init_deg[5] = math::loopLimit(
+        jm6_->motor_data_.ecd_angle - init_.jm6_zero, -180, 180);
+  }
 
   // 设置电机反馈角度
-  if (init_.method == Arm::Init_t::Method_e::MANUAL) {
-    j1_->resetFeedbackAngle(j_init_deg[0]);
-    j2_->resetFeedbackAngle(j_init_deg[1]);
-    j3_->resetFeedbackAngle(j_init_deg[2]);
-    j4_->resetFeedbackAngle(j_init_deg[3]);
-    j5_->resetFeedbackAngle(j_init_deg[4]);
-    j6_->resetFeedbackAngle(j_init_deg[5]);
-  }
-  // 使用IMU初始化关节电机角度
-  else if (init_.method == Arm::Init_t::Method_e::LINK_IMU) {
-    // 等待陀螺仪上电 & 重力补偿收敛
-    if (HAL_GetTick() < 2000) {
-      return;
-    }
-    // 检测陀螺仪连接状态 todo
-    if (!(init_.imu_comm->imu2_connect_.check() &&
-          init_.imu_comm->imu1_connect_.check()) ||
-        !(fabs(init_.imu0->pitch()) < 10.0f &&
-          fabs(init_.imu0->roll()) < 10.0f)) {
-      // 若未检测到陀螺仪或link0陀螺仪不水平则切换为手动初始化
-      init_.method = Arm::Init_t::Method_e::MANUAL;
-      return;
-    }
-
-    // 根据陀螺仪角度初始化关节电机角度
-    float rpy2[3] = {math::deg2rad(init_.imu2->yaw()),
-                     math::deg2rad(init_.imu2->pitch()),
-                     math::deg2rad(init_.imu2->roll())};
-    float rpy3[3] = {math::deg2rad(init_.imu3->yaw()),
-                     math::deg2rad(init_.imu3->pitch()),
-                     math::deg2rad(init_.imu3->roll())};
-    Matrixf<3, 3> Rw2 = robotics::rpy2r(rpy2);
-    Matrixf<3, 3> Rw3 = robotics::rpy2r(rpy3);
-    j_init_deg[1] = math::rad2deg(
-        math::loopLimit(atan2f(Rw2[2][0], -Rw2[2][2]), -PI * 1.5f, PI * 0.5f));
-    j_init_deg[2] = math::rad2deg(math::loopLimit(
-        atan2f(-Rw3[2][2], -Rw3[2][0]) - math::deg2rad(j_init_deg[1]), -PI,
-        PI));
-
-    // 设置电机反馈角度
-    j1_->resetFeedbackAngle(j_init_deg[0]);
-    j2_->resetFeedbackAngle(j_init_deg[1]);
-    j3_->resetFeedbackAngle(j_init_deg[2]);
-    j4_->resetFeedbackAngle(j_init_deg[3]);
-    j5_->resetFeedbackAngle(j_init_deg[4]);
-    j6_->resetFeedbackAngle(j_init_deg[5]);
-  }
-  // 使用编码器初始化关节电机角度
-  else if (init_.method == Arm::Init_t::Method_e::ENCODER) {
-    // todo
-  }
+  jm1_->resetFeedbackAngle(j_init_deg[0]);
+  jm2_->resetFeedbackAngle(j_init_deg[1]);
+  jm3_->resetFeedbackAngle(j_init_deg[2]);
+  jm4_->resetFeedbackAngle(j_init_deg[3]);
+  jm5_->resetFeedbackAngle(j_init_deg[4]);
+  jm6_->resetFeedbackAngle(j_init_deg[5]);
 
   // 更新反馈状态
   float q[6];
@@ -125,12 +96,12 @@ void Arm::init(void) {
   ref_.roll = fdb_.roll;
 
   // 设置电机反馈数据源
-  j1_->setFdbSrc(&j1_->kfAngle(), &j1_->kfSpeed());
-  j2_->setFdbSrc(&j2_->kfAngle(), &j2_->kfSpeed());
-  j3_->setFdbSrc(&j3_->kfAngle(), &j3_->kfSpeed());
-  j4_->setFdbSrc(&j4_->kfAngle(), &j4_->kfSpeed());
-  j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
-  j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
+  jm1_->setFdbSrc(&jm1_->kfAngle(), &jm1_->kfSpeed());
+  jm2_->setFdbSrc(&jm2_->kfAngle(), &jm2_->kfSpeed());
+  jm3_->setFdbSrc(&jm3_->kfAngle(), &jm3_->kfSpeed());
+  jm4_->setFdbSrc(&jm4_->kfAngle(), &jm4_->kfSpeed());
+  jm5_->setFdbSrc(&jm5_->kfAngle(), &jm5_->kfSpeed());
+  jm6_->setFdbSrc(&jm6_->kfAngle(), &jm6_->kfSpeed());
 
   init_.is_finish = true;
 }
@@ -138,9 +109,9 @@ void Arm::init(void) {
 // 反馈状态解算，目标状态处理，运行控制器
 void Arm::handle(void) {
   // 检测电机连接状态
-  if (!(j1_->connect_.check() && j2_->connect_.check() &&
-        j3_->connect_.check() && j4_->connect_.check() &&
-        j5_->connect_.check() && j6_->connect_.check())) {
+  if (!(jm1_->connect_.check() && jm2_->connect_.check() &&
+        jm3_->connect_.check() && jm4_->connect_.check() &&
+        jm5_->connect_.check() && jm6_->connect_.check())) {
     // 电机离线重新初始化
     init_.is_finish = false;
   }
@@ -152,20 +123,21 @@ void Arm::handle(void) {
   }
 
   // 获取关节角度&角速度
-  fdb_.q[0][0] = math::deg2rad(j1_->realAngle());
-  fdb_.q[1][0] = math::deg2rad(j2_->realAngle());
-  fdb_.q[2][0] = math::deg2rad(j3_->realAngle());
-  fdb_.q[3][0] = math::deg2rad(j4_->realAngle());
-  fdb_.q[4][0] = math::deg2rad((j5_->realAngle() - j6_->realAngle()) * 0.5f);
-  fdb_.q[5][0] = math::deg2rad((j6_->realAngle() + j6_->realAngle()) * ratio6_);
-  fdb_.q_D1[0][0] = math::dps2radps(j1_->realSpeed());
-  fdb_.q_D1[1][0] = math::dps2radps(j2_->realSpeed());
-  fdb_.q_D1[2][0] = math::dps2radps(j3_->realSpeed());
-  fdb_.q_D1[3][0] = math::dps2radps(j4_->realSpeed());
+  fdb_.q[0][0] = math::deg2rad(jm1_->realAngle());
+  fdb_.q[1][0] = math::deg2rad(jm2_->realAngle());
+  fdb_.q[2][0] = math::deg2rad(jm3_->realAngle());
+  fdb_.q[3][0] = math::deg2rad(jm4_->realAngle());
+  fdb_.q[4][0] = math::deg2rad((jm5_->realAngle() - jm6_->realAngle()) * 0.5f);
+  fdb_.q[5][0] =
+      math::deg2rad((jm6_->realAngle() + jm6_->realAngle()) * ratio6_);
+  fdb_.q_D1[0][0] = math::dps2radps(jm1_->realSpeed());
+  fdb_.q_D1[1][0] = math::dps2radps(jm2_->realSpeed());
+  fdb_.q_D1[2][0] = math::dps2radps(jm3_->realSpeed());
+  fdb_.q_D1[3][0] = math::dps2radps(jm4_->realSpeed());
   fdb_.q_D1[4][0] =
-      math::dps2radps((j5_->realSpeed() - j6_->realSpeed()) * 0.5f);
+      math::dps2radps((jm5_->realSpeed() - jm6_->realSpeed()) * 0.5f);
   fdb_.q_D1[5][0] =
-      math::dps2radps((j5_->realSpeed() + j6_->realSpeed()) * ratio6_);
+      math::dps2radps((jm5_->realSpeed() + jm6_->realSpeed()) * ratio6_);
 
   // 反馈位姿解算(正运动学)
   fdb_.T = arm_.fkine(fdb_.q);
@@ -484,20 +456,20 @@ void Arm::manipulationController(void) {
   torq_ = arm_.rne(fdb_.q);
 
   // 电机控制
-  j1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j2_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j3_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
-  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
-  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
-  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
-  j5_->setAngleSpeed(
+  jm1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm2_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm3_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  jm2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  jm5_->setAngleSpeed(
       math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[4][0]);
-  j6_->setAngleSpeed(
+  jm6_->setAngleSpeed(
       math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[5][0]);
 }
@@ -522,20 +494,20 @@ void Arm::jointController(void) {
   ref_.roll = fdb_.roll;
 
   // 电机控制
-  j1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j2_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j3_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
-  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
-  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
-  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
-  j5_->setAngleSpeed(
+  jm1_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm2_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm3_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
+  jm1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  jm2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  jm5_->setAngleSpeed(
       math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[4][0]);
-  j6_->setAngleSpeed(
+  jm6_->setAngleSpeed(
       math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[5][0]);
 }
@@ -556,18 +528,18 @@ void Arm::complianceController(void) {
   torq_ = arm_.rne(fdb_.q);
 
   // 电机控制
-  j1_->method_ = Motor::ControlMethod_e::TORQUE;
-  j2_->method_ = Motor::ControlMethod_e::TORQUE;
-  j3_->method_ = Motor::ControlMethod_e::TORQUE;
-  j4_->method_ = Motor::ControlMethod_e::TORQUE;
-  j5_->method_ = Motor::ControlMethod_e::TORQUE;
-  j6_->method_ = Motor::ControlMethod_e::TORQUE;
-  j1_->targetTorque() = torq_[0][0];
-  j2_->targetTorque() = torq_[1][0];
-  j3_->targetTorque() = torq_[2][0];
-  j4_->targetTorque() = torq_[3][0];
-  j5_->targetTorque() = torq_[4][0];
-  j6_->targetTorque() = torq_[5][0];
+  jm1_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm2_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm3_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm4_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm5_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm6_->method_ = Motor::ControlMethod_e::TORQUE;
+  jm1_->targetTorque() = torq_[0][0];
+  jm2_->targetTorque() = torq_[1][0];
+  jm3_->targetTorque() = torq_[2][0];
+  jm4_->targetTorque() = torq_[3][0];
+  jm5_->targetTorque() = torq_[4][0];
+  jm6_->targetTorque() = torq_[5][0];
 }
 
 // 轨迹规划处理

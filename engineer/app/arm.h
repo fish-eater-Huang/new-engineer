@@ -12,6 +12,7 @@
 #ifndef ARM_H
 #define ARM_H
 
+#include "app/encoder.h"
 #include "app/imu_comm.h"
 #include "base/imu/imu.h"
 #include "base/motor/motor.h"
@@ -21,8 +22,8 @@
 class Arm {
  public:
   // 构造函数
-  Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
-      IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm);
+  Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
+      EncoderComm* encoder);
 
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
@@ -122,32 +123,22 @@ class Arm {
   robotics::Serial_Link<6> arm_;
 
   // 电机指针
-  Motor *j1_, *j2_, *j3_, *j4_, *j5_, *j6_;
+  Motor *jm1_, *jm2_, *jm3_, *jm4_, *jm5_, *jm6_;
 
   struct Init_t {
     // 初始化状态
     bool is_finish;
-    // 初始化方法
-    enum Method_e {
-      MANUAL,
-      ENCODER,
-      LINK_IMU,
-    } method;
 
-    // J456电机零点
-    const float j4_zero = 0;
-    const float j5_zero = 0;
-    const float j6_zero = 0;
+    // 电机编码器零点
+    const float jm1_zero = 0;
+    const float jm2_zero = 0;
+    const float jm3_zero = 0;
+    const float jm4_zero = 0;
+    const float jm5_zero = 0;
+    const float jm6_zero = 0;
 
-    // 板间通信指针
-    ImuComm* imu_comm;
-    // 定位imu指针
-    IMU *imu0, *imu2, *imu3;
-    // imu连接状态
-    Connect imu2_connect, imu3_connect;
-
-    Init_t(uint32_t imu_timeout = 1000)
-        : imu2_connect(imu_timeout), imu3_connect(imu_timeout) {}
+    // 编码器指针
+    EncoderComm* encoder;
   } init_;
 
   // 工作模式

@@ -32,10 +32,15 @@ class EncoderComm {
 
  public:
   Connect connect_;
+
+  // 接收数据
   struct RxData_t {
     uint16_t ecd[3];
     uint16_t reserve;
   } rx_data_;
+
+  // 编码器角度
+  float deg_[3];
 
  private:
   CAN_HandleTypeDef* hcan_;

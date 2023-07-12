@@ -70,8 +70,7 @@ ImuComm imu_comm(&hcan2, &arm_imu[0], &arm_imu[1], &arm_imu[2]);
 EncoderComm encoder(&hcan2);
 
 // 机械臂
-Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &board_imu, &arm_imu[0],
-        &arm_imu[1], &imu_comm);
+Arm arm(&JM1, &JM2, &JM3, &JM4, &JM5, &JM6, &encoder);
 // 机械臂控制器
 ArmController arm_controller(&controller_comm, controller_imu);
 
