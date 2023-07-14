@@ -497,18 +497,12 @@ void Arm::manipulationController(void) {
   j4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
   j5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
   j6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0,
-                     j1_->model_(torq_[0][0], 0));
-  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0,
-                     j2_->model_(torq_[1][0], 0));
-  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
-                     j3_->model_(torq_[2][0], 0));
-  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0,
-                     j4_->model_(torq_[3][0], 0));
-  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0,
-                     j5_->model_(torq_[4][0], 0));
-  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0,
-                     j6_->model_(torq_[5][0], 0));
+  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0, torq_[4][0]);
+  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0, torq_[5][0]);
 }
 
 // 关节空间控制器(关节角度)
@@ -537,18 +531,12 @@ void Arm::jointController(void) {
   j4_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
   j5_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
   j6_->method_ = Motor::ControlMethod_e::POSITION_SPEED;
-  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0,
-                     j1_->model_(torq_[0][0], 0));
-  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0,
-                     j2_->model_(torq_[1][0], 0));
-  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0,
-                     j3_->model_(torq_[2][0], 0));
-  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0,
-                     j4_->model_(torq_[3][0], 0));
-  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0,
-                     j5_->model_(torq_[4][0], 0));
-  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0,
-                     j6_->model_(torq_[5][0], 0));
+  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0, torq_[4][0]);
+  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0, torq_[5][0]);
 }
 
 // 柔顺控制器
