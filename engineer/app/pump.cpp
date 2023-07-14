@@ -19,7 +19,12 @@ Pump::Pump(Motor* motor, ServoZX361D* servo, uint16_t pmw_close,
       pwm_open_2_(pwm_open_2) {}
 
 // 设置阀门状态
-void Pump::setValve(ValveState_e state) {
+void Pump::set(const float& speed, ValveState_e state) {
+  // 电机状态控制
+  motor_speed_ = speed;
+  motor_->setSpeed(speed);
+
+  // 舵机控制
   if (state == ValveState_e::CLOSE) {
     if (servo_->getMode() != ServoZX361D::NORMAL) {
       servo_->setMode(ServoZX361D::NORMAL);
@@ -45,20 +50,4 @@ void Pump::setValve(ValveState_e state) {
       }
     }
   }
-}
-
-// 气泵工作
-void Pump::work(void) {
-  setValve(Pump::ValveState_e::CLOSE);
-  motor_->setSpeed(speed_);
-}
-
-// 气泵关闭
-void Pump::off(uint8_t i) {
-  if (i == 1) {
-    setValve(Pump::ValveState_e::OPEN_1);
-  } else if (i == 2) {
-    setValve(Pump::ValveState_e::OPEN_2);
-  }
-  motor_->setSpeed(0);
 }

@@ -147,6 +147,22 @@ class Arm {
     COMPLIANCE,
   } mode_;
 
+  // 限位
+  struct Limit_t {
+    const float qmin[6] = {math::deg2rad(-160), math::deg2rad(-170),
+                           math::deg2rad(-90),  math::deg2rad(-180),
+                           math::deg2rad(-90),  math::deg2rad(-180)};
+    const float qmax[6] = {math::deg2rad(160), math::deg2rad(0),
+                           math::deg2rad(70),  math::deg2rad(180),
+                           math::deg2rad(70),  math::deg2rad(180)};
+    const float xmin = -1.0f;
+    const float xmax = 1.0f;
+    const float ymin = -1.0f;
+    const float ymax = 1.0f;
+    const float zmin = -1.0f;
+    const float zmax = 1.0f;
+  } limit_;
+
   // J6减速比
   const float ratio6_ = -27.f / 62.f / 2.f;
 

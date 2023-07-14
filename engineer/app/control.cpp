@@ -44,10 +44,12 @@ extern RefereeComm referee;
 extern ServoZX361D pump_servo[];
 
 uint8_t board_id = 0;
-// Pump pump_arm(&PM_ARM, &pump_servo[0], 500, 1000);
-// Pump pump_l(&PM_L, &pump_servo[1], 500, 1000);
-// Pump pump_r(&PM_R, &pump_servo[2], 500, 1000);
 BoardLed led;
+MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(5, 0, 10, 100, 240),
+                       LowPassFilter(2e-2f));
+ArmGimbal gimbal(&JM0, &GMP, &board_imu);
+Pump pump_e(&PME, &pump_servo[0], 1166, 500, 1833);
+Pump pump_0(&PM0, &pump_servo[1], 1166, 500, 1833);
 
 // 上电状态
 enum RobotPowerState_e {
@@ -62,11 +64,19 @@ RC::RCSwitch last_rc_switch;
 // 额外功率
 float extra_power_max = 0;
 
-// 遥控器控制
+// 遥控器控制参数
 namespace rcctrl {
-const float arm_position_rate = 7e-7f;
+
+const float arm_position_rate = 1e-6f;
 const float arm_direction_rate = 3e-6f;
 const float arm_joint_rate = 3e-6f;
+
+const float chassis_speed_rate = 4e-3f;
+const float chassis_rotate_rate = 0.5f;
+const float chassis_follow_ff_rate = 0.3f;
+
+const float gimbal_rate = 6e-4f;
+
 }  // namespace rcctrl
 
 // 控制初始化
@@ -91,6 +101,9 @@ void controlLoop(void) {
     robotControl();  // 机器人控制
   }
 
+  chassis.rotateHandle(-gimbal.j0EncoderAngle());
+  chassis.handle();
+  gimbal.handle();
   arm_controller.handle();
   boardLedHandle();
 }
@@ -141,36 +154,66 @@ bool robotStartup(void) {
 void robotControl(void) {
   // 遥控器挡位左上右上
   if (rc.switch_.l == RC::UP && rc.switch_.r == RC::UP) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
-               -rc.channel_.l_row * rcctrl::arm_position_rate,
-               -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
-               -rc.channel_.r_row * rcctrl::arm_direction_rate,
-               -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
-    arm.trajAbort();
-  }
-  // 遥控器挡位左中右上
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
+    // 机械臂x+y+yaw+pitch+roll
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
                -rc.channel_.l_row * rcctrl::arm_position_rate, 0,
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate,
                -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
-    arm.trajAbort();
+  }
+  // 遥控器挡位左中右上
+  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
+    // 机械臂x+y+z+yaw+pitch
+    arm.mode_ = Arm::Mode_e::MANIPULATION;
+    arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
+               -rc.channel_.l_row * rcctrl::arm_position_rate,
+               -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
+               -rc.channel_.r_row * rcctrl::arm_direction_rate,
+               -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
+    // 控制器档
     arm.mode_ = Arm::Mode_e::MANIPULATION;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 0.3, 3);
-      arm.trajStart();
+    if (arm_controller.state_) {
+      if (rc.switch_.l != last_rc_switch.l ||
+          rc.switch_.r != last_rc_switch.r) {
+        arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
+                                 arm.fdb_.y - arm_controller.raw_.y,
+                                 arm.fdb_.z - arm_controller.raw_.z);
+      } else {
+        arm_controller.addOffset(
+            rc.channel_.l_col * rcctrl::arm_position_rate,
+            -rc.channel_.l_row * rcctrl::arm_position_rate,
+            -rc.channel_.dial_wheel * rcctrl::arm_position_rate);
+      }
+      arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
+                 arm_controller.ref_.z, arm_controller.ref_.yaw,
+                 arm_controller.ref_.pitch, arm_controller.ref_.roll);
     }
+    arm.trajAbort();
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
+    // 云台底盘测试
     arm.mode_ = Arm::Mode_e::COMPLIANCE;
     arm.trajAbort();
+
+    chassis.lock_ = false;
+    chassis.mode_ = MecanumChassis::FOLLOW;
+    if (fabs(rc.channel_.dial_wheel > 100)) {
+      chassis.mode_ = MecanumChassis::GYRO;
+      chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate,
+                       -rc.channel_.r_row * rcctrl::chassis_speed_rate,
+                       rc.channel_.dial_wheel * rcctrl::chassis_rotate_rate);
+    } else {
+      chassis.setAngleSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate,
+                            -rc.channel_.r_row * rcctrl::chassis_speed_rate, 0);
+    }
+
+    gimbal.addAngle(-rc.channel_.l_row * rcctrl::gimbal_rate,
+                    -rc.channel_.l_col * rcctrl::gimbal_rate);
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
@@ -185,20 +228,10 @@ void robotControl(void) {
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
-
-    if (arm_controller.state_) {
-      if (rc.switch_.l != last_rc_switch.l ||
-          rc.switch_.r != last_rc_switch.r) {
-        arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
-                                 arm.fdb_.y - arm_controller.raw_.y,
-                                 arm.fdb_.z - arm_controller.raw_.z);
-      }
-      arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
-                 arm_controller.ref_.z, arm_controller.ref_.yaw,
-                 arm_controller.ref_.pitch, arm_controller.ref_.roll);
+    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+      arm.trajSet(0.5, 0, 0.3, 0, 0, 0, 0.5, 3);
+      arm.trajStart();
     }
-
-    arm.trajAbort();
   }
 
   // 记录遥控器挡位状态

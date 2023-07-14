@@ -27,19 +27,29 @@ Motor CMBR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
            PID(), PID(chassis_wheel_spid));             // ppid, spid
 
 // 云台电机
+// 30, 0.05, 10, 50, 360
+// 30, 0.05, 200, 1000, 16384
 Motor GMY(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
-          PID(30, 0.05, 10, 50, 360),                    // ppid
-          PID(30, 0.05, 200, 1000, 16384),               // spid
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
-          PID(30, 0.05, 10, 50, 360),                    // ppid
-          PID(30, 0.05, 200, 1000, 16384),               // spid
+Motor GMP(Motor::M3508, -1, Motor::POSITION_SPEED,       // type, ratio, method
+          PID(30, 0, 10, 0, 360),                        // ppid
+          PID(25, 0.05, 200, 1000, 12000),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+
+// 气泵电机
+// const PID pump_spid(30, 0.05, 200, 1000, 16384);
+const PID pump_spid(0, 0, 0, 0, 0);
+Motor PME(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
+          PID(), pump_spid);              // ppid, spid
+Motor PM0(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
+          PID(), pump_spid);              // ppid, spid
 
 // J0转轴电机
 Motor JM0(Motor::MIT, -1, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(20, 0.05, 10, 10, 360),                    // ppid
-          PID(1e-2, 0, 1.5e-2, 0, 7),                    // spid
+          PID(0, 0, 0, 0, 0),                            // ppid
+          PID(0, 0, 0, 0, 0),                            // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 机械臂关节电机
@@ -47,65 +57,52 @@ float jm123Model(const float& torque, const float& speed = 0) {
   return torque * 0.027f;
 }
 Motor JM1(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
-          PID(5, 0, 2, 100, 90),                     // ppid
-          PID(2e-2, 0, 0, 0, 5),                         // spid
+          PID(20, 0.1, 5, 100, 120),                     // ppid
+          PID(2e-2, 0, 1e-2, 0, 5),                      // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
           jm123Model);                                   // model
 Motor JM2(Motor::MIT, 25, Motor::POSITION_SPEED,         // type, ratio, method
           PID(20, 0.1, 5, 100, 120),                     // ppid
-          PID(3e-2, 0, 0, 0, 5),                         // spid
+          PID(2e-2, 0, 1e-2, 0, 5),                      // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
           jm123Model);                                   // model
 Motor JM3(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
           PID(20, 0.1, 5, 100, 120),                     // ppid
-          PID(3e-2, 0, 0, 0, 5),                         // spid
+          PID(2e-2, 0, 1e-2, 0, 5),                      // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
           jm123Model);                                   // model
 Motor JM4(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(20, 0.1, 10, 100, 360),                    // ppid
           PID(6e-3, 0, 1.5e-2, 0, 3),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM5(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(20, 0.1, 10, 100, 360),                    // ppid
           PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(20, 0.01, 10, 10, 360),                    // ppid
+          PID(20, 0.1, 10, 100, 360),                    // ppid
           PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-
-// 气泵电机
-// const PID pump_spid(30, 0.05, 200, 1000, 16384);
-const PID pump_spid(0, 0, 0, 0, 0);
-Motor PM_ARM(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
-             PID(), pump_spid);              // ppid, spid
-Motor PM_L(Motor::M3508, 1, Motor::SPEED,    // type, ratio, method
-           PID(), pump_spid);                // ppid, spid
-Motor PM_R(Motor::M3508, 1, Motor::SPEED,    // type, ratio, method
-           PID(), pump_spid);                // ppid, spid
 
 // DJI Motor id config, M3508/M2006: 1~8, GM6020: 5~11
 // DJI电机ID配置，M3508，M2006可配置范围为1~8，GM6020可配置范围为5~11
 Motor* can1_dji_motor[11] = {
-    &CMFL,    // id:1
-    &CMFR,    // id:2
-    &CMBL,    // id:3
-    &CMBR,    // id:4
-    nullptr,  // id:5
-    nullptr,  // id:6
-    nullptr,  // id:7
-    nullptr,  // id:8
+    &CMFL,  // id:1
+    &CMFR,  // id:2
+    &CMBL,  // id:3
+    &CMBR,  // id:4
+
     nullptr,  // id:9
     nullptr,  // id:10
     nullptr   // id:11
 };
 Motor* can2_dji_motor[11] = {
-    &PM_ARM,  // id:1
-    &PM_L,    // id:2
-    &PM_R,    // id:3
-    nullptr,  // id:4
-    &GMY,     // id:5
-    &GMP,     // id:6
+    &GMY,     // id:1
+    &GMP,     // id:2
+    &PME,     // id:3
+    &PM0,     // id:4
+    nullptr,  // id:5
+    nullptr,  // id:6
     nullptr,  // id:7
     nullptr,  // id:8
     nullptr,  // id:9

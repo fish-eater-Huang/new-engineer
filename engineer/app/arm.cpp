@@ -427,6 +427,10 @@ void Arm::manipulationController(void) {
   ref_.x = math::limit(ref_.x, -a2d4 * 0.9f + x56, a2d4 * 0.9f + x56);
   ref_.y = math::limit(ref_.y, -a2d4 * 0.9f + y56, a2d4 * 0.9f + y56);
   ref_.z = math::limit(ref_.z, -a2d4 * 0.9f + z56, a2d4 * 0.9f + z56);
+  // 软件位置限位(比赛规则)
+  ref_.x = math::limit(ref_.x, limit_.xmin, limit_.xmax);
+  ref_.y = math::limit(ref_.y, limit_.ymin, limit_.ymax);
+  ref_.z = math::limit(ref_.z, limit_.zmin, limit_.zmax);
   // 肘部奇异限位
   float ref_p[3] = {ref_.x, ref_.y, ref_.z};
   float o5_norm = (Matrixf<3, 1>(ref_p) - p56).norm();
@@ -466,20 +470,10 @@ void Arm::manipulationController(void) {
   // 逆运动学解析解
   ref_.q = ikine(ref_.T, fdb_.q);
 
-  // 关节限位
-  float j_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
-  ref_.q[0][0] =
-      math::limit(ref_.q[0][0], math::deg2rad(-150), math::deg2rad(150));
-  ref_.q[1][0] =
-      math::limit(ref_.q[1][0], math::deg2rad(-170), math::deg2rad(0));
-  ref_.q[2][0] =
-      math::limit(ref_.q[2][0], math::deg2rad(-90), math::deg2rad(70));
-  ref_.q[3][0] =
-      math::limit(ref_.q[3][0], math::deg2rad(-180), math::deg2rad(180));
-  ref_.q[4][0] =
-      math::limit(ref_.q[4][0], math::deg2rad(-90), math::deg2rad(70));
-  ref_.q[5][0] =
-      math::limit(ref_.q[5][0], math::deg2rad(-180), math::deg2rad(180));
+  for (int i = 0; i < 6; i++) {
+    // 关节限位
+    ref_.q[i][0] = math::limit(ref_.q[i][0], limit_.qmin[i], limit_.qmax[i]);
+  }
 
   // 自重补偿作为动力学前馈(取动力学方程位置项)
   torq_ = arm_.rne(fdb_.q);
@@ -506,12 +500,9 @@ void Arm::manipulationController(void) {
 // 关节空间控制器(关节角度)
 void Arm::jointController(void) {
   // 关节限位
-  ref_.q[0][0] = math::limit(ref_.q[0][0], -PI * 0.8f, PI * 0.8f);
-  ref_.q[1][0] = math::limit(ref_.q[1][0], -PI, 0);
-  ref_.q[2][0] = math::limit(ref_.q[2][0], -PI * 0.5f, math::deg2rad(80));
-  ref_.q[3][0] = math::limit(ref_.q[3][0], -PI, PI);
-  ref_.q[4][0] = math::limit(ref_.q[4][0], -PI * 0.5f, PI * 0.4f);
-  ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
+  for (int i = 0; i < 6; i++) {
+    ref_.q[i][0] = math::limit(ref_.q[i][0], limit_.qmin[i], limit_.qmax[i]);
+  }
 
   // 正运动学
   ref_.T = fdb_.T;
