@@ -30,6 +30,7 @@ extern RC rc;
 extern RefereeComm referee;
 extern ImuComm imu_comm;
 extern ControllerComm controller_comm;
+extern ControllerComm controller_comm_offline;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -60,6 +61,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef* huart) {
   }
   if (controller_comm.uartCheck(huart)) {
     controller_comm.rxCallback();
+  }
+  if (controller_comm_offline.uartCheck(huart)) {
+    controller_comm_offline.rxCallback();
   }
   if (serial_tool.uartCheck(huart)) {
     serial_tool.uartRxCallback();

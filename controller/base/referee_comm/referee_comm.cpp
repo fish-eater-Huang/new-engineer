@@ -10,7 +10,6 @@
 
 #include "base/referee_comm/referee_comm.h"
 #include "base/common/crc.h"
-#include "base/referee_comm/referee_ui.h"
 
 const uint32_t referee_comm_timout = 1000;  // ms
 

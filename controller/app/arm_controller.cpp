@@ -207,6 +207,13 @@ void ArmController::setOffset(float dx, float dy, float dz) {
   ref_.z_filter.reset(raw_.z + offset_.z);
 }
 
+// 增量设置机械臂控制器位置偏置值
+void ArmController::addOffset(float dx, float dy, float dz) {
+  offset_.x += dx;
+  offset_.y += dy;
+  offset_.z += dz;
+}
+
 // 设置yaw零点
 void ArmController::setYawZero(void) {
   for (int i = 0; i < 3; i++) {

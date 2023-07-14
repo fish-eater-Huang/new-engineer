@@ -16,7 +16,6 @@
 
 #include "app/arm_controller.h"
 #include "app/can_monitor.h"
-#include "app/client_ui.h"
 #include "app/control.h"
 #include "app/imu_comm.h"
 #include "app/imu_monitor.h"
@@ -25,7 +24,6 @@
 #include "base/cap_comm/cap_comm.h"
 #include "base/cv_comm/cv_comm.h"
 #include "base/referee_comm/referee_comm.h"
-#include "base/referee_comm/referee_ui.h"
 #include "base/remote/remote.h"
 #include "base/servo/servo.h"
 
@@ -36,12 +34,12 @@ RC rc;
 #endif  // RC_UART
 #ifdef REFEREE_UART
 RefereeComm referee(REFEREE_UART);
-UI ui(REFEREE_UART, &referee, ui_func, sizeof(ui_func) / sizeof(void*));
 #else
 RefereeComm referee;
 #endif  // REFEREE_UART
 #ifdef CONTROLLER_UART
 ControllerComm controller_comm(CONTROLLER_UART);
+ControllerComm controller_comm_offline(OFFLINE_CONTROLLER_UART);
 #else
 ControllerComm controller_comm;
 #endif  // CONTROLLER_UART
@@ -57,6 +55,7 @@ ImuComm imu_comm(&hcan2, &controller_imu[0], &controller_imu[1],
 
 // 机械臂控制器
 ArmController arm_controller(&controller_comm, controller_imu);
+ArmController arm_controller_offline(&controller_comm_offline, controller_imu);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
@@ -99,10 +98,8 @@ void imuTask(void const* argument) {
 osThreadId refereeCommTaskHandle;
 void refereeCommTask(void const* argument) {
   referee.init();
-  ui.init();
   for (;;) {
     referee.handle();
-    ui.handle();
     osDelay(1);
   }
 }
@@ -110,9 +107,11 @@ void refereeCommTask(void const* argument) {
 osThreadId ctrlCommTaskHandle;
 void ctrlCommTask(void const* argument) {
   controller_comm.init();
+  controller_comm_offline.init();
   uint32_t tick = osKernelSysTick();
   for (;;) {
     controller_comm.handle();
+    controller_comm_offline.handle();
     osDelayUntil(&tick, 40);
   }
 }

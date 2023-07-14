@@ -34,9 +34,11 @@ void boardLedHandle(void);
 extern RC rc;
 extern ImuComm imu_comm;
 extern ArmController arm_controller;
+extern ArmController arm_controller_offline;
 
 uint8_t board_id = 0;
 BoardLed led;
+ArmController* arm_controllers[2] = {&arm_controller, &arm_controller_offline};
 
 // 上电状态
 enum RobotPowerState_e {
@@ -80,7 +82,9 @@ void controlLoop(void) {
     robotControl();  // 机器人控制
   }
 
-  arm_controller.handle();
+  for (int i = 0; i < 2; i++) {
+    arm_controllers[i]->handle();
+  }
   boardLedHandle();
 }
 
@@ -127,27 +131,29 @@ bool robotStartup(void) {
 
 // 机器人控制
 void robotControl(void) {
-  // 设置控制器串口发送数据
-  arm_controller.comm_->tx_data_.controller_state = true;
-  arm_controller.comm_->tx_data_.imu_connect[0] =
-      imu_comm.imu1_connect_.check();
-  arm_controller.comm_->tx_data_.imu_connect[1] =
-      imu_comm.imu2_connect_.check();
-  arm_controller.comm_->tx_data_.imu_connect[2] =
-      imu_comm.imu3_connect_.check();
-  for (int i = 0; i < 3; i++) {
-    arm_controller.comm_->tx_data_.imu[i].yaw =
-        imucomm::float_2_int16(math::degNormalize180(
-            arm_controller.imu_[i]->yaw() - arm_controller.offset_.yaw[i]));
-    arm_controller.comm_->tx_data_.imu[i].pitch =
-        imucomm::float_2_int16(arm_controller.imu_[i]->pitch());
-    arm_controller.comm_->tx_data_.imu[i].roll =
-        imucomm::float_2_int16(arm_controller.imu_[i]->roll());
-  }
+  for (int i = 0; i < 2; i++) {
+    // 设置控制器串口发送数据
+    arm_controllers[i]->comm_->tx_data_.controller_state = true;
+    arm_controllers[i]->comm_->tx_data_.imu_connect[0] =
+        imu_comm.imu1_connect_.check();
+    arm_controllers[i]->comm_->tx_data_.imu_connect[1] =
+        imu_comm.imu2_connect_.check();
+    arm_controllers[i]->comm_->tx_data_.imu_connect[2] =
+        imu_comm.imu3_connect_.check();
+    for (int j = 0; j < 3; j++) {
+      arm_controllers[i]->comm_->tx_data_.imu[j].yaw = imucomm::float_2_int16(
+          math::degNormalize180(arm_controllers[i]->imu_[j]->yaw() -
+                                arm_controllers[i]->offset_.yaw[j]));
+      arm_controllers[i]->comm_->tx_data_.imu[j].pitch =
+          imucomm::float_2_int16(arm_controllers[i]->imu_[j]->pitch());
+      arm_controllers[i]->comm_->tx_data_.imu[j].roll =
+          imucomm::float_2_int16(arm_controllers[i]->imu_[j]->roll());
+    }
 
-  // 设置yaw零点
-  if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin) == GPIO_PIN_RESET) {
-    arm_controller.setYawZero();
+    // 设置yaw零点
+    if (HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin) == GPIO_PIN_RESET) {
+      arm_controllers[i]->setYawZero();
+    }
   }
 
   // 记录遥控器挡位状态
@@ -160,7 +166,7 @@ void boardLedHandle(void) {
   if (imu_comm.imu1_connect_.check() && imu_comm.imu2_connect_.check() &&
       imu_comm.imu3_connect_.check()) {
     // imu全部连接
-    led.setColor(0, 0, 255);  // blue
+    led.setColor(0, 255, 0);  // green
     led.setModeOn();
   } else {
     // imu离线
