@@ -23,8 +23,8 @@ class Pump {
   } ValveState_e;
 
  public:
-  Pump(Motor* motor, ServoZX361D* servo, uint16_t pmw_close, float pwm_open_1,
-       float pwm_open_2);
+  Pump(Motor* motor, ServoPwm* pwm_servo, ServoZX361D* uart_servo,
+       uint16_t pmw_close, float pwm_open_1, float pwm_open_2);
 
   // 设置气泵状态
   void set(const float& speed, ValveState_e state);
@@ -35,7 +35,8 @@ class Pump {
 
  private:
   Motor* motor_;
-  ServoZX361D* servo_;
+  ServoPwm* pwm_servo_;
+  ServoZX361D* uart_servo_;
 
   uint16_t pwm_close_;   // 阀门关闭舵机PWM
   uint16_t pwm_open_1_;  // 阀门开启舵机PWM

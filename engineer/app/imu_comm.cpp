@@ -11,7 +11,7 @@
 #include "app/imu_comm.h"
 #include <string.h>
 
-extern uint8_t board_id;
+// extern uint8_t board_id;
 
 ImuComm::ImuComm(CAN_HandleTypeDef* hcan, IMU* imu1, IMU* imu2, IMU* imu3)
     : hcan_(hcan),
@@ -31,13 +31,13 @@ void ImuComm::handle(void) {
 // Transmit data
 // 发送数据
 void ImuComm::canTxMsg(void) {
-  can_tx_header_.IDE = CAN_ID_STD;
-  can_tx_header_.RTR = CAN_RTR_DATA;
-  can_tx_header_.DLC = 8;
-  can_tx_header_.StdId = board_id + imu_comm_id_base_;
-  memcpy(can_tx_data_, &imu_msg_[board_id - 1], sizeof(ImuMsgPack_t));
-  // transmit
-  HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_, &can_tx_mail_box_);
+  // can_tx_header_.IDE = CAN_ID_STD;
+  // can_tx_header_.RTR = CAN_RTR_DATA;
+  // can_tx_header_.DLC = 8;
+  // can_tx_header_.StdId = board_id + imu_comm_id_base_;
+  // memcpy(can_tx_data_, &imu_msg_[board_id - 1], sizeof(ImuMsgPack_t));
+  // // transmit
+  // HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_, &can_tx_mail_box_);
 }
 
 // Check CAN channel and id of received CAN message

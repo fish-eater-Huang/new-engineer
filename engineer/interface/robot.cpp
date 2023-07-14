@@ -53,12 +53,12 @@ ControllerComm controller_comm(CONTROLLER_UART);
 ControllerComm controller_comm;
 #endif  // CONTROLLER_UART
 #ifdef SERVO_UART
-ServoZX361D pump_servo[2] = {
-    ServoZX361D(SERVO_UART),
-    ServoZX361D(SERVO_UART),
-};
+// ServoZX361D pump_servo[2] = {
+//     ServoZX361D(SERVO_UART),
+//     ServoZX361D(SERVO_UART),
+// };
 #else
-ServoZX361D pump_servo[2];
+// ServoZX361D pump_servo[2];
 #endif  // SERVO_UART
 #ifdef DEBUG_UART
 SerialStudio serial_tool(DEBUG_UART);

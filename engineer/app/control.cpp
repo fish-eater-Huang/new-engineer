@@ -41,15 +41,19 @@ extern Arm arm;
 extern ArmController arm_controller;
 extern CVComm cv_comm;
 extern RefereeComm referee;
-extern ServoZX361D pump_servo[];
+// extern ServoZX361D pump_servo[];
 
-uint8_t board_id = 0;
-BoardLed led;
 MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(5, 0, 10, 100, 240),
                        LowPassFilter(2e-2f));
+
 ArmGimbal gimbal(&JM0, &GMP, &board_imu);
-Pump pump_e(&PME, &pump_servo[0], 1166, 500, 1833);
-Pump pump_0(&PM0, &pump_servo[1], 1166, 500, 1833);
+
+ServoPwm pump_e_servo(&htim8, TIM_CHANNEL_3);
+ServoPwm pump_0_servo(&htim8, TIM_CHANNEL_4);
+Pump pump_e(&PME, &pump_e_servo, nullptr, 1166, 500, 1833);  // 机械臂气泵
+Pump pump_0(&PM0, &pump_0_servo, nullptr, 1166, 500, 1833);  // 存矿气泵
+
+BoardLed led;
 
 // 上电状态
 enum RobotPowerState_e {
@@ -58,15 +62,12 @@ enum RobotPowerState_e {
   WORKING = 2,
 } robot_state;
 // 初始化标志
-bool robot_init_flag = false;
+bool startup_flag = false;
 // 遥控器挡位记录
 RC::RCSwitch last_rc_switch;
-// 额外功率
-float extra_power_max = 0;
 
 // 遥控器控制参数
 namespace rcctrl {
-
 const float arm_position_rate = 1e-6f;
 const float arm_direction_rate = 3e-6f;
 const float arm_joint_rate = 3e-6f;
@@ -76,11 +77,12 @@ const float chassis_rotate_rate = 0.5f;
 const float chassis_follow_ff_rate = 0.3f;
 
 const float gimbal_rate = 6e-4f;
-
 }  // namespace rcctrl
 
 // 控制初始化
 void controlInit(void) {
+  pump_0_servo.init();
+  pump_e_servo.init();
   led.init();
   robot_state = STOP;
 }
@@ -94,8 +96,8 @@ void controlLoop(void) {
     allMotorsStopShutoff();
     robotReset();
   } else if (robot_state == STARTUP) {
-    allMotorsOn();                     // 电机上电
-    robot_init_flag = robotStartup();  // 开机状态判断
+    allMotorsOn();                  // 电机上电
+    startup_flag = robotStartup();  // 开机状态判断
   } else if (robot_state == WORKING) {
     allMotorsOn();   // 电机上电
     robotControl();  // 机器人控制
@@ -126,7 +128,7 @@ void robotPowerStateFSM(bool stop_flag) {
   } else if (robot_state == STARTUP) {
     if (stop_flag) {
       robot_state = STOP;
-    } else if (robot_init_flag) {
+    } else if (startup_flag) {
       // 初始化/复位完成
       robot_state = WORKING;
     }
@@ -139,7 +141,7 @@ void robotPowerStateFSM(bool stop_flag) {
 
 // 重置各功能状态
 void robotReset(void) {
-  robot_init_flag = false;
+  startup_flag = false;
   arm.mode_ = Arm::Mode_e::STOP;
   last_rc_switch = rc.switch_;
 }
@@ -231,6 +233,23 @@ void robotControl(void) {
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       arm.trajSet(0.5, 0, 0.3, 0, 0, 0, 0.5, 3);
       arm.trajStart();
+    }
+
+    // 存矿气泵控制
+    if (pump_0.valve_state_ == Pump::ValveState_e::CLOSE) {
+      if (rc.channel_.r_row == 660) {
+        pump_0.set(pump_0.motor_speed_, Pump::OPEN_1);
+      } else if (rc.channel_.r_row == -660) {
+        pump_0.set(pump_0.motor_speed_, Pump::OPEN_2);
+      }
+    } else if (pump_0.valve_state_ == Pump::ValveState_e::OPEN_1) {
+      if (rc.channel_.r_row < -300) {
+        pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
+      }
+    } else if (pump_0.valve_state_ == Pump::ValveState_e::OPEN_2) {
+      if (rc.channel_.r_row > 300) {
+        pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
+      }
     }
   }
 
