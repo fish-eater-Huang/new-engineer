@@ -15,7 +15,8 @@
 
 // 构造函数
 Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
-         EncoderComm* encoder)
+         EncoderComm* encoder, IMU* imu0, IMU* imu2, IMU* imu3,
+         ImuComm* imu_comm)
     : jm1_(jm1),
       jm2_(jm2),
       jm3_(jm3),
@@ -25,51 +26,90 @@ Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
       arm_(links_) {
   init_.is_finish = false;
   init_.encoder = encoder;
+  init_.imu0 = imu0;
+  init_.imu2 = imu2;
+  init_.imu3 = imu3;
+  init_.imu_comm = imu_comm;
 }
 
 // 初始化关节角度
 void Arm::init(void) {
   // 初始角度设置
-  // 手动初始化（移至初始化位置开机）
-  float j_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
+  // 默认初始化角度（移至初始化位置开机）
+  float jm_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
 
-  // 检测编码器连接状态
+  // JM1
   if (init_.encoder->connect_.check()) {
-    j_init_deg[0] =
-        math::loopLimit(init_.encoder->deg_[0] - init_.jm1_zero, -180, 180);
-    j_init_deg[1] =
-        math::loopLimit(init_.encoder->deg_[1] - init_.jm2_zero, -180, 180);
-    j_init_deg[2] =
-        math::loopLimit(init_.encoder->deg_[2] - init_.jm3_zero, -180, 180);
+    // 按编码器角度初始化
+    init_.method[0] = Arm::Init_t::Method_e::ENCODER;
+    jm_init_deg[0] = math::loopLimit(
+        init_.encoder->deg_[0] - init_.encoder_zero[0], -180, 180);
+  } else {
+    // 按默认角度初始化(手动移至初始位置后重启)
+    init_.method[0] = Arm::Init_t::Method_e::MANUAL;
   }
-  if (jm4_->connect_.check()) {
-    j_init_deg[3] = math::loopLimit(
-        jm4_->motor_data_.ecd_angle - init_.jm4_zero, -180, 180);
+  // JM23
+  if (init_.encoder->connect_.check()) {
+    // 按编码器角度初始化
+    init_.method[1] = Arm::Init_t::Method_e::ENCODER;
+    init_.method[2] = Arm::Init_t::Method_e::ENCODER;
+    jm_init_deg[1] = math::loopLimit(
+        init_.encoder->deg_[1] - init_.encoder_zero[1], -180, 180);
+    jm_init_deg[2] = math::loopLimit(
+        init_.encoder->deg_[2] - init_.encoder_zero[2], -180, 180);
+  } else if (init_.imu_comm->imu1_connect_.check() &&
+             init_.imu_comm->imu2_connect_.check() &&
+             (fabs(init_.imu0->pitch()) < 10.0f &&
+              fabs(init_.imu0->roll()) < 10.0f)) {
+    // 编码器未连接，imu连接，且J0基本水平，则按imu姿态初始化
+    // 首次开机需要等待link23imu角度收敛后重启
+    init_.method[1] = Arm::Init_t::Method_e::LINK_IMU;
+    init_.method[2] = Arm::Init_t::Method_e::LINK_IMU;
+    // imu姿态->JM23角度
+    float rpy2[3] = {math::deg2rad(init_.imu2->yaw()),
+                     math::deg2rad(init_.imu2->pitch()),
+                     math::deg2rad(init_.imu2->roll())};
+    float rpy3[3] = {math::deg2rad(init_.imu3->yaw()),
+                     math::deg2rad(init_.imu3->pitch()),
+                     math::deg2rad(init_.imu3->roll())};
+    Matrixf<3, 3> Rw2 = robotics::rpy2r(rpy2);
+    Matrixf<3, 3> Rw3 = robotics::rpy2r(rpy3);
+    jm_init_deg[1] = math::rad2deg(
+        math::loopLimit(atan2f(Rw2[2][0], -Rw2[2][2]), -PI * 1.5f, PI * 0.5f));
+    jm_init_deg[2] = math::rad2deg(math::loopLimit(
+        atan2f(-Rw3[2][2], -Rw3[2][0]) - math::deg2rad(jm_init_deg[1]), -PI,
+        PI));
+  } else {
+    // 按默认角度初始化(手动移至初始位置后重启)
+    init_.method[1] = Arm::Init_t::Method_e::MANUAL;
+    init_.method[2] = Arm::Init_t::Method_e::MANUAL;
   }
-  if (jm5_->connect_.check()) {
-    j_init_deg[4] = math::loopLimit(
-        jm5_->motor_data_.ecd_angle - init_.jm5_zero, -180, 180);
-  }
-  if (jm6_->connect_.check()) {
-    j_init_deg[5] = math::loopLimit(
-        jm6_->motor_data_.ecd_angle - init_.jm6_zero, -180, 180);
-  }
+  // JM456
+  init_.method[3] = Arm::Init_t::Method_e::ENCODER;
+  init_.method[4] = Arm::Init_t::Method_e::ENCODER;
+  init_.method[5] = Arm::Init_t::Method_e::ENCODER;
+  jm_init_deg[3] = math::loopLimit(
+      jm4_->motor_data_.ecd_angle - init_.encoder_zero[3], -180, 180);
+  jm_init_deg[4] = math::loopLimit(
+      jm5_->motor_data_.ecd_angle - init_.encoder_zero[4], -180, 180);
+  jm_init_deg[5] = math::loopLimit(
+      jm6_->motor_data_.ecd_angle - init_.encoder_zero[5], -180, 180);
 
   // 设置电机反馈角度
-  jm1_->resetFeedbackAngle(j_init_deg[0]);
-  jm2_->resetFeedbackAngle(j_init_deg[1]);
-  jm3_->resetFeedbackAngle(j_init_deg[2]);
-  jm4_->resetFeedbackAngle(j_init_deg[3]);
-  jm5_->resetFeedbackAngle(j_init_deg[4]);
-  jm6_->resetFeedbackAngle(j_init_deg[5]);
+  jm1_->resetFeedbackAngle(jm_init_deg[0]);
+  jm2_->resetFeedbackAngle(jm_init_deg[1]);
+  jm3_->resetFeedbackAngle(jm_init_deg[2]);
+  jm4_->resetFeedbackAngle(jm_init_deg[3]);
+  jm5_->resetFeedbackAngle(jm_init_deg[4]);
+  jm6_->resetFeedbackAngle(jm_init_deg[5]);
 
   // 更新反馈状态
   float q[6];
   for (int i = 0; i < 4; i++) {
-    q[i] = math::deg2rad(j_init_deg[i]);
+    q[i] = math::deg2rad(jm_init_deg[i]);
   }
-  q[4] = math::deg2rad((j_init_deg[4] - j_init_deg[5]) * 0.5f);
-  q[5] = math::deg2rad((j_init_deg[4] + j_init_deg[5]) * ratio6_);
+  q[4] = math::deg2rad((jm_init_deg[4] - jm_init_deg[5]) * 0.5f);
+  q[5] = math::deg2rad((jm_init_deg[4] + jm_init_deg[5]) * ratio6_);
   fdb_.q = Matrixf<6, 1>(q);
   fdb_.q_D1 = matrixf::zeros<6, 1>();
   fdb_.T = arm_.fkine(fdb_.q);
@@ -130,6 +170,7 @@ void Arm::handle(void) {
   fdb_.q[4][0] = math::deg2rad((jm5_->realAngle() - jm6_->realAngle()) * 0.5f);
   fdb_.q[5][0] =
       math::deg2rad((jm5_->realAngle() + jm6_->realAngle()) * ratio6_);
+
   fdb_.q_D1[0][0] = math::dps2radps(jm1_->realSpeed());
   fdb_.q_D1[1][0] = math::dps2radps(jm2_->realSpeed());
   fdb_.q_D1[2][0] = math::dps2radps(jm3_->realSpeed());
@@ -427,10 +468,12 @@ void Arm::manipulationController(void) {
   ref_.x = math::limit(ref_.x, -a2d4 * 0.9f + x56, a2d4 * 0.9f + x56);
   ref_.y = math::limit(ref_.y, -a2d4 * 0.9f + y56, a2d4 * 0.9f + y56);
   ref_.z = math::limit(ref_.z, -a2d4 * 0.9f + z56, a2d4 * 0.9f + z56);
-  // 软件位置限位(比赛规则)
-  ref_.x = math::limit(ref_.x, limit_.xmin, limit_.xmax);
-  ref_.y = math::limit(ref_.y, limit_.ymin, limit_.ymax);
-  ref_.z = math::limit(ref_.z, limit_.zmin, limit_.zmax);
+  // J1边界限制
+  if (fdb_.x - x56 < 0.05f && fdb_.y - y56 >= 0) {
+    ref_.y = math::limitMin(ref_.y, 0.1f + y56);
+  } else if (fdb_.x - x56 < 0.05f && fdb_.y - y56 < 0) {
+    ref_.y = math::limitMax(ref_.y, -0.1f + y56);
+  }
   // 肘部奇异限位
   float ref_p[3] = {ref_.x, ref_.y, ref_.z};
   float o5_norm = (Matrixf<3, 1>(ref_p) - p56).norm();
@@ -449,12 +492,10 @@ void Arm::manipulationController(void) {
   ref_.x = math::limit(ref_.x, fdb_.x - 0.1f, fdb_.x + 0.1f);
   ref_.y = math::limit(ref_.y, fdb_.y - 0.1f, fdb_.y + 0.1f);
   ref_.z = math::limit(ref_.z, fdb_.z - 0.1f, fdb_.z + 0.1f);
-  // J1边界限制
-  if (fdb_.x - x56 < 0.05f && fdb_.y - y56 >= 0) {
-    ref_.y = math::limitMin(ref_.y, 0.1f + y56);
-  } else if (fdb_.x - x56 < 0.05f && fdb_.y - y56 < 0) {
-    ref_.y = math::limitMax(ref_.y, -0.1f + y56);
-  }
+  // 软件位置限位(比赛规则)
+  ref_.x = math::limit(ref_.x, limit_.xmin, limit_.xmax);
+  ref_.y = math::limit(ref_.y, limit_.ymin, limit_.ymax);
+  ref_.z = math::limit(ref_.z, limit_.zmin, limit_.zmax);
 
   // 目标状态解算
   Matrixf<3, 1> p_ref;

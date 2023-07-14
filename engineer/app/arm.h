@@ -23,7 +23,7 @@ class Arm {
  public:
   // 构造函数
   Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
-      EncoderComm* encoder);
+      EncoderComm* encoder, IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm);
 
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
@@ -126,17 +126,21 @@ class Arm {
   struct Init_t {
     // 初始化状态
     bool is_finish;
-
-    // 电机编码器零点
-    const float jm1_zero = 0;
-    const float jm2_zero = 0;
-    const float jm3_zero = 0;
-    const float jm4_zero = 40.0;
-    const float jm5_zero = -142.0;
-    const float jm6_zero = -170.0;
+    // 初始化方式
+    enum Method_e {
+      ENCODER,   // 编码器
+      LINK_IMU,  // IMU
+      MANUAL,    // 手动
+    } method[6];
 
     // 编码器指针
     EncoderComm* encoder;
+    // 电机编码器零点
+    const float encoder_zero[6] = {0, 0, 0, 40.0, -142.0, -170.0};
+
+    // IMU指针
+    IMU *imu0, *imu2, *imu3;
+    ImuComm* imu_comm;
   } init_;
 
   // 工作模式
@@ -155,12 +159,12 @@ class Arm {
     const float qmax[6] = {math::deg2rad(160), math::deg2rad(0),
                            math::deg2rad(70),  math::deg2rad(180),
                            math::deg2rad(70),  math::deg2rad(180)};
-    const float xmin = -1.0f;
-    const float xmax = 1.0f;
-    const float ymin = -1.0f;
-    const float ymax = 1.0f;
-    const float zmin = -1.0f;
-    const float zmax = 1.0f;
+    const float xmin = -0.6f;
+    const float xmax = 0.6f;
+    const float ymin = -0.6f;
+    const float ymax = 0.6f;
+    const float zmin = -0.6f;
+    const float zmax = 0.6f;
   } limit_;
 
   // J6减速比
