@@ -76,11 +76,11 @@ Motor JM4(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
           PID(6e-3, 0, 1.5e-2, 0, 3),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM5(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(20, 0.1, 10, 100, 360),                    // ppid
+          PID(20, 0.1, 10, 100, 720),                    // ppid
           PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(20, 0.1, 10, 100, 360),                    // ppid
+          PID(20, 0.1, 10, 100, 720),                    // ppid
           PID(6e-3, 0, 1.5e-2, 0, 2),                    // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
