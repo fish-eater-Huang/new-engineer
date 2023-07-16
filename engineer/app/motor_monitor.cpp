@@ -47,9 +47,9 @@ Motor PM0(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
           PID(), pump_spid);              // ppid, spid
 
 // J0转轴电机
-Motor JM0(Motor::MIT, -1, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
+Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+          PID(10, 0, 15, 100, 360),                      // ppid
+          PID(0.1, 0, 0.3, 0, 20),                       // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 机械臂关节电机
@@ -87,11 +87,14 @@ Motor JM6(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
 // DJI Motor id config, M3508/M2006: 1~8, GM6020: 5~11
 // DJI电机ID配置，M3508，M2006可配置范围为1~8，GM6020可配置范围为5~11
 Motor* can1_dji_motor[11] = {
-    &CMFL,  // id:1
-    &CMFR,  // id:2
-    &CMBL,  // id:3
-    &CMBR,  // id:4
-
+    &CMFL,    // id:1
+    &CMFR,    // id:2
+    &CMBL,    // id:3
+    &CMBR,    // id:4
+    nullptr,  // id:5
+    nullptr,  // id:6
+    nullptr,  // id:7
+    nullptr,  // id:8
     nullptr,  // id:9
     nullptr,  // id:10
     nullptr   // id:11

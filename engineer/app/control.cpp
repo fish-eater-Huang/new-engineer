@@ -76,7 +76,7 @@ const float chassis_speed_rate = 4e-3f;
 const float chassis_rotate_rate = 0.5f;
 const float chassis_follow_ff_rate = 0.3f;
 
-const float gimbal_rate = 6e-4f;
+const float gimbal_rate = 3e-4f;
 }  // namespace rcctrl
 
 // 控制初始化
@@ -105,6 +105,7 @@ void controlLoop(void) {
 
   chassis.rotateHandle(-gimbal.j0EncoderAngle());
   chassis.handle();
+  JM0.control_data_.feedforward_intensity = JM1.intensity_float_;
   gimbal.handle();
   arm_controller.handle();
   boardLedHandle();
@@ -214,12 +215,16 @@ void robotControl(void) {
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
     // 云台底盘测试
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    arm.mode_ = Arm::Mode_e::JOINT;
     arm.trajAbort();
 
     chassis.lock_ = false;
+//    chassis.mode_ = MecanumChassis::NORMAL;
+//    chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate,
+//                     -rc.channel_.r_row * rcctrl::chassis_speed_rate,
+//                     rc.channel_.dial_wheel * rcctrl::chassis_rotate_rate);
     chassis.mode_ = MecanumChassis::FOLLOW;
-    if (fabs(rc.channel_.dial_wheel > 100)) {
+    if (fabs(rc.channel_.dial_wheel) > 100) {
       chassis.mode_ = MecanumChassis::GYRO;
       chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate,
                        -rc.channel_.r_row * rcctrl::chassis_speed_rate,

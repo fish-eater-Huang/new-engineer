@@ -54,7 +54,7 @@ void ArmGimbal::addAngle(const float& j0, const float& pitch) {
 
 // 获取J0编码器角度
 float ArmGimbal::j0EncoderAngle(void) {
-  return (jm0_->motor_data_.ecd_angle - param_.j0_zero) / jm0_->ratio_;
+  return math::degNormalize180((jm0_->motor_data_.ecd_angle - param_.j0_zero) / jm0_->ratio_);
 }
 
 // 设置电机目标状态，更新反馈数据
