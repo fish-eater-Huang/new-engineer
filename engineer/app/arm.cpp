@@ -36,7 +36,7 @@ Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
 void Arm::init(void) {
   // 初始角度设置
   // 默认初始化角度（移至初始化位置开机）
-  float jm_init_deg[6] = {0, -170.0f, 70.0f, 0, 0, 0};
+  float jm_init_deg[6] = {0, -165.0f, 65.0f, 0, 0, 0};
 
   // JM1
   if (init_.encoder->connect_.check()) {

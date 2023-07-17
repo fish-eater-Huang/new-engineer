@@ -61,18 +61,18 @@ class ControllerComm {
 
   // 发送数据
   struct TxData_t {
-    bool controller_state;
-    bool imu_connect[3];
-    bool reserve[4];
+    uint8_t controller_state;
+    uint8_t imu_connect[3];
     ImuStatus_t imu[3];
+    uint8_t reserve[8];
   } __packed tx_data_;
 
   // 接收数据
   struct RxData_t {
-    bool controller_state;
-    bool imu_connect[3];
-    bool reserve[4];
+    uint8_t controller_state;
+    uint8_t imu_connect[3];
     ImuStatus_t imu[3];
+    uint8_t reserve[8];
   } __packed rx_data_;
 
  private:

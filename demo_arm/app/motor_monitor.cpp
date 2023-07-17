@@ -29,7 +29,7 @@ float j2Model(const float& torque, const float& speed = 0) {
   return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
 }
 Motor JM2(Motor::M3508, -100, Motor::POSITION_SPEED,    // type, ratio, method
-          PID(20, 0.1, 5, 10, 120),                     // ppid
+          PID(20, 0.1, 5, 10, 90),                      // ppid
           PID(200, 0.1, 20, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j2Model);                                     // model
@@ -38,7 +38,7 @@ float j3Model(const float& torque, const float& speed = 0) {
   return torque * 4e2f;  // 8192*19.2/(3*100) ~= 5.2e2
 }
 Motor JM3(Motor::M3508, 100, Motor::POSITION_SPEED,     // type, ratio, method
-          PID(20, 0.1, 5, 10, 120),                     // ppid
+          PID(20, 0.1, 5, 10, 90),                      // ppid
           PID(200, 0.1, 20, 1000, 16384),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),  // kf
           j3Model);                                     // model

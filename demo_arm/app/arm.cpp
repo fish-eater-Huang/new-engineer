@@ -513,7 +513,7 @@ void Arm::jointController(void) {
   ref_.q[2][0] = math::limit(ref_.q[2][0], -PI * 0.5f, math::deg2rad(80));
   ref_.q[3][0] = math::limit(ref_.q[3][0], -PI, PI);
   ref_.q[4][0] = math::limit(ref_.q[4][0], -PI, PI);
-  // ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
+  ref_.q[5][0] = math::limit(ref_.q[5][0], -PI, PI);
 
   // 正运动学
   ref_.T = fdb_.T;
