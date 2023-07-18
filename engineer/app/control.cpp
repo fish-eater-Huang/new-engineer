@@ -85,7 +85,6 @@ void controlInit(void) {
   pump_e_servo.init();
   led.init();
   robot_state = STOP;
-  last_rc_switch = rc.switch_;
 }
 
 // 控制主循环
@@ -181,12 +180,6 @@ void robotControl(void) {
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate,
                -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
-    // arm.trajAbort();
-    // if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r)
-    // {
-    //   arm.trajSet(0.235, 0, 0.15, 0, 0, 0, 0.6, 3);
-    //   arm.trajStart();
-    // }
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
@@ -198,11 +191,6 @@ void robotControl(void) {
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
     arm.trajAbort();
-    //    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r !=
-    //    last_rc_switch.r) {
-    //      arm.trajSet(0.235, 0, 0.4, 0, 0, 0, 0.6, 3);
-    //      arm.trajStart();
-    //    }
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
@@ -268,11 +256,7 @@ void robotControl(void) {
   }
   // 遥控器挡位左下右中
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm.trajSet(0.15, 0, 0.15, 0, 0, 0, 0.5, 3);
-      arm.trajStart();
-    }
+    arm.mode_ = Arm::Mode_e::JOINT;
 
     // 存矿气泵
     if (pump_0.valve_state_ == Pump::ValveState_e::CLOSE) {
@@ -290,7 +274,11 @@ void robotControl(void) {
         pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
       }
     }
-    pump_0.set(rc.channel_.r_col * rcctrl::pump_motor_rate, pump_0.valve_state_);
+    if(rc.channel_.r_row == 660){
+      pump_0.set(18000, pump_0.valve_state_);
+    } else if(rc.channel_.r_row < -300){
+      pump_0.set(0, pump_0.valve_state_);
+    }
     
     // 机械臂气泵
     if (pump_e.valve_state_ == Pump::ValveState_e::CLOSE) {
@@ -304,7 +292,11 @@ void robotControl(void) {
     } else if (pump_e.valve_state_ == Pump::ValveState_e::OPEN_2) {
         pump_e.set(pump_e.motor_speed_, Pump::CLOSE);
     }
-    pump_e.set(rc.channel_.l_col * rcctrl::pump_motor_rate, pump_e.valve_state_);
+    if(rc.channel_.l_row == 660){
+      pump_e.set(18000, pump_e.valve_state_);
+    } else if(rc.channel_.l_row < -300){
+      pump_e.set(0, pump_e.valve_state_);
+    }
   }
 }
 

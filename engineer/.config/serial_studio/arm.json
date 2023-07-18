@@ -430,6 +430,26 @@
             ],
             "title": "roll",
             "widget": "multiplot"
+        },
+        {
+            "datasets": [
+                {
+                    "alarm": 0,
+                    "fft": false,
+                    "fftSamples": 1024,
+                    "graph": false,
+                    "led": false,
+                    "log": false,
+                    "max": 0,
+                    "min": 0,
+                    "title": "sigma",
+                    "units": "",
+                    "value": "%26",
+                    "widget": ""
+                }
+            ],
+            "title": "trajectory",
+            "widget": "multiplot"
         }
     ],
     "separator": "",

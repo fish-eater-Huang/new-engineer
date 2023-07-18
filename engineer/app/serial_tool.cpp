@@ -139,6 +139,7 @@ void SerialStudio::txArmData(Arm& arm) {
       math::rad2deg(arm.fdb_.pitch),    // %23
       math::rad2deg(arm.ref_.roll),     // %24
       math::rad2deg(arm.fdb_.roll),     // %25
+      arm.traj_.sigma,                  // %26
   };
   txData(txdata_pack, sizeof(txdata_pack) / sizeof(float));
 }

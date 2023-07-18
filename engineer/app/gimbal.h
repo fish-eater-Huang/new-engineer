@@ -58,7 +58,7 @@ class ArmGimbal {
     bool pitch_finish;
 
     const float j0_thres = 2;
-    const float pitch_angle = 30;
+    const float pitch_angle = 35;
   } init_;
 
   // 目标状态数据

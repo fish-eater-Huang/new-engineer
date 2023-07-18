@@ -135,15 +135,6 @@ void Arm::init(void) {
   ref_.pitch = fdb_.pitch;
   ref_.roll = fdb_.roll;
 
-  // 更新轨迹规划状态
-  traj_.start.q = fdb_.q;
-  traj_.start.x = fdb_.x;
-  traj_.start.y = fdb_.y;
-  traj_.start.z = fdb_.z;
-  traj_.start.yaw = fdb_.yaw;
-  traj_.start.pitch = fdb_.pitch;
-  traj_.start.roll = fdb_.roll;
-
   // 设置电机反馈数据源
   jm1_->setFdbSrc(&jm1_->kfAngle(), &jm1_->kfSpeed());
   jm2_->setFdbSrc(&jm2_->kfAngle(), &jm2_->kfSpeed());
@@ -151,6 +142,21 @@ void Arm::init(void) {
   jm4_->setFdbSrc(&jm4_->kfAngle(), &jm4_->kfSpeed());
   jm5_->setFdbSrc(&jm5_->kfAngle(), &jm5_->kfSpeed());
   jm6_->setFdbSrc(&jm6_->kfAngle(), &jm6_->kfSpeed());
+  
+  // 力矩前馈清零
+  torq_ = matrixf::zeros<6, 1>();
+  
+  // 设置初始目标角度
+  jm1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  jm2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  jm5_->setAngleSpeed(
+      math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
+      torq_[4][0]);
+  jm6_->setAngleSpeed(
+      math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
+      torq_[5][0]);
 
   init_.is_finish = true;
 }
@@ -673,7 +679,8 @@ void Arm::trajectoryPlanner(void) {
       ref_.yaw = rpy_ref[0][0];
       ref_.pitch = rpy_ref[1][0];
       ref_.roll = rpy_ref[2][0];
-    } else if (mode_ == Arm::Mode_e::JOINT) {
+    }
+    else if (mode_ == Arm::Mode_e::JOINT) {
       // 非关节空间规划模式中止规划
       if (traj_.mode != Arm::Traj_t::JOINT) {
         trajAbort();
