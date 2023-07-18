@@ -27,29 +27,24 @@ Motor CMBR(Motor::M3508, 3591.f / 187.f, Motor::SPEED,  // type, ratio, method
            PID(), PID(chassis_wheel_spid));             // ppid, spid
 
 // 云台电机
-// 30, 0.05, 10, 50, 360
-// 30, 0.05, 200, 1000, 16384
-Motor GMY(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
-          PID(0, 0, 0, 0, 0),                            // ppid
-          PID(0, 0, 0, 0, 0),                            // spid
-          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
-Motor GMP(Motor::M3508, -1, Motor::POSITION_SPEED,       // type, ratio, method
+Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
           PID(30, 0, 10, 0, 360),                        // ppid
           PID(25, 0.05, 200, 1000, 12000),               // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
-// 气泵电机
-// const PID pump_spid(30, 0.05, 200, 1000, 16384);
-const PID pump_spid(0, 0, 0, 0, 0);
-Motor PME(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
-          PID(), pump_spid);              // ppid, spid
-Motor PM0(Motor::M3508, 1, Motor::SPEED,  // type, ratio, method
-          PID(), pump_spid);              // ppid, spid
-
 // J0转轴电机
 Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(12, 0, 15, 100, 200),                      // ppid
-          PID(0.1, 0, 0.3, 0, 20),                       // spid
+          PID(10, 0, 800, 100, 180),                     // ppid
+          PID(0.2, 0, 0.5, 0, 10),                       // spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+
+// 气泵电机
+const PID pump_spid(6, 0, 5, 1000, 16384);
+Motor PME(Motor::M3508, 1, Motor::SPEED,                 // type, ratio, method
+          PID(), pump_spid,                              // ppid, spid
+          true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
+Motor PM0(Motor::M3508, 1, Motor::SPEED,                 // type, ratio, method
+          PID(), pump_spid,                              // ppid, spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 机械臂关节电机
@@ -100,7 +95,7 @@ Motor* can1_dji_motor[11] = {
     nullptr   // id:11
 };
 Motor* can2_dji_motor[11] = {
-    &GMY,     // id:1
+    nullptr,  // id:1
     &GMP,     // id:2
     &PME,     // id:3
     &PM0,     // id:4

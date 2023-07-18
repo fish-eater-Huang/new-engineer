@@ -47,13 +47,16 @@ class Arm {
   void addJointRef(const float& q1, const float& q2, const float& q3,
                    const float& q4, const float& q5, const float& q6);
 
-  // 设置轨迹终点(末端位姿)+时间(ms)
+  // 设置轨迹终点(末端位姿)+速度
   void trajSet(const float& x, const float& y, const float& z, const float& yaw,
                const float& pitch, const float& roll, const float& speed,
                const float& rotate_speed);
 
+  // 设置轨迹终点(关节角度)+速度
+  void trajSet(Matrixf<6, 1> q, Matrixf<6, 1> q_D1);
+
   // 开始轨迹
-  void trajStart(void);
+  uint32_t trajStart(void);
 
   // 中止轨迹
   void trajAbort(void);
@@ -136,7 +139,7 @@ class Arm {
     // 编码器指针
     EncoderComm* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {0, 0, 0, 40.0, -142.0, -170.0};
+    const float encoder_zero[6] = {0, 0, 0, -49.1, -172.3, 27.4};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;
@@ -153,11 +156,11 @@ class Arm {
 
   // 限位
   struct Limit_t {
-    const float qmin[6] = {math::deg2rad(-160), math::deg2rad(-170),
+    const float qmin[6] = {math::deg2rad(-160), math::deg2rad(-165),
                            math::deg2rad(-90),  math::deg2rad(-180),
                            math::deg2rad(-90),  math::deg2rad(-180)};
     const float qmax[6] = {math::deg2rad(160), math::deg2rad(0),
-                           math::deg2rad(70),  math::deg2rad(180),
+                           math::deg2rad(75),  math::deg2rad(180),
                            math::deg2rad(70),  math::deg2rad(180)};
     const float xmin = -0.6f;
     const float xmax = 0.6f;
@@ -199,6 +202,11 @@ class Arm {
   struct Traj_t {
     // 轨迹规划运行状态
     bool state;
+    // 轨迹规划模式
+    enum Mode_e {
+      MANIPULATION,
+      JOINT,
+    } mode;
 
     // 轨迹起点
     struct Start_t {
@@ -221,6 +229,7 @@ class Arm {
     // 速度
     float speed;         // 速度(m/s)
     float rotate_speed;  // 角速度(rad/s)
+    Matrixf<6, 1> q_D1;  // 关节角速度(rad/s)
 
     // 时间相关变量
     uint32_t ticks;

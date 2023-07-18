@@ -37,8 +37,8 @@ struct Param {
   const float g_thres = 0.3f;
 
   // 传感器方向变换矩阵(对应不同安装方向，默认为I(3))
-  const float R_imu[3][3] = {{1.0f, 0.0f, 0.0f},
-                             {0.0f, 1.0f, 0.0f},
+  const float R_imu[3][3] = {{0.0f, 1.0f, 0.0f},
+                             {-1.0f, 0.0f, 0.0f},
                              {0.0f, 0.0f, 1.0f}};
   const float R_mag[3][3] = {{0.93f, 0.0f, 0.0f},
                              {0.0f, 1.03f, 0.0f},

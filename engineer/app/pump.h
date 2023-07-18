@@ -25,6 +25,9 @@ class Pump {
  public:
   Pump(Motor* motor, ServoPwm* pwm_servo, ServoZX361D* uart_servo,
        uint16_t pmw_close, float pwm_open_1, float pwm_open_2);
+ 
+  // 初始化
+  void init(void);
 
   // 设置气泵状态
   void set(const float& speed, ValveState_e state);

@@ -18,6 +18,11 @@ Pump::Pump(Motor* motor, ServoPwm* pwm_servo, ServoZX361D* uart_servo,
       pwm_close_(pmw_close),
       pwm_open_1_(pwm_open_1),
       pwm_open_2_(pwm_open_2) {}
+        
+// 初始化
+void Pump::init(void){
+  motor_->setFdbSrc(&motor_->kfAngle(), &motor_->kfSpeed());
+}
 
 // 设置阀门状态
 void Pump::set(const float& speed, ValveState_e state) {

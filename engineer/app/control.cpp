@@ -12,15 +12,12 @@
 
 #include "iwdg.h"
 
-#include "app/arm.h"
-#include "app/arm_controller.h"
 #include "app/chassis.h"
 #include "app/gimbal.h"
 #include "app/imu_comm.h"
 #include "app/imu_monitor.h"
 #include "app/mine.h"
 #include "app/motor_monitor.h"
-#include "app/pump.h"
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
 #include "base/common/math.h"
@@ -43,15 +40,15 @@ extern CVComm cv_comm;
 extern RefereeComm referee;
 // extern ServoZX361D pump_servo[];
 
-MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(5, 0, 10, 100, 240),
-                       LowPassFilter(2e-2f));
+MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(10, 0, 10, 100, 270),
+                       LowPassFilter(5e-3f));
 
 ArmGimbal gimbal(&JM0, &GMP, &board_imu);
 
-ServoPwm pump_e_servo(&htim8, TIM_CHANNEL_3);
-ServoPwm pump_0_servo(&htim8, TIM_CHANNEL_4);
-Pump pump_e(&PME, &pump_e_servo, nullptr, 1166, 500, 1833);  // 机械臂气泵
-Pump pump_0(&PM0, &pump_0_servo, nullptr, 1166, 500, 1833);  // 存矿气泵
+ServoPwm pump_e_servo(&htim5, TIM_CHANNEL_3);
+ServoPwm pump_0_servo(&htim5, TIM_CHANNEL_4);
+Pump pump_e(&PME, &pump_e_servo, nullptr, 1166, 550, 1166);  // 机械臂气泵
+Pump pump_0(&PM0, &pump_0_servo, nullptr, 1166, 1760, 540);  // 存矿气泵
 
 BoardLed led;
 
@@ -73,18 +70,22 @@ const float arm_direction_rate = 3e-6f;
 const float arm_joint_rate = 3e-6f;
 
 const float chassis_speed_rate = 4e-3f;
-const float chassis_rotate_rate = 0.5f;
+const float chassis_rotate_rate = 0.45f;
 const float chassis_follow_ff_rate = 0.3f;
 
 const float gimbal_rate = 3e-4f;
+  
+const float pump_motor_rate = 30;
 }  // namespace rcctrl
 
 // 控制初始化
 void controlInit(void) {
+  gimbal.initAll();
   pump_0_servo.init();
   pump_e_servo.init();
   led.init();
   robot_state = STOP;
+  last_rc_switch = rc.switch_;
 }
 
 // 控制主循环
@@ -109,6 +110,9 @@ void controlLoop(void) {
   gimbal.handle();
   arm_controller.handle();
   boardLedHandle();
+  
+  // 记录遥控器挡位状态
+  last_rc_switch = rc.switch_;
 }
 
 // IWDG处理，true持续刷新，false进入STOP状态并停止刷新
@@ -143,13 +147,26 @@ void robotPowerStateFSM(bool stop_flag) {
 // 重置各功能状态
 void robotReset(void) {
   startup_flag = false;
+  
   arm.mode_ = Arm::Mode_e::STOP;
-  last_rc_switch = rc.switch_;
+  arm.trajAbort();
+  gimbal.initJ0();
+  pump_e.set(0, Pump::ValveState_e::CLOSE);
+  pump_0.set(0, Pump::ValveState_e::CLOSE);
 }
 
 // 开机上电启动处理
 bool robotStartup(void) {
   bool flag = true;
+  if(!gimbal.init_.j0_finish){
+    chassis.lock_ = true;
+    flag = false;
+  } else {
+    chassis.lock_ = false;
+  }
+  if(!gimbal.init_.pitch_finish){
+    flag = false;
+  }
   return flag;
 }
 
@@ -164,12 +181,12 @@ void robotControl(void) {
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate,
                -rc.channel_.dial_wheel * rcctrl::arm_direction_rate);
-    arm.trajAbort();  
-//    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-//      arm.trajSet(0.235, 0, 0.15, 0, 0, 0, 0.6, 3);
-//      arm.trajStart();
-//    }
-
+    // arm.trajAbort();
+    // if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r)
+    // {
+    //   arm.trajSet(0.235, 0, 0.15, 0, 0, 0, 0.6, 3);
+    //   arm.trajStart();
+    // }
   }
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
@@ -181,10 +198,11 @@ void robotControl(void) {
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
     arm.trajAbort();
-//    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-//      arm.trajSet(0.235, 0, 0.4, 0, 0, 0, 0.6, 3);
-//      arm.trajStart();
-//    }
+    //    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r !=
+    //    last_rc_switch.r) {
+    //      arm.trajSet(0.235, 0, 0.4, 0, 0, 0, 0.6, 3);
+    //      arm.trajStart();
+    //    }
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
@@ -207,22 +225,23 @@ void robotControl(void) {
                  arm_controller.ref_.pitch, arm_controller.ref_.roll);
     }
     arm.trajAbort();
-//    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-//      arm.trajSet(-0.3, -0.1, 0.12, 0, 0, 0, 0.6, 3);
-//      arm.trajStart();
-//    }
   }
   // 遥控器挡位左上右中
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
     // 云台底盘测试
     arm.mode_ = Arm::Mode_e::JOINT;
-    arm.trajAbort();
+    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+      float q[6] = {math::deg2rad(0),     math::deg2rad(-165.0f),
+                    math::deg2rad(75.0f), math::deg2rad(0),
+                    math::deg2rad(0),     math::deg2rad(0)};
+      float q_D1[6] = {math::dps2radps(120), math::dps2radps(90),
+                       math::dps2radps(90),  math::dps2radps(360),
+                       math::dps2radps(360), math::dps2radps(360)};
+      arm.trajSet(q, q_D1);
+      arm.trajStart();
+    }
 
     chassis.lock_ = false;
-//    chassis.mode_ = MecanumChassis::NORMAL;
-//    chassis.setSpeed(rc.channel_.r_col * rcctrl::chassis_speed_rate,
-//                     -rc.channel_.r_row * rcctrl::chassis_speed_rate,
-//                     rc.channel_.dial_wheel * rcctrl::chassis_rotate_rate);
     chassis.mode_ = MecanumChassis::FOLLOW;
     if (fabs(rc.channel_.dial_wheel) > 100) {
       chassis.mode_ = MecanumChassis::GYRO;
@@ -255,26 +274,38 @@ void robotControl(void) {
       arm.trajStart();
     }
 
-    // 存矿气泵控制
+    // 存矿气泵
     if (pump_0.valve_state_ == Pump::ValveState_e::CLOSE) {
-      if (rc.channel_.r_row == 660) {
+      if (rc.channel_.r_row == -660) {
         pump_0.set(pump_0.motor_speed_, Pump::OPEN_1);
-      } else if (rc.channel_.r_row == -660) {
+      } else if (rc.channel_.r_row == 660) {
         pump_0.set(pump_0.motor_speed_, Pump::OPEN_2);
       }
     } else if (pump_0.valve_state_ == Pump::ValveState_e::OPEN_1) {
-      if (rc.channel_.r_row < -300) {
-        pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
-      }
-    } else if (pump_0.valve_state_ == Pump::ValveState_e::OPEN_2) {
       if (rc.channel_.r_row > 300) {
         pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
       }
+    } else if (pump_0.valve_state_ == Pump::ValveState_e::OPEN_2) {
+      if (rc.channel_.r_row < -300) {
+        pump_0.set(pump_0.motor_speed_, Pump::CLOSE);
+      }
     }
+    pump_0.set(rc.channel_.r_col * rcctrl::pump_motor_rate, pump_0.valve_state_);
+    
+    // 机械臂气泵
+    if (pump_e.valve_state_ == Pump::ValveState_e::CLOSE) {
+      if (rc.channel_.l_row == 660) {
+        pump_e.set(pump_e.motor_speed_, Pump::OPEN_1);
+      }
+    } else if (pump_e.valve_state_ == Pump::ValveState_e::OPEN_1) {
+      if (rc.channel_.l_row < -300) {
+        pump_e.set(pump_e.motor_speed_, Pump::CLOSE);
+      }
+    } else if (pump_e.valve_state_ == Pump::ValveState_e::OPEN_2) {
+        pump_e.set(pump_e.motor_speed_, Pump::CLOSE);
+    }
+    pump_e.set(rc.channel_.l_col * rcctrl::pump_motor_rate, pump_e.valve_state_);
   }
-
-  // 记录遥控器挡位状态
-  last_rc_switch = rc.switch_;
 }
 
 // 板载LED指示灯效果

@@ -57,7 +57,7 @@ class ArmGimbal {
     bool j0_finish;
     bool pitch_finish;
 
-    const float j0_thres = 5;
+    const float j0_thres = 2;
     const float pitch_angle = 30;
   } init_;
 

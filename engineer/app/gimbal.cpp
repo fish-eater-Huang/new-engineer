@@ -54,16 +54,18 @@ void ArmGimbal::addAngle(const float& j0, const float& pitch) {
 
 // 获取J0编码器角度
 float ArmGimbal::j0EncoderAngle(void) {
-  return math::degNormalize180((jm0_->motor_data_.ecd_angle - param_.j0_zero) / jm0_->ratio_);
+  return math::degNormalize180((jm0_->motor_data_.ecd_angle - param_.j0_zero) /
+                               jm0_->ratio_);
 }
 
 // 设置电机目标状态，更新反馈数据
 void ArmGimbal::handle(void) {
   // J0初始化，更新反馈角度并回正
   if (!init_.j0_finish) {
-    ref_.j0 = 0;
-    init_.j0_finish = jm0_->connect_.check() &&
-                      (fabs(jm0_->motor_data_.angle) < init_.j0_thres);
+    ref_.j0 = fdb_.j0 + fmin(fabs(ref_.j0 - fdb_.j0), 6e-2f) *
+                            math::sign(ref_.j0 - fdb_.j0);
+    init_.j0_finish = (jm0_->connect_.check() &&
+                       fabs(jm0_->motor_data_.angle) < init_.j0_thres);
   }
   // pitch初始化
   if (!init_.pitch_finish) {
@@ -75,7 +77,7 @@ void ArmGimbal::handle(void) {
     }
     if (gm_pitch_->connect_.check() &&
         gm_pitch_->targetAngle() - gm_pitch_->realAngle() > 10 &&
-        gm_pitch_->motor_data_.current * gm_pitch_->ratio_ > 6000) {
+        gm_pitch_->motor_data_.current * gm_pitch_->ratio_ > 3000) {
       // 初始化完成
       gm_pitch_->resetFeedbackAngle(init_.pitch_angle);
       ref_.pitch = 0;  // todo

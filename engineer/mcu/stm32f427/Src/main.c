@@ -87,7 +87,7 @@ int main(void)
 
   /* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */  
+  /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
@@ -114,6 +114,7 @@ int main(void)
   MX_TIM3_Init();
   MX_I2C2_Init();
   MX_SPI4_Init();
+  MX_TIM5_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 

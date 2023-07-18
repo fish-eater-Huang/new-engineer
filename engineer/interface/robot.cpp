@@ -117,7 +117,7 @@ void imuTask(void const* argument) {
 
 osThreadId armTaskHandle;
 void armTask(void const* argument) {
-  osDelay(2000);
+  osDelay(1000);
   arm.init();
   for (;;) {
     arm.handle();
