@@ -159,7 +159,7 @@
           <Type>0</Type>
           <LineNumber>99</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134247328</Address>
+          <Address>134247384</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
@@ -195,7 +195,7 @@
         <Ww>
           <count>4</count>
           <WinNumber>1</WinNumber>
-          <ItemText>board_imu</ItemText>
+          <ItemText>task</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
@@ -220,7 +220,7 @@
         <Ww>
           <count>9</count>
           <WinNumber>1</WinNumber>
-          <ItemText>last_rc_switch</ItemText>
+          <ItemText>board_imu</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>

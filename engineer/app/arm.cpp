@@ -142,10 +142,10 @@ void Arm::init(void) {
   jm4_->setFdbSrc(&jm4_->kfAngle(), &jm4_->kfSpeed());
   jm5_->setFdbSrc(&jm5_->kfAngle(), &jm5_->kfSpeed());
   jm6_->setFdbSrc(&jm6_->kfAngle(), &jm6_->kfSpeed());
-  
+
   // 力矩前馈清零
   torq_ = matrixf::zeros<6, 1>();
-  
+
   // 设置初始目标角度
   jm1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
   jm2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
@@ -583,7 +583,7 @@ void Arm::trajSet(Matrixf<6, 1> q, Matrixf<6, 1> q_D1) {
   }
 }
 
-// 开始轨迹
+// 开始轨迹，返回轨迹结束时间
 uint32_t Arm::trajStart(void) {
   // 设置轨迹起点为当前状态
   traj_.start.q = fdb_.q;
@@ -679,8 +679,7 @@ void Arm::trajectoryPlanner(void) {
       ref_.yaw = rpy_ref[0][0];
       ref_.pitch = rpy_ref[1][0];
       ref_.roll = rpy_ref[2][0];
-    }
-    else if (mode_ == Arm::Mode_e::JOINT) {
+    } else if (mode_ == Arm::Mode_e::JOINT) {
       // 非关节空间规划模式中止规划
       if (traj_.mode != Arm::Traj_t::JOINT) {
         trajAbort();

@@ -56,12 +56,13 @@ void MecanumChassis::setSpeed(float vx, float vy, float wz) {
 // Handle rotate speed
 // 处理不同模式下底盘旋转速度
 // fdb_angle: 反馈角度，用于底盘跟随等
-void MecanumChassis::rotateHandle(float fdb_angle) {
+void MecanumChassis::rotateHandle(float fdb_angle, float follow_fdb_angle) {
   fdb_.angle = fdb_angle;
   if (mode_ == NORMAL) {
   } else if (mode_ == FOLLOW) {
-    ref_.wz = math::deadBand(angle_pid_.calc(ref_.angle, fdb_.angle), -10, 10) +
-              feedforward_wz_;
+    ref_.wz =
+        math::deadBand(angle_pid_.calc(ref_.angle, follow_fdb_angle), -10, 10) +
+        feedforward_wz_;
   } else if (mode_ == GYRO) {
   }
 }

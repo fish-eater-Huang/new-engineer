@@ -22,189 +22,261 @@ void controlInit(void);
 // 控制主循环
 void controlLoop(void);
 
+// 机械臂位姿参数
+typedef struct Pose {
+  float x, y, z;
+  float yaw, pitch, roll;
+
+  Pose(float arg_x = 0, float arg_y = 0, float arg_z = 0, float arg_yaw = 0,
+       float arg_pitch = 0, float arg_roll = 0)
+      : x(arg_x),
+        y(arg_y),
+        z(arg_z),
+        yaw(arg_yaw),
+        pitch(arg_pitch),
+        roll(arg_roll) {}
+} Pose_t;
+
 // 机械臂任务类
 class ArmTask {
-  // 任务状态
-  typedef enum State {
+ public:
+  // 任务类别
+  typedef enum Mode {
     MOVE,         // 行驶
-    EXCHANGE,     // 兑换
     PICK_NORMAL,  // 取矿(资源岛)
     PICK_LOW,     // 取矿(地面)/障碍块/救援
-    PICK_HIGH,    // 空接
-    DEPOSIT_1,    // 存矿1(左)
-    DEPOSIT_2,    // 存矿2(右)
-    WITHDRAW_1,   // 出矿1(左)
-    WITHDRAW_2,   // 出矿2(右)
-  } State_e;
+    PICK_HIGH,    // 取矿(空接)
+    DEPOSIT_0,    // 存矿0(左)
+    DEPOSIT_1,    // 存矿1(右)
+    WITHDRAW_0,   // 出矿0(左)
+    WITHDRAW_1,   // 出矿1(右)
+    EXCHANGE,     // 兑换
+  } Mode_e;
 
-  // 机械臂位姿参数
-  typedef struct Pose {
-    float x, y, z;
-    float yaw, pitch, roll;
+  // 任务状态
+  typedef enum TaskState {
+    IDLE,
+    WORKING,
+  } TaskState_e;
 
-    Pose(float arg_x, float arg_y, float arg_z, float arg_yaw, float arg_pitch,
-         float arg_roll)
-        : x(arg_x),
-          y(arg_y),
-          z(arg_z),
-          yaw(arg_yaw),
-          pitch(arg_pitch),
-          roll(arg_roll) {}
-  } Pose_t;
+  // 取矿方式
+  typedef enum PickMethod {
+    SINGLE,
+    TRIPLE,
+  } PickMethod_e;
 
  public:
   // 构造函数
-  ArmTask(RC* rc, Arm* arm, ArmController* controller, Pump* pump_e,
-          Pump* pump_0);
+  ArmTask(void) {}
 
-  // 遥控器控制
-  void rcCtrl(void);
-  // 控制器控制
-  void controllerCtrl(void);
+  // 初始化
+  void reset(void);
 
-  // 切换任务状态
-  void switchState(ArmTask::State_e state);
-  // 暂停任务
-  void pause(void);
+  // 切换任务模式
+  void switchMode(ArmTask::Mode_e mode);
 
   // 任务处理
   void handle(void);
 
+  // 开始取矿
+  void startPick(PickMethod_e method);
+
+  // 开始兑换
+  void startExchange(void);
+
+  // 重置存矿计数
+  void resetDepositCnt(void);
+
+  // 存矿气泵电机处理
+  void depositPumpHandle(void);
+
+  // 三连取矿处理
+  void triplePickHandle(void);
+
  public:
-  RC* rc_;                     // 遥控器指针
-  Arm* arm_;                   // 机械臂指针
-  ArmController* controller_;  // 控制器指针
-  ArmGimbal* gimbal_;          // 云台指针
-  Pump *pump_e_, *pump_0_;     // 气泵指针
-
   // 任务状态
-  State_e state_;
-  // 暂停标记
-  bool pause_;
-
-  // 机械臂控制方式
-  enum ControlMethod_e {
-    MANIPULATION_FPV,  // 第一人称工作空间控制
-    MANIPULATION_TPV,  // 第三人称工作空间控制
-    JOINT,             // 关节控制
-    JOINT_FREE,        // 无限制关节控制，用于手动初始化
-  } method_;
+  Mode_e mode_;
 
   // 步骤切换时间
-  uint32_t tick_next_step;
+  uint32_t finish_tick_;
 
-  // 控制参数
-  struct ControlParam_t {
-    // 遥控器控制参数
-    struct RCCtrl_t {
-      float position_rate = 1e-6f;
-      float arm_direction_rate = 3e-6f;
-      float arm_joint_rate = 3e-6f;
-    } rc;
-    // 控制器控制参数
-    struct Controller_t {
-      float x_rate = 1;
-      float y_rate = 1;
-      float z_rate = 1;
-    } controller;
-    // 轨迹参数
-    struct Traj_t {
-      float speed = 0.5;
-      float rotate_speed = PI;
-    } traj;
-    // 速度比例
-    struct Ratio_t {
-      float fast = 1.2;
-      float slow = 0.5;
-    } ratio;
-  } ctrl_;
-
-  // 兑换
-  struct Exchange_t {
+  // 移动
+  struct Move_t {
+    // 状态
+    TaskState_e state;
+    uint32_t* finish_tick;
     // 步骤
     enum Step_e {
-      TRAJ_DEFAULT,  // 移动至默认位置
-      LOCATE,        // 定位
-      PUMP_E_OFF,    // 关闭机械臂气泵
-      TRAJ_ROTATE,   // 末端转90°
+      PREPARE,       // 准备
+      TRAJ_RELAY,    // 机械臂中间点
+      TRAJ_RETRACT,  // 机械臂收回
     } step;
-  } exchange_;
+    // 机械臂中间点关节角度
+    float q_relay[6] = {math::deg2rad(0),     math::deg2rad(-135.0f),
+                        math::deg2rad(60.0f), math::deg2rad(0),
+                        math::deg2rad(0),     math::deg2rad(0)};
+    // 机械臂收回关节角度
+    float q_retract[6] = {math::deg2rad(0),     math::deg2rad(-165.0f),
+                          math::deg2rad(75.0f), math::deg2rad(0),
+                          math::deg2rad(0),     math::deg2rad(0)};
+
+    // 处理函数
+    void handle(void);
+  } move_;
 
   // 取矿
   struct Pick_t {
+    // 状态
+    TaskState_e state;
+    uint32_t* finish_tick;
     // 步骤
     enum Step_e {
+      PREPARE,           // 准备
       TRAJ_DEFAULT,      // 移动至默认位置(三连23矿跳过)
       LOCATE,            // 定位
       PUMP_E_ON,         // 开启机械臂气泵
-      TRAJ_PICK_UPWARD,  // 升高(空接跳过该步)
+      TRAJ_PICK_UPWARD,  // 升高
     } step;
+    // 取矿模式，0-normal，1-high，2-low
+    uint8_t type;
+    // 默认位姿参数
+    Pose_t default_pose[3] = {
+        Pose(0.235, 0, 0.15, 0, 0, 0),
+        Pose(0.5, 0, 0.5, 0, -PI * 0.5, 0),
+        Pose(0.3, 0, -0.2, 0, PI * 0.5, 0),
+    };
     // 定位位姿
     Pose_t start_pose;
-    // 默认位姿参数
-    const Pose_t normal_default = Pose(0.235, 0, 0.15, 0, 0, 0);
-    const Pose_t high_default = Pose(0.5, 0, 0.3, 0, -PI * 0.5, 0);
-    const Pose_t low_default = Pose(0.235, 0, 0, 0, PI * 0.5, 0);
     // 取矿升高距离
-    const float pick_upward = 0.3;
+    Pose_t pick_up_pose;
+    float pick_up_dist = 0.3;
+
+    // 处理函数
+    void handle(void);
   } pick_;
+
+  // 存矿
+  struct Deposit_t {
+    // 状态
+    TaskState_e state;
+    uint32_t* finish_tick;
+    // 步骤
+    enum Step_e {
+      PREPARE,                // 准备
+      TRAJ_RELAY_0,           // 移动至中间点0(x+)
+      TRAJ_RELAY_1,           // 移动至中间点1(避免干涉)
+      TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
+      TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
+      PUMP_0_ON,              // 开启存矿气泵
+      PUMP_E_OFF,             // 关闭机械臂气泵
+      TRAJ_DEPOSIT_UPWARD,    // 升高至存矿点上方
+    } step;
+    // 存矿位
+    uint8_t side;
+    // 存矿数记录(打开存矿气泵)
+    uint32_t cnt[2];
+    // 中间点0(正前方)
+    Pose_t relay0 = Pose(0.235, 0, 0.3, 0, 0, 0);
+    // 中间点1(左右，避免干涉)
+    Pose_t relay1[2] = {Pose(0, 0.1, 0.4, PI * 0.25, PI * 0.25, 0),
+                        Pose(0, -0.1, 0.4, PI * 0.25, PI * 0.25, 0)};
+    // 存矿吸盘上方
+    Pose_t deposit_above[2] = {Pose(-0.3, 0.2, 0.22, PI * 0.5, PI * 0.5, 0),
+                               Pose(-0.3, -0.2, 0.22, PI * 0.5, PI * 0.5, 0)};
+    // 存矿吸盘
+    Pose_t deposit[2] = {Pose(-0.3, 0.2, 0.12, PI * 0.5, PI * 0.5, 0),
+                         Pose(-0.3, -0.2, 0.12, PI * 0.5, PI * 0.5, 0)};
+
+    // 处理函数
+    void handle(void);
+  } deposit_;
+
+  // 出矿
+  struct Withdraw_t {
+    // 状态
+    TaskState_e state;
+    uint32_t* finish_tick;
+    // 步骤
+    enum Step_e {
+      PREPARE,                // 准备
+      TRAJ_RELAY_0,           // 移动至中间点0(x+)
+      TRAJ_RELAY_1,           // 移动至中间点1(避免干涉)
+      TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
+      TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
+      PUMP_E_ON,              // 开启机械臂气泵
+      PUMP_0_OFF,             // 关闭存矿气泵
+      TRAJ_DEPOSIT_UPWARD,    // 升高至存矿点上方
+      TRAJ_RELAY_1_BACK,      // 移动至中间点1
+      TRAJ_EXCHANGE,          // 移动至兑换默认位姿
+    } step;
+    // 出矿位
+    uint8_t side;
+    // 出矿数记录(打开存矿气泵)
+    uint32_t cnt[2];
+    // 中间点0(正前方)
+    Pose_t relay0 = Pose(0.235, 0, 0.3, 0, 0, 0);
+    // 中间点1(左右，避免干涉)
+    Pose_t relay1[2] = {Pose(0, 0.1, 0.4, PI * 0.25, PI * 0.25, 0),
+                        Pose(0, -0.1, 0.4, PI * 0.25, PI * 0.25, 0)};
+    // 存矿吸盘上方
+    Pose_t withdraw_above[2] = {Pose(-0.35, 0.2, 0.22, PI * 0.5, PI * 0.5, 0),
+                                Pose(-0.35, -0.2, 0.22, PI * 0.5, PI * 0.5, 0)};
+    // 存矿吸盘
+    Pose_t withdraw[2] = {Pose(-0.35, 0.2, 0.12, PI * 0.5, PI * 0.5, 0),
+                          Pose(-0.35, -0.2, 0.12, PI * 0.5, PI * 0.5, 0)};
+    // 兑换默认位姿
+    Pose_t exchange_default = Pose(0.2, 0, 0.4, 0, 0, 0);
+
+    // 处理函数
+    void handle(void);
+  } withdraw_;
+
+  // 兑换
+  struct Exchange_t {
+    // 状态
+    TaskState_e state;
+    uint32_t* finish_tick;
+    // 步骤
+    enum Step_e {
+      PREPARE,       // 准备
+      TRAJ_DEFAULT,  // 移动至默认位置
+      LOCATE,        // 定位
+      PUMP_E_OFF,    // 关闭机械臂气泵
+      TRAJ_ROTATE,   // 末端旋转
+    } step;
+    // 兑换默认位姿
+    Pose_t default_pose = Pose(0.2, 0, 0.4, 0, 0, 0);
+    // 兑换开始位姿
+    Pose_t start_pose;
+    // 兑换旋转位姿
+    Pose_t rotate_pose;
+    float rotate_angle = math::deg2rad(45);
+
+    // 处理函数
+    void handle(void);
+  } exchange_;
 
   // 三连取矿
   struct TriplePick_t {
-    // 三连状态
-    bool state;
+    // 状态
+    TaskState_e state;
     // 步骤
     enum Step_e {
+      PREPARE,    // 准备
       PICK_1,     // 取1
       DEPOSIT_1,  // 存1
       PICK_2,     // 取2
       DEPOSIT_2,  // 存2
       PICK_3,     // 取3
-      DEPOSIT_3,  // 存3
     } step;
     // 矿石间隔
-    const float mine_dist = 0.27;
+    float mine_dist = 0.27;
+    // 3矿坐标
+    Pose_t mine[3];
+
+    // // 处理函数
+    // void handle(void);
   } triple_pick_;
-
-  // 存矿
-  struct Deposit_t {
-    // 步骤
-    enum Step_e {
-      PUMP_E_ON,              // 开启机械臂气泵
-      TRAJ_RELAY_1,           // 移动至中间点1(x+)
-      TRAJ_RELAY_2,           // 移动至中间点2(避免干涉)
-      TRAJ_DEPOSIT_ABOVE,     // 移动至存矿上方
-      TRAJ_DEPOSIT_DOWNWARD,  // 降低
-      PUMP_0_ON,              // 开启存矿气泵
-      PUMP_E_OFF,             // 关闭机械臂气泵
-      TRAJ_DEPOSIT_UPWARD,    // 升高
-    } step;
-    // 中间点1(正前方)
-    const Pose_t relay1 = Pose(0.235, 0, 0.3, 0, 0, 0);
-    // 中间点2(左右，避免干涉)
-    const Pose_t relay2_1 = Pose(0, 0.1, 0.4, 0, PI * 0.5, 0);
-    const Pose_t relay2_2 = Pose(0, -0.1, 0.4, 0, PI * 0.5, 0);
-    // 存矿吸盘上方
-    const Pose_t deposite_1_above = Pose(-0.3, 0.1, 0.22, 0, PI * 0.5, 0);
-    const Pose_t deposite_2_above = Pose(-0.3, -0.1, 0.22, 0, PI * 0.5, 0);
-    // 存矿吸盘
-    const Pose_t deposite_1 = Pose(-0.3, 0.1, 0.12, 0, PI * 0.5, 0);
-    const Pose_t deposite_2 = Pose(-0.3, -0.1, 0.12, 0, PI * 0.5, 0);
-  } deposite_;
-
-  // 出矿
-  struct Withdraw_t {
-    // 步骤
-    enum Step_e {
-      TRAJ_DEPOSIT_ABOVE,     // 移动至存矿上方
-      TRAJ_DEPOSIT_DOWNWARD,  // 降低
-      PUMP_E_ON,              // 开启机械臂气泵
-      PUMP_0_OFF,             // 关闭存矿气泵
-      TRAJ_DEPOSIT_UPWARD,    // 升高
-      TRAJ_RELAY_2,           // 移动至中间点2
-      TRAJ_EXCHANGE,          // 移动至兑换默认位姿
-    } step;
-  } withdraw_;
 };
 
 #endif  // CONTROL_H

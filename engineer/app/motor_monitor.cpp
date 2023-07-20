@@ -49,7 +49,7 @@ Motor PM0(Motor::M3508, 1, Motor::SPEED,                 // type, ratio, method
 
 // 机械臂关节电机
 float jm123Model(const float& torque, const float& speed = 0) {
-  return torque * 0.027f;
+  return torque * 0.035f;
 }
 Motor JM1(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
           PID(20, 0.1, 5, 100, 120),                     // ppid

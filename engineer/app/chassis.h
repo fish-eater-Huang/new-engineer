@@ -54,8 +54,9 @@ class MecanumChassis {
 
   // Handle rotate speed
   // 处理底盘旋转速度
-  // fdb_angle: 反馈角度，用于底盘跟随等
-  void rotateHandle(float fdb_angle);
+  // fdb_angle: 反馈角度，用于底盘运动方向解算
+  // follow_fdb_angle: 跟随反馈角度，用于底盘跟随
+  void rotateHandle(float fdb_angle, float follow_fdb_angle);
 
   // Update feedback and send target status to motor
   // 更新反馈数据，设置电机目标状态
