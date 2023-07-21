@@ -160,7 +160,7 @@ void serialToolTask(void const* argument) {
 
 // Create and config tasks
 void rtosTaskInit(void) {
-  osThreadDef(control_task, controlTask, osPriorityAboveNormal, 0, 256);
+  osThreadDef(control_task, controlTask, osPriorityAboveNormal, 0, 512);
   controlTaskHandle = osThreadCreate(osThread(control_task), NULL);
 
   osThreadDef(motor_task, motorTask, osPriorityHigh, 0, 128);

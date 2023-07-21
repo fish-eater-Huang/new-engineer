@@ -202,11 +202,12 @@ class Arm {
   struct Traj_t {
     // 轨迹规划运行状态
     bool state;
-    // 轨迹规划模式
-    enum Mode_e {
+
+    // 轨迹规划方法(工作空间/关节空间插值)
+    enum Method_e {
       MANIPULATION,
       JOINT,
-    } mode;
+    } method;
 
     // 轨迹起点
     struct Start_t {

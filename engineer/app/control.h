@@ -140,10 +140,15 @@ class ArmTask {
     // 取矿模式，0-normal，1-high，2-low
     uint8_t type;
     // 默认位姿参数
-    Pose_t default_pose[3] = {
-        Pose(0.235, 0, 0.15, 0, 0, 0),
-        Pose(0.5, 0, 0.5, 0, -PI * 0.5, 0),
-        Pose(0.3, 0, -0.2, 0, PI * 0.5, 0),
+    // Pose_t default_pose[3] = {
+    //     Pose(0.235, 0, 0.15, 0, 0, 0),
+    //     Pose(0.5, 0, 0.5, 0, -PI/2, 0),
+    //     Pose(0.3, 0, -0.2, 0, PI/2, 0),
+    // };
+    float default_pose[3][6] = {
+        {0, -2.3, 1.0, 0, 0, 0},  // normal
+        {0, -2.3, 1.0, 0, 0, 0},  // high
+        {0, -2.3, 1.0, 0, 0, 0},  // low
     };
     // 定位位姿
     Pose_t start_pose;
@@ -163,8 +168,7 @@ class ArmTask {
     // 步骤
     enum Step_e {
       PREPARE,                // 准备
-      TRAJ_RELAY_0,           // 移动至中间点0(x+)
-      TRAJ_RELAY_1,           // 移动至中间点1(避免干涉)
+      TRAJ_RELAY,             // 移动至中间点(避免干涉)
       TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
       TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
       PUMP_0_ON,              // 开启存矿气泵
@@ -175,17 +179,21 @@ class ArmTask {
     uint8_t side;
     // 存矿数记录(打开存矿气泵)
     uint32_t cnt[2];
-    // 中间点0(正前方)
-    Pose_t relay0 = Pose(0.235, 0, 0.3, 0, 0, 0);
-    // 中间点1(左右，避免干涉)
-    Pose_t relay1[2] = {Pose(0, 0.1, 0.4, PI * 0.25, PI * 0.25, 0),
-                        Pose(0, -0.1, 0.4, PI * 0.25, PI * 0.25, 0)};
+    // 中间点(左右，避免干涉)
+    float relay[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
     // 存矿吸盘上方
-    Pose_t deposit_above[2] = {Pose(-0.3, 0.2, 0.22, PI * 0.5, PI * 0.5, 0),
-                               Pose(-0.3, -0.2, 0.22, PI * 0.5, PI * 0.5, 0)};
+    float deposit_above[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
     // 存矿吸盘
-    Pose_t deposit[2] = {Pose(-0.3, 0.2, 0.12, PI * 0.5, PI * 0.5, 0),
-                         Pose(-0.3, -0.2, 0.12, PI * 0.5, PI * 0.5, 0)};
+    float deposit[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
 
     // 处理函数
     void handle(void);
@@ -199,33 +207,35 @@ class ArmTask {
     // 步骤
     enum Step_e {
       PREPARE,                // 准备
-      TRAJ_RELAY_0,           // 移动至中间点0(x+)
-      TRAJ_RELAY_1,           // 移动至中间点1(避免干涉)
+      TRAJ_RELAY,             // 移动至中间点(避免干涉)
       TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
       TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
       PUMP_E_ON,              // 开启机械臂气泵
       PUMP_0_OFF,             // 关闭存矿气泵
       TRAJ_DEPOSIT_UPWARD,    // 升高至存矿点上方
-      TRAJ_RELAY_1_BACK,      // 移动至中间点1
       TRAJ_EXCHANGE,          // 移动至兑换默认位姿
     } step;
     // 出矿位
     uint8_t side;
     // 出矿数记录(打开存矿气泵)
     uint32_t cnt[2];
-    // 中间点0(正前方)
-    Pose_t relay0 = Pose(0.235, 0, 0.3, 0, 0, 0);
-    // 中间点1(左右，避免干涉)
-    Pose_t relay1[2] = {Pose(0, 0.1, 0.4, PI * 0.25, PI * 0.25, 0),
-                        Pose(0, -0.1, 0.4, PI * 0.25, PI * 0.25, 0)};
+    // 中间点(左右，避免干涉)
+    float relay[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
     // 存矿吸盘上方
-    Pose_t withdraw_above[2] = {Pose(-0.35, 0.2, 0.22, PI * 0.5, PI * 0.5, 0),
-                                Pose(-0.35, -0.2, 0.22, PI * 0.5, PI * 0.5, 0)};
+    float withdraw_above[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
     // 存矿吸盘
-    Pose_t withdraw[2] = {Pose(-0.35, 0.2, 0.12, PI * 0.5, PI * 0.5, 0),
-                          Pose(-0.35, -0.2, 0.12, PI * 0.5, PI * 0.5, 0)};
+    float withdraw[2][6] = {
+        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
+        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+    };
     // 兑换默认位姿
-    Pose_t exchange_default = Pose(0.2, 0, 0.4, 0, 0, 0);
+    float exchange_default[6] = {0, -2.3, 1.0, 0, 0, 0};
 
     // 处理函数
     void handle(void);
@@ -245,7 +255,7 @@ class ArmTask {
       TRAJ_ROTATE,   // 末端旋转
     } step;
     // 兑换默认位姿
-    Pose_t default_pose = Pose(0.2, 0, 0.4, 0, 0, 0);
+    float default_pose[6] = {0, -2.3, 1.0, 0, 0, 0};
     // 兑换开始位姿
     Pose_t start_pose;
     // 兑换旋转位姿

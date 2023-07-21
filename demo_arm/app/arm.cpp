@@ -122,6 +122,17 @@ void Arm::init(void) {
   j5_->setFdbSrc(&j5_->kfAngle(), &j5_->kfSpeed());
   j6_->setFdbSrc(&j6_->kfAngle(), &j6_->kfSpeed());
 
+  // 力矩前馈清零
+  torq_ = matrixf::zeros<6, 1>();
+
+  // 设置初始目标角度
+  j1_->setAngleSpeed(math::rad2deg(ref_.q[0][0]), 0, torq_[0][0]);
+  j2_->setAngleSpeed(math::rad2deg(ref_.q[1][0]), 0, torq_[1][0]);
+  j3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
+  j4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
+  j5_->setAngleSpeed(math::rad2deg(ref_.q[4][0]), 0, torq_[4][0]);
+  j6_->setAngleSpeed(math::rad2deg(ref_.q[5][0]), 0, torq_[5][0]);
+
   init_.is_finish = true;
 }
 
@@ -223,70 +234,6 @@ void Arm::addJointRef(const float& q1, const float& q2, const float& q3,
   ref_.q[3][0] += q4;
   ref_.q[4][0] += q5;
   ref_.q[5][0] += q6;
-}
-
-// 设置轨迹终点(末端位姿)+时间(ms)
-void Arm::trajSet(const float& x, const float& y, const float& z,
-                  const float& yaw, const float& pitch, const float& roll,
-                  const float& speed, const float& rotate_speed) {
-  // 设置轨迹终点位姿
-  traj_.end.x = x;
-  traj_.end.y = y;
-  traj_.end.z = z;
-  traj_.end.yaw = yaw;
-  traj_.end.pitch = pitch;
-  traj_.end.roll = roll;
-  // 设置轨迹速度/角速度
-  traj_.speed = fmaxf(fabs(speed), 1e-6f);
-  traj_.rotate_speed = fmaxf(fabs(rotate_speed), 1e-6f);
-}
-
-// 开始轨迹
-void Arm::trajStart(void) {
-  // 设置轨迹起点为当前状态
-  traj_.start.q = fdb_.q;
-  traj_.start.x = fdb_.x;
-  traj_.start.y = fdb_.y;
-  traj_.start.z = fdb_.z;
-  traj_.start.yaw = fdb_.yaw;
-  traj_.start.pitch = fdb_.pitch;
-  traj_.start.roll = fdb_.roll;
-
-  // 设置轨迹开始时间为当前时间
-  traj_.start.tick = HAL_GetTick();
-
-  // 位移时间
-  float dx = traj_.end.x - traj_.start.x;
-  float dy = traj_.end.y - traj_.start.y;
-  float dz = traj_.end.z - traj_.start.z;
-  if (traj_.speed == 0) {
-    return;
-  }
-  float ticks_pos = sqrtf(dx * dx + dy * dy + dz * dz) / traj_.speed * 1e3f;
-
-  // 旋转时间
-  float rpy_start[3] = {traj_.start.yaw, traj_.start.pitch, traj_.start.roll};
-  float rpy_end[3] = {traj_.end.yaw, traj_.end.pitch, traj_.end.roll};
-  traj_.start.R = robotics::rpy2r(rpy_start);
-  traj_.end.R = robotics::rpy2r(rpy_end);
-  traj_.r_theta = robotics::r2angvec(traj_.start.R.trans() * traj_.end.R);
-  if (traj_.rotate_speed == 0) {
-    return;
-  }
-  float ticks_rot = fabs(traj_.r_theta[3][0]) / traj_.rotate_speed * 1e3f;
-
-  // 取位移时间和旋转时间中较长的计算轨迹时间
-  traj_.ticks = (uint32_t)fmax(ticks_pos, ticks_rot);
-  traj_.end.tick = traj_.start.tick + traj_.ticks;
-
-  // 设置轨迹规划状态
-  traj_.state = true;
-}
-
-// 中止轨迹
-void Arm::trajAbort(void) {
-  // 设置轨迹规划状态
-  traj_.state = false;
 }
 
 // 逆运动学求解(解析形式)
@@ -569,6 +516,100 @@ void Arm::complianceController(void) {
   j6_->targetTorque() = torq_[5][0];
 }
 
+// 设置轨迹终点(末端位姿)+时间(ms)
+void Arm::trajSet(const float& x, const float& y, const float& z,
+                  const float& yaw, const float& pitch, const float& roll,
+                  const float& speed, const float& rotate_speed) {
+  // 设置轨迹终点位姿
+  traj_.end.x = x;
+  traj_.end.y = y;
+  traj_.end.z = z;
+  traj_.end.yaw = yaw;
+  traj_.end.pitch = pitch;
+  traj_.end.roll = roll;
+
+  // 设置轨迹速度/角速度
+  traj_.speed = fmaxf(fabs(speed), 1e-6f);
+  traj_.rotate_speed = fmaxf(fabs(rotate_speed), 1e-6f);
+}
+
+// 设置轨迹终点(关节角度)+速度
+void Arm::trajSet(Matrixf<6, 1> q, Matrixf<6, 1> q_D1) {
+  // 设置轨迹终点关节角度
+  traj_.end.q = q;
+
+  // 设置关节角速度
+  for (int i = 0; i < 6; i++) {
+    traj_.q_D1[i][0] = fmaxf(fabs(q_D1[i][0]), 1e-6f);
+  }
+}
+
+// 开始轨迹，返回轨迹结束时间
+uint32_t Arm::trajStart(void) {
+  // 设置轨迹起点为当前状态
+  traj_.start.q = fdb_.q;
+  traj_.start.x = fdb_.x;
+  traj_.start.y = fdb_.y;
+  traj_.start.z = fdb_.z;
+  traj_.start.yaw = fdb_.yaw;
+  traj_.start.pitch = fdb_.pitch;
+  traj_.start.roll = fdb_.roll;
+
+  // 设置轨迹开始时间为当前时间
+  traj_.start.tick = HAL_GetTick();
+
+  // 工作空间插值
+  if (traj_.method == Arm::Traj_t::MANIPULATION) {
+    // 位移时间
+    float dx = traj_.end.x - traj_.start.x;
+    float dy = traj_.end.y - traj_.start.y;
+    float dz = traj_.end.z - traj_.start.z;
+    if (traj_.speed == 0) {
+      return 0;
+    }
+    float ticks_pos = sqrtf(dx * dx + dy * dy + dz * dz) / traj_.speed * 1e3f;
+
+    // 旋转时间
+    float rpy_start[3] = {traj_.start.yaw, traj_.start.pitch, traj_.start.roll};
+    float rpy_end[3] = {traj_.end.yaw, traj_.end.pitch, traj_.end.roll};
+    traj_.start.R = robotics::rpy2r(rpy_start);
+    traj_.end.R = robotics::rpy2r(rpy_end);
+    traj_.r_theta = robotics::r2angvec(traj_.start.R.trans() * traj_.end.R);
+    if (traj_.rotate_speed == 0) {
+      return 0;
+    }
+    float ticks_rot = fabs(traj_.r_theta[3][0]) / traj_.rotate_speed * 1e3f;
+
+    // 取位移时间和旋转时间中较长的计算轨迹时间
+    traj_.ticks = (uint32_t)fmax(ticks_pos, ticks_rot);
+    traj_.end.tick = traj_.start.tick + traj_.ticks;
+  }
+  // 关节空间插值
+  else if (traj_.method == Arm::Traj_t::JOINT) {
+    // 关节运动时间
+    Matrixf<6, 1> dq = traj_.end.q - traj_.start.q;
+    Matrixf<6, 1> ticks = matrixf::zeros<6, 1>();
+    traj_.ticks = 0;
+    for (int i = 0; i < 6; i++) {
+      if (traj_.q_D1[i][0] == 0) {
+        return 0;
+      }
+      traj_.ticks = fmax(traj_.ticks, fabs(dq[i][0]) / traj_.q_D1[i][0] * 1e3f);
+    }
+    traj_.end.tick = traj_.start.tick + traj_.ticks;
+  }
+
+  // 设置轨迹规划状态
+  traj_.state = true;
+  return traj_.ticks;
+}
+
+// 中止轨迹
+void Arm::trajAbort(void) {
+  // 设置轨迹规划状态
+  traj_.state = false;
+}
+
 // 轨迹规划处理
 void Arm::trajectoryPlanner(void) {
   if (traj_.state) {
@@ -578,20 +619,50 @@ void Arm::trajectoryPlanner(void) {
     }
     traj_.sigma = math::limit(sigma, 0, 1);
 
+    // 工作空间控制模式
     if (mode_ == Arm::Mode_e::MANIPULATION) {
-      // 末端位置线性插值
-      ref_.x = traj_.sigma * traj_.end.x + (1 - traj_.sigma) * traj_.start.x;
-      ref_.y = traj_.sigma * traj_.end.y + (1 - traj_.sigma) * traj_.start.y;
-      ref_.z = traj_.sigma * traj_.end.z + (1 - traj_.sigma) * traj_.start.z;
-      // 末端姿态Slerp插值
-      float r_theta[4] = {traj_.r_theta[0][0], traj_.r_theta[1][0],
-                          traj_.r_theta[2][0],
-                          traj_.r_theta[3][0] * traj_.sigma};
-      Matrixf<3, 1> rpy_ref =
-          robotics::r2rpy(traj_.start.R * robotics::angvec2r(r_theta));
-      ref_.yaw = rpy_ref[0][0];
-      ref_.pitch = rpy_ref[1][0];
-      ref_.roll = rpy_ref[2][0];
+      // 工作空间插值
+      if (traj_.method == Arm::Traj_t::MANIPULATION) {
+        // 末端位置线性插值
+        ref_.x = traj_.sigma * traj_.end.x + (1 - traj_.sigma) * traj_.start.x;
+        ref_.y = traj_.sigma * traj_.end.y + (1 - traj_.sigma) * traj_.start.y;
+        ref_.z = traj_.sigma * traj_.end.z + (1 - traj_.sigma) * traj_.start.z;
+        // 末端姿态Slerp插值
+        float r_theta[4] = {traj_.r_theta[0][0], traj_.r_theta[1][0],
+                            traj_.r_theta[2][0],
+                            traj_.r_theta[3][0] * traj_.sigma};
+        Matrixf<3, 1> rpy_ref =
+            robotics::r2rpy(traj_.start.R * robotics::angvec2r(r_theta));
+        ref_.yaw = rpy_ref[0][0];
+        ref_.pitch = rpy_ref[1][0];
+        ref_.roll = rpy_ref[2][0];
+      }
+      // 关节空间插值
+      else if (traj_.method == Arm::Traj_t::JOINT) {
+        // 轨迹规划直接设置关节角度
+        ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
+        ref_.T = arm_.fkine(ref_.q);
+        Matrixf<3, 1> p_ref = robotics::t2p(ref_.T);
+        ref_.x = p_ref[0][0];
+        ref_.y = p_ref[1][0];
+        ref_.z = p_ref[2][0];
+        Matrixf<3, 1> rpy_ref =
+            robotics::r2rpy(robotics::t2r(ref_.T) * R0_.trans());
+        ref_.yaw = rpy_ref[0][0];
+        ref_.pitch = rpy_ref[1][0];
+        ref_.roll = rpy_ref[2][0];
+      }
+    }
+    // 关节空间控制模式
+    else if (mode_ == Arm::Mode_e::JOINT) {
+      if (traj_.method == Arm::Traj_t::JOINT) {
+        // 关节角度线性插值
+        ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
+      } else {
+        trajAbort();
+      }
+    } else {
+      trajAbort();
     }
   } else {
     traj_.sigma = 0;

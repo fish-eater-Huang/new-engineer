@@ -51,8 +51,11 @@ class Arm {
                const float& pitch, const float& roll, const float& speed,
                const float& rotate_speed);
 
+  // 设置轨迹终点(关节角度)+速度
+  void trajSet(Matrixf<6, 1> q, Matrixf<6, 1> q_D1);
+
   // 开始轨迹
-  void trajStart(void);
+  uint32_t trajStart(void);
 
   // 中止轨迹
   void trajAbort(void);
@@ -181,6 +184,12 @@ class Arm {
     // 轨迹规划运行状态
     bool state;
 
+    // 轨迹规划方法(工作空间/关节空间插值)
+    enum Method_e {
+      MANIPULATION,
+      JOINT,
+    } method;
+
     // 轨迹起点
     struct Start_t {
       Matrixf<6, 1> q;         // rad
@@ -202,6 +211,7 @@ class Arm {
     // 速度
     float speed;         // 速度(m/s)
     float rotate_speed;  // 角速度(rad/s)
+    Matrixf<6, 1> q_D1;  // 关节角速度(rad/s)
 
     // 时间相关变量
     uint32_t ticks;

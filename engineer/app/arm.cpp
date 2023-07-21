@@ -568,6 +568,7 @@ void Arm::trajSet(const float& x, const float& y, const float& z,
   traj_.end.yaw = yaw;
   traj_.end.pitch = pitch;
   traj_.end.roll = roll;
+
   // 设置轨迹速度/角速度
   traj_.speed = fmaxf(fabs(speed), 1e-6f);
   traj_.rotate_speed = fmaxf(fabs(rotate_speed), 1e-6f);
@@ -577,6 +578,7 @@ void Arm::trajSet(const float& x, const float& y, const float& z,
 void Arm::trajSet(Matrixf<6, 1> q, Matrixf<6, 1> q_D1) {
   // 设置轨迹终点关节角度
   traj_.end.q = q;
+
   // 设置关节角速度
   for (int i = 0; i < 6; i++) {
     traj_.q_D1[i][0] = fmaxf(fabs(q_D1[i][0]), 1e-6f);
@@ -597,10 +599,8 @@ uint32_t Arm::trajStart(void) {
   // 设置轨迹开始时间为当前时间
   traj_.start.tick = HAL_GetTick();
 
-  if (mode_ == Arm::Mode_e::MANIPULATION) {
-    // 设置轨迹规划模式为工作空间规划
-    traj_.mode = Arm::Traj_t::Mode_e::MANIPULATION;
-
+  // 工作空间插值
+  if (traj_.method == Arm::Traj_t::MANIPULATION) {
     // 位移时间
     float dx = traj_.end.x - traj_.start.x;
     float dy = traj_.end.y - traj_.start.y;
@@ -624,10 +624,9 @@ uint32_t Arm::trajStart(void) {
     // 取位移时间和旋转时间中较长的计算轨迹时间
     traj_.ticks = (uint32_t)fmax(ticks_pos, ticks_rot);
     traj_.end.tick = traj_.start.tick + traj_.ticks;
-  } else if (mode_ == Arm::Mode_e::JOINT) {
-    // 设置轨迹规划模式为关节空间规划
-    traj_.mode = Arm::Traj_t::Mode_e::JOINT;
-
+  }
+  // 关节空间插值
+  else if (traj_.method == Arm::Traj_t::JOINT) {
     // 关节运动时间
     Matrixf<6, 1> dq = traj_.end.q - traj_.start.q;
     Matrixf<6, 1> ticks = matrixf::zeros<6, 1>();
@@ -643,7 +642,7 @@ uint32_t Arm::trajStart(void) {
 
   // 设置轨迹规划状态
   traj_.state = true;
-  return traj_.end.tick;
+  return traj_.ticks;
 }
 
 // 中止轨迹
@@ -661,31 +660,48 @@ void Arm::trajectoryPlanner(void) {
     }
     traj_.sigma = math::limit(sigma, 0, 1);
 
+    // 工作空间控制模式
     if (mode_ == Arm::Mode_e::MANIPULATION) {
-      // 非工作空间规划模式中止规划
-      if (traj_.mode != Arm::Traj_t::MANIPULATION) {
+      // 工作空间插值
+      if (traj_.method == Arm::Traj_t::MANIPULATION) {
+        // 末端位置线性插值
+        ref_.x = traj_.sigma * traj_.end.x + (1 - traj_.sigma) * traj_.start.x;
+        ref_.y = traj_.sigma * traj_.end.y + (1 - traj_.sigma) * traj_.start.y;
+        ref_.z = traj_.sigma * traj_.end.z + (1 - traj_.sigma) * traj_.start.z;
+        // 末端姿态Slerp插值
+        float r_theta[4] = {traj_.r_theta[0][0], traj_.r_theta[1][0],
+                            traj_.r_theta[2][0],
+                            traj_.r_theta[3][0] * traj_.sigma};
+        Matrixf<3, 1> rpy_ref =
+            robotics::r2rpy(traj_.start.R * robotics::angvec2r(r_theta));
+        ref_.yaw = rpy_ref[0][0];
+        ref_.pitch = rpy_ref[1][0];
+        ref_.roll = rpy_ref[2][0];
+      }
+      // 关节空间插值
+      else if (traj_.method == Arm::Traj_t::JOINT) {
+        // 轨迹规划直接设置关节角度
+        ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
+        ref_.T = arm_.fkine(ref_.q);
+        Matrixf<3, 1> p_ref = robotics::t2p(ref_.T);
+        ref_.x = p_ref[0][0];
+        ref_.y = p_ref[1][0];
+        ref_.z = p_ref[2][0];
+        Matrixf<3, 1> rpy_ref =
+            robotics::r2rpy(robotics::t2r(ref_.T) * R0_.trans());
+        ref_.yaw = rpy_ref[0][0];
+        ref_.pitch = rpy_ref[1][0];
+        ref_.roll = rpy_ref[2][0];
+      }
+    }
+    // 关节空间控制模式
+    else if (mode_ == Arm::Mode_e::JOINT) {
+      if (traj_.method == Arm::Traj_t::JOINT) {
+        // 关节角度线性插值
+        ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
+      } else {
         trajAbort();
       }
-      // 末端位置线性插值
-      ref_.x = traj_.sigma * traj_.end.x + (1 - traj_.sigma) * traj_.start.x;
-      ref_.y = traj_.sigma * traj_.end.y + (1 - traj_.sigma) * traj_.start.y;
-      ref_.z = traj_.sigma * traj_.end.z + (1 - traj_.sigma) * traj_.start.z;
-      // 末端姿态Slerp插值
-      float r_theta[4] = {traj_.r_theta[0][0], traj_.r_theta[1][0],
-                          traj_.r_theta[2][0],
-                          traj_.r_theta[3][0] * traj_.sigma};
-      Matrixf<3, 1> rpy_ref =
-          robotics::r2rpy(traj_.start.R * robotics::angvec2r(r_theta));
-      ref_.yaw = rpy_ref[0][0];
-      ref_.pitch = rpy_ref[1][0];
-      ref_.roll = rpy_ref[2][0];
-    } else if (mode_ == Arm::Mode_e::JOINT) {
-      // 非关节空间规划模式中止规划
-      if (traj_.mode != Arm::Traj_t::JOINT) {
-        trajAbort();
-      }
-      // 关节角度线性插值
-      ref_.q = traj_.sigma * traj_.end.q + (1 - traj_.sigma) * traj_.start.q;
     } else {
       trajAbort();
     }

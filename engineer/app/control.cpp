@@ -234,6 +234,7 @@ void robotControl(void) {
   else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
     // 云台底盘测试
     arm.mode_ = Arm::Mode_e::JOINT;
+    arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       task.switchMode(ArmTask::Mode_e::MOVE);
     }
@@ -256,14 +257,6 @@ void robotControl(void) {
   }
   // 遥控器挡位左中右中
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    // arm.mode_ = Arm::Mode_e::JOINT;
-    // arm.addJointRef(-rc.channel_.l_row * rcctrl::arm_joint_rate,
-    //                 rc.channel_.l_col * rcctrl::arm_joint_rate,
-    //                 rc.channel_.dial_wheel * rcctrl::arm_joint_rate,
-    //                 rc.channel_.r_row * rcctrl::arm_joint_rate,
-    //                 -rc.channel_.r_col * rcctrl::arm_joint_rate, 0);
-    // arm.trajAbort();
-
     // 取矿/三连取矿
     if (rc.channel_.l_col > 500) {
       if (rc.channel_.dial_wheel < -300) {
@@ -647,7 +640,7 @@ void ArmTask::Move_t::handle(void) {
         step = TRAJ_RETRACT;
         trajSetJoint(q_retract);
       }
-      *finish_tick = arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 中间点阶段
@@ -655,7 +648,7 @@ void ArmTask::Move_t::handle(void) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_RETRACT;
       trajSetJoint(q_retract);
-      *finish_tick = arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 收回阶段
@@ -681,8 +674,9 @@ void ArmTask::Pick_t::handle(void) {
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEFAULT;
-      trajSetPose(default_pose[type]);
-      *finish_tick = arm.trajStart() + 500;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(default_pose[type]);
+      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
     }
   }
   // 移动至默认位置
@@ -705,8 +699,9 @@ void ArmTask::Pick_t::handle(void) {
   else if (step == PUMP_E_ON) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_PICK_UPWARD;
+      arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_up_pose);
-      *finish_tick = arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 升高
@@ -731,47 +726,37 @@ void ArmTask::Deposit_t::handle(void) {
   // 准备阶段
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
-      if (math::sign(arm.fdb_.y) != math::sign(deposit[side].y) &&
-          arm.fdb_.x < 0.1) {
-        // 经过中间点0
-        step = TRAJ_RELAY_0;
-        trajSetPose(relay0);
-        *finish_tick = arm.trajStart();
-      } else if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
-        // 经过中间点1
-        step = TRAJ_RELAY_1;
-        trajSetPose(relay1[side]);
-        *finish_tick = arm.trajStart();
+      if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
+        // 经过中间点
+        step = TRAJ_RELAY;
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(relay[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
       } else {
         // 不经过中间点
         step = TRAJ_DEPOSIT_ABOVE;
-        trajSetPose(deposit_above[side]);
-        *finish_tick = arm.trajStart();
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(deposit_above[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
       }
     }
   }
-  // 移动至中间点0
-  else if (step == TRAJ_RELAY_0) {
-    if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_RELAY_1;
-      trajSetPose(relay1[side]);
-      *finish_tick = arm.trajStart();
-    }
-  }
-  // 移动至中间点1
-  else if (step == TRAJ_RELAY_1) {
+  // 移动至中间点
+  else if (step == TRAJ_RELAY) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_ABOVE;
-      trajSetPose(deposit_above[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(deposit_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 移动至存矿点上方
   else if (step == TRAJ_DEPOSIT_ABOVE) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_DOWNWARD;
-      trajSetPose(deposit[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(deposit[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 下降至存矿点
@@ -796,8 +781,9 @@ void ArmTask::Deposit_t::handle(void) {
   else if (step == PUMP_E_OFF) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_UPWARD;
-      trajSetPose(deposit_above[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(deposit_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 升高至存矿点上方
@@ -822,47 +808,37 @@ void ArmTask::Withdraw_t::handle(void) {
   // 准备阶段
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
-      if (math::sign(arm.fdb_.y) != math::sign(withdraw[side].y) &&
-          arm.fdb_.x < 0.1) {
-        // 经过中间点0
-        step = TRAJ_RELAY_0;
-        trajSetPose(relay0);
-        *finish_tick = arm.trajStart();
-      } else if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
-        // 经过中间点1
-        step = TRAJ_RELAY_1;
-        trajSetPose(relay1[side]);
-        *finish_tick = arm.trajStart();
+      if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
+        // 经过中间点
+        step = TRAJ_RELAY;
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(relay[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
       } else {
         // 不经过中间点
         step = TRAJ_DEPOSIT_ABOVE;
-        trajSetPose(withdraw_above[side]);
-        *finish_tick = arm.trajStart();
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(withdraw_above[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
       }
     }
   }
-  // 移动至中间点0
-  else if (step == TRAJ_RELAY_0) {
-    if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_RELAY_1;
-      trajSetPose(relay1[side]);
-      *finish_tick = arm.trajStart();
-    }
-  }
-  // 移动至中间点1
-  else if (step == TRAJ_RELAY_1) {
+  // 移动至中间点
+  else if (step == TRAJ_RELAY) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_ABOVE;
-      trajSetPose(withdraw_above[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 移动至存矿点上方
   else if (step == TRAJ_DEPOSIT_ABOVE) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_DOWNWARD;
-      trajSetPose(withdraw[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 下降至存矿点
@@ -890,24 +866,18 @@ void ArmTask::Withdraw_t::handle(void) {
   else if (step == PUMP_0_OFF) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_UPWARD;
-      trajSetPose(withdraw_above[side]);
-      *finish_tick = arm.trajStart();
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 升高至存矿点上方
   else if (step == TRAJ_DEPOSIT_UPWARD) {
     if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_RELAY_1_BACK;
-      trajSetPose(relay1[side]);
-      *finish_tick = arm.trajStart();
-    }
-  }
-  // 移动至兑换默认位姿
-  else if (step == TRAJ_RELAY_1_BACK) {
-    if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_EXCHANGE;
-      trajSetPose(exchange_default);
-      *finish_tick = arm.trajStart() + 500;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(exchange_default);
+      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
     }
   }
   // 移动至兑换默认位姿
@@ -928,8 +898,9 @@ void ArmTask::Exchange_t::handle(void) {
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEFAULT;
-      trajSetPose(default_pose);
-      *finish_tick = arm.trajStart() + 500;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(default_pose);
+      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
     }
   }
   // 移动至默认位置
@@ -952,8 +923,9 @@ void ArmTask::Exchange_t::handle(void) {
   else if (step == PUMP_E_OFF) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_ROTATE;
+      arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(rotate_pose);
-      *finish_tick = arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 末端旋转
@@ -1003,8 +975,9 @@ void ArmTask::triplePickHandle(void) {
       pick_.start_pose = triple_pick_.mine[1];
       pick_.pick_up_pose = pick_.start_pose;
       pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_dist;
+      arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
-      finish_tick_ = arm.trajStart() + 500;
+      finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.2;
       // 重置任务状态
       move_.state = IDLE;
       // pick_.state = IDLE;
@@ -1047,8 +1020,9 @@ void ArmTask::triplePickHandle(void) {
       pick_.start_pose = triple_pick_.mine[2];
       pick_.pick_up_pose = pick_.start_pose;
       pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_dist;
+      arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
-      finish_tick_ = arm.trajStart() + 500;
+      finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.2;
       // 重置任务状态
       move_.state = IDLE;
       // pick_.state = IDLE;
