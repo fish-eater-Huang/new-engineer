@@ -15,10 +15,10 @@
 
 #include "app/imu_comm.h"
 #include "app/motor_monitor.h"
-#include "base/cap_comm/cap_comm.h"
 
 extern DJIMotorDriver dji_motor_driver;
 extern MITMotorDriver mit_motor_driver[];
+extern HTNCMotorDriver nc_motor_driver[];
 
 // CAN filter初始化
 void canFilterInit(void) {
@@ -54,7 +54,8 @@ void canTxMonitor(void) {
   }
 
   if (HAL_GetTick() % 2 == 0) {
-    mit_motor_driver[0].canTxMsg();
+    // mit_motor_driver[0].canTxMsg();
+    nc_motor_driver[0].canTxMsg();
     mit_motor_driver[1].canTxMsg();
   } else if (HAL_GetTick() % 2 == 1) {
     mit_motor_driver[2].canTxMsg();

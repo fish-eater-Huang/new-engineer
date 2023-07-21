@@ -33,7 +33,7 @@ Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // J0转轴电机
-Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+Motor JM0(Motor::HTNC, 1, Motor::POSITION_SPEED,         // type, ratio, method
           PID(10, 0, 800, 100, 180),                     // ppid
           PID(0.2, 0, 0.5, 0, 10),                       // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
@@ -175,6 +175,7 @@ const float t_max = 7;
 
 // MIT协议电机
 MITMotorDriver mit_motor_driver[] = {
+    // J0改用HT-NC协议，列表内占位
     MITMotorDriver(&JM0, &hcan1, 0x10, 0x00, ht04::p_min, ht04::p_max,
                    ht04::v_min, ht04::v_max, ht04::kp_min, ht04::kp_max,
                    ht04::kv_min, ht04::kv_max, ht04::t_ff_min, ht04::t_ff_max,
@@ -202,7 +203,13 @@ MITMotorDriver mit_motor_driver[] = {
     MITMotorDriver(&JM6, &hcan2, 0x16, 0x06, m4310::p_min, m4310::p_max,
                    m4310::v_min, m4310::v_max, m4310::kp_min, m4310::kp_max,
                    m4310::kv_min, m4310::kv_max, m4310::t_ff_min,
-                   m4310::t_ff_max, m4310::t_min, m4310::t_max)};
+                   m4310::t_ff_max, m4310::t_min, m4310::t_max),
+};
+
+// HT-NC协议电机
+HTNCMotorDriver nc_motor_driver[] = {
+    HTNCMotorDriver(&JM0, &hcan1, 0x10, 0x00),
+};
 
 // 电机停转速度上限(dps)
 const float motor_stop_rotate_speed_thres = 1200;
@@ -233,6 +240,9 @@ void allMotorsStopShutoff(void) {
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->mode_ = Motor::POWEROFF;
   }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->mode_ = Motor::POWEROFF;
+  }
 }
 
 // Shut off all motors
@@ -250,6 +260,9 @@ void allMotorsShutOff(void) {
   }
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->mode_ = Motor::POWEROFF;
+  }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->mode_ = Motor::POWEROFF;
   }
 }
 
@@ -269,6 +282,9 @@ void allMotorsStop(void) {
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->mode_ = Motor::STOP;
   }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->mode_ = Motor::STOP;
+  }
 }
 
 // Startup all motors
@@ -287,6 +303,9 @@ void allMotorsOn(void) {
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->mode_ = Motor::WORKING;
   }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->mode_ = Motor::WORKING;
+  }
 }
 
 // Reset all motors.
@@ -303,7 +322,11 @@ void allMotorsInit(void) {
   }
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->reset();
-    mit_motor_driver[i].setCmd(mitmotor::MOTOR_MODE);
+    mit_motor_driver[i].setCmd(MITMotorDriver::Cmd_e::MOTOR_MODE);
+  }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->reset();
+    nc_motor_driver[i].setCmd(HTNCMotorDriver::Cmd_e::START);
   }
 }
 
@@ -321,7 +344,13 @@ void allMotorsHandle(void) {
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     mit_motor_driver[i].motor_->handle();
     if (!mit_motor_driver[i].motor_->connect_.check()) {
-      mit_motor_driver[i].setCmd(mitmotor::MOTOR_MODE);
+      mit_motor_driver[i].setCmd(MITMotorDriver::Cmd_e::MOTOR_MODE);
+    }
+  }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    nc_motor_driver[i].motor_->handle();
+    if (!nc_motor_driver[i].motor_->connect_.check()) {
+      nc_motor_driver[i].setCmd(HTNCMotorDriver::Cmd_e::START);
     }
   }
 }
@@ -336,6 +365,11 @@ void motorsCanRxMsgHandle(CAN_HandleTypeDef* hcan,
   for (int i = 0; i < sizeof(mit_motor_driver) / sizeof(MITMotorDriver); i++) {
     if (mit_motor_driver[i].canRxMsgCheck(hcan, rx_header)) {
       mit_motor_driver[i].canRxMsgCallback(hcan, rx_header, rx_data);
+    }
+  }
+  for (int i = 0; i < sizeof(nc_motor_driver) / sizeof(HTNCMotorDriver); i++) {
+    if (nc_motor_driver[i].canRxMsgCheck(hcan, rx_header)) {
+      nc_motor_driver[i].canRxMsgCallback(hcan, rx_header, rx_data);
     }
   }
 }

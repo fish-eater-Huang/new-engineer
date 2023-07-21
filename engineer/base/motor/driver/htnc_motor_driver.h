@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * @file    mit_motor_driver.cpp/h
- * @brief   Driver program for motor use MIT protocol. MIT协议电机驱动
+ * @file    htnc_motor_driver.cpp/h
+ * @brief   Driver program for HT-NC motor. 海泰NC协议电机驱动
  * @author  Spoon Guan
  ******************************************************************************
  * Copyright (c) 2023 Team JiaoLong-SJTU
@@ -9,44 +9,29 @@
  ******************************************************************************
  */
 
-#ifndef MIT_MOTOR_DRIVER_H
-#define MIT_MOTOR_DRIVER_H
+#ifndef HTNC_MOTOR_DRIVER_H
+#define HTNC_MOTOR_DRIVER_H
 
 #include "base/motor/motor.h"
 #include "can.h"
 
-class MITMotorDriver {
+class HTNCMotorDriver {
  public:
   // motor mode command
   typedef enum Cmd {
     NO_CMD = 0,
-    MOTOR_MODE = 1,
-    RESET_MODE = 2,
-    ZERO_POSITION = 3,
+    START = 1,
+    STOP = 2,
   } Cmd_e;
 
  public:
   // master id: motor->board
   // slave id: board->motor
-  MITMotorDriver(Motor* motor, CAN_HandleTypeDef* hcan, uint32_t master_id,
-                 uint32_t slave_id, float p_min, float p_max, float v_min,
-                 float v_max, float kp_min, float kp_max, float kv_min,
-                 float kv_max, float t_ff_min, float t_ff_max, float t_min,
-                 float t_max);
+  HTNCMotorDriver(Motor* motor, CAN_HandleTypeDef* hcan, uint32_t master_id,
+                  uint32_t slave_id);
 
   // set motor mode command
-  bool setCmd(MITMotorDriver::Cmd_e cmd);
-
-  // set motor control parameter
-  // p: target position(rad)
-  // v: target speed(rad/s)
-  // kp/kv: control gain
-  // t: feedforward torque
-  // T = kp*(p-p_fdb)+kv*(v-v_fdb)+t
-  void setControlParam(float p, float v, float kp, float kv, float t_ff);
-
-  // set torque
-  void setTorque(const float& torque);
+  bool setCmd(HTNCMotorDriver::Cmd_e cmd);
 
   // Transmit CAN message
   void canTxMsg(void);
@@ -65,16 +50,14 @@ class MITMotorDriver {
 
   // transmit data pack
   struct TxData {
-    uint16_t p;
-    uint16_t v;
-    uint16_t kp;
-    uint16_t kv;
-    uint16_t t_ff;
+    float torque;
+    uint32_t duration;
   } tx_data_;
 
   // receive data pack
   struct RxData {
-    uint8_t id;
+    uint8_t res;
+    uint8_t temp;    // degree
     float position;  // rad
     float speed;     // rad/s
     float torque;    // N·m
@@ -94,30 +77,9 @@ class MITMotorDriver {
   struct Command_t {
     uint32_t tick;
     const uint32_t interval = 100;
-    Cmd_e list[5] = {MITMotorDriver::Cmd_e::NO_CMD};
+    Cmd_e list[5] = {HTNCMotorDriver::Cmd_e::NO_CMD};
     uint8_t cnt = 0;
   } cmd_;
-
-  // motor parameters
-  struct Param_t {
-    // position limit(rad)
-    float p_min;
-    float p_max;
-    // speed limit(rad/s)
-    float v_min;
-    float v_max;
-    // PD param limit
-    float kp_min;
-    float kp_max;
-    float kv_min;
-    float kv_max;
-    // feedforward torque limit(N·m)
-    float t_ff_min;
-    float t_ff_max;
-    // feedback torque limit(N·m)
-    float t_min;
-    float t_max;
-  } param_;
 };
 
-#endif  // MIT_MOTOR_DRIVER_H
+#endif  // HTNC_MOTOR_DRIVER_H

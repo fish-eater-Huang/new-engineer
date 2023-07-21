@@ -26,8 +26,7 @@ class Motor {
     GM6020,
     // other motor
     MIT,
-    HT04,
-    LK9025
+    HTNC,
   } Type_e;
 
   typedef enum ControlMethod {

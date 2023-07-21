@@ -822,6 +822,11 @@
               <FileType>8</FileType>
               <FilePath>..\..\..\base\motor\driver\mit_motor_driver.cpp</FilePath>
             </File>
+            <File>
+              <FileName>htnc_motor_driver.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\..\..\base\motor\driver\htnc_motor_driver.cpp</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

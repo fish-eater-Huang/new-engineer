@@ -13,6 +13,7 @@
 #define MOTOR_MONITOR_H
 
 #include "base/motor/driver/dji_motor_driver.h"
+#include "base/motor/driver/htnc_motor_driver.h"
 #include "base/motor/driver/mit_motor_driver.h"
 #include "base/motor/motor.h"
 

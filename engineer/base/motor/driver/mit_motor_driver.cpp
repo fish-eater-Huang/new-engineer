@@ -19,6 +19,8 @@ uint16_t float2uint(float x, float x_min, float x_max, uint8_t bits);
 float uint2float(int x_int, float x_min, float x_max, int bits);
 };  // namespace mitmotor
 
+// master id: motor->board
+// slave id: board->motor
 MITMotorDriver::MITMotorDriver(Motor* motor, CAN_HandleTypeDef* hcan,
                                uint32_t master_id, uint32_t slave_id,
                                float p_min, float p_max, float v_min,
@@ -46,7 +48,7 @@ MITMotorDriver::MITMotorDriver(Motor* motor, CAN_HandleTypeDef* hcan,
 }
 
 // Set motor mode command
-bool MITMotorDriver::setCmd(mitmotor::CmdType_e cmd) {
+bool MITMotorDriver::setCmd(MITMotorDriver::Cmd_e cmd) {
   if (cmd_.cnt > 5 || (cmd_.cnt > 0 && cmd_.list[cmd_.cnt - 1] == cmd)) {
     return false;
   }
@@ -57,7 +59,7 @@ bool MITMotorDriver::setCmd(mitmotor::CmdType_e cmd) {
 
 // Set motor control parameter
 // p: target position(rad)
-// v: target velocity(rad/s)
+// v: target speed(rad/s)
 // kp/kv: control gain
 // t: feedforward torque
 // T = kp*(p-p_fdb)+kv*(v-v_fdb)+t
@@ -93,34 +95,24 @@ void MITMotorDriver::canTxMsg(void) {
   can_tx_header_.StdId = slave_id_;
 
   // transmit command pack
-  if (cmd_.cnt > 0) {
-    setTorque(0);
+  if (cmd_.cnt > 0 && HAL_GetTick() - cmd_.tick > cmd_.interval) {
     memset(can_tx_data_, 0xff, 8);
-    can_tx_data_[7] = 0xfb + cmd_.list[cmd_.cnt - 1];
-    if (HAL_GetTick() - cmd_.tick > cmd_.interval) {
-      HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_,
-                           &can_tx_mail_box_);
-      memmove(cmd_.list, (mitmotor::CmdType_e*)cmd_.list + 1,
-              4 * sizeof(mitmotor::CmdType_e));
-      cmd_.list[cmd_.cnt - 1] = mitmotor::NO_CMD;
-      cmd_.cnt--;
-      cmd_.tick = HAL_GetTick();
-    } else {
-      can_tx_data_[0] = tx_data_.p >> 8;
-      can_tx_data_[1] = tx_data_.p & 0xff;
-      can_tx_data_[2] = tx_data_.v >> 4;
-      can_tx_data_[3] = ((tx_data_.v & 0xf) << 4) | (tx_data_.kp >> 8);
-      can_tx_data_[4] = tx_data_.kp & 0xff;
-      can_tx_data_[5] = tx_data_.kv >> 4;
-      can_tx_data_[6] = ((tx_data_.kv & 0xf) << 4) | (tx_data_.t_ff >> 8);
-      can_tx_data_[7] = tx_data_.t_ff & 0xff;
-      HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_,
-                           &can_tx_mail_box_);
-    }
+    can_tx_data_[7] = 0xfb + cmd_.list[0];
+    HAL_CAN_AddTxMessage(hcan_, &can_tx_header_, can_tx_data_,
+                         &can_tx_mail_box_);
+    memmove(cmd_.list, (MITMotorDriver::Cmd_e*)cmd_.list + 1,
+            4 * sizeof(MITMotorDriver::Cmd_e));
+    cmd_.list[cmd_.cnt - 1] = MITMotorDriver::Cmd_e::NO_CMD;
+    cmd_.cnt--;
+    cmd_.tick = HAL_GetTick();
   }
   // transmit control pack
   else {
-    setTorque(motor_->intensity_float_);
+    if (cmd_.cnt > 0) {
+      setTorque(0);
+    } else {
+      setTorque(motor_->intensity_float_);
+    }
     can_tx_data_[0] = tx_data_.p >> 8;
     can_tx_data_[1] = tx_data_.p & 0xff;
     can_tx_data_[2] = tx_data_.v >> 4;
@@ -157,9 +149,9 @@ void MITMotorDriver::canRxMsgCallback(CAN_HandleTypeDef* hcan,
   uint_t = ((rx_data[4] & 0x0F) << 8) | (rx_data[5]);
   rx_data_.position =
       mitmotor::uint2float(uint_p, param_.p_min, param_.p_max, 16);
-  rx_data_.velocity =
-      mitmotor::uint2float(uint_v, param_.v_min, param_.v_max, 12);
-  rx_data_.torq = mitmotor::uint2float(uint_t, param_.t_min, param_.t_max, 12);
+  rx_data_.speed = mitmotor::uint2float(uint_v, param_.v_min, param_.v_max, 12);
+  rx_data_.torque =
+      mitmotor::uint2float(uint_t, param_.t_min, param_.t_max, 12);
 
   // Encoder angle(deg)
   // 编码器角度
@@ -173,10 +165,10 @@ void MITMotorDriver::canRxMsgCallback(CAN_HandleTypeDef* hcan,
   // feedback rotational speed
   // 反馈转速
   motor_->motor_data_.rotate_speed =
-      math::radps2dps(rx_data_.velocity) / motor_->ratio_;  // dps
+      math::radps2dps(rx_data_.speed) / motor_->ratio_;  // dps
   // Update current
   // 更新转矩电流
-  motor_->motor_data_.current = rx_data_.torq;
+  motor_->motor_data_.current = rx_data_.torque;
   // update encoder angle record
   // 更新编码器角度记录
   motor_->motor_data_.last_ecd_angle = motor_->motor_data_.ecd_angle;
