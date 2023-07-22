@@ -79,6 +79,9 @@ class MITMotorDriver {
     float speed;     // rad/s
     float torque;    // N·m
   } rx_data_;
+  
+  // encoder offset
+  float encoder_offset_;
 
  private:
   CAN_HandleTypeDef* hcan_;

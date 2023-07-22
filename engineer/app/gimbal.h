@@ -41,7 +41,7 @@ class ArmGimbal {
   // 云台/J0参数
   struct Param_t {
     // 编码器零点
-    const float j0_zero = 12.27f;
+    const float j0_zero = 1.75f;
 
     // 云台角度限位(°)
     const float pitch_min = -45;

@@ -54,8 +54,7 @@ void canTxMonitor(void) {
   }
 
   if (HAL_GetTick() % 2 == 0) {
-    // mit_motor_driver[0].canTxMsg();
-    nc_motor_driver[0].canTxMsg();
+    mit_motor_driver[0].canTxMsg();
     mit_motor_driver[1].canTxMsg();
   } else if (HAL_GetTick() % 2 == 1) {
     mit_motor_driver[2].canTxMsg();

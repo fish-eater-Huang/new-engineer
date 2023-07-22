@@ -155,11 +155,20 @@ void MITMotorDriver::canRxMsgCallback(CAN_HandleTypeDef* hcan,
 
   // Encoder angle(deg)
   // 编码器角度
-  motor_->motor_data_.ecd_angle = math::rad2deg(rx_data_.position);
+  motor_->motor_data_.ecd_angle = math::rad2deg(rx_data_.position) + encoder_offset_;
   // Use incremental calculation to deals with encoder overflow and underflow
   // 增量计算处理编码器上下溢问题
   float delta =
       motor_->motor_data_.ecd_angle - motor_->motor_data_.last_ecd_angle;
+  if (delta > (math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min)) / 2) {
+    delta -= (math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min));
+    encoder_offset_ -= (math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min));
+  } else if (delta <
+             -(math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min)) / 2) {
+    delta += (math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min));
+    encoder_offset_ += (math::rad2deg(param_.p_max) - math::rad2deg(param_.p_min));
+  }
+  motor_->motor_data_.ecd_angle = math::rad2deg(rx_data_.position) + encoder_offset_;
   delta = math::degNormalize180(delta) / motor_->ratio_;
   motor_->motor_data_.angle += delta;  // deg
   // feedback rotational speed

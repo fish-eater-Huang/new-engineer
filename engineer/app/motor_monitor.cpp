@@ -33,9 +33,9 @@ Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // J0转轴电机
-Motor JM0(Motor::HTNC, 1, Motor::POSITION_SPEED,         // type, ratio, method
-          PID(10, 0, 800, 100, 180),                     // ppid
-          PID(0.2, 0, 0.5, 0, 10),                       // spid
+Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
+          PID(10, 0, 200, 100, 270),                     // ppid
+          PID(0.4, 0, 0.5, 0, 20),                       // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 气泵电机
