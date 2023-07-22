@@ -17,7 +17,7 @@
 #include "app/motor_monitor.h"
 
 extern DJIMotorDriver dji_motor_driver;
-extern BoardComm board_comm;
+extern BoardComm board_comm1, board_comm2;
 
 // CAN filter初始化
 void canFilterInit(void) {
@@ -46,7 +46,8 @@ void canFilterInit(void) {
 // CAN通信发送管理
 void canTxMonitor(void) {
   // note: 每个通道一次只能发送3个包
-  board_comm.canTxMsg();
+  board_comm1.canTxMsg();
+  board_comm2.canTxMsg();
 
   osDelay(10);
 }

@@ -23,7 +23,7 @@
 #include "base/remote/remote.h"
 
 extern RC rc;
-extern BoardComm board_comm;
+extern BoardComm board_comm1, board_comm2;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -34,8 +34,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &rx_header, rx_data);
 
   motorsCanRxMsgHandle(hcan, rx_header, rx_data);
-  if(board_comm.canRxMsgCheck(hcan, rx_header)) {
-    board_comm.canRxMsgCallback(hcan, rx_header, rx_data);
+  if(board_comm1.canRxMsgCheck(hcan, rx_header)) {
+    board_comm1.canRxMsgCallback(hcan, rx_header, rx_data);
+  }
+  if(board_comm2.canRxMsgCheck(hcan, rx_header)) {
+    board_comm2.canRxMsgCallback(hcan, rx_header, rx_data);
   }
 }
 

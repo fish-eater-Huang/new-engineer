@@ -29,7 +29,7 @@ void boardLedHandle(void);
 
 extern RC rc;
 extern IMU board_imu;
-extern BoardComm board_comm;
+extern BoardComm board_comm1, board_comm2;
 
 uint8_t board_id = 1;
 BoardLed led;
@@ -117,9 +117,12 @@ bool robotStartup(void) {
 
 // 机器人控制
 void robotControl(void) {
-  board_comm.imu_msg_[board_id - 1].yaw = board_imu.yaw() * 32767 / 180;
-  board_comm.imu_msg_[board_id - 1].pitch = board_imu.pitch() * 32767 / 180;
-  board_comm.imu_msg_[board_id - 1].roll = board_imu.roll() * 32767 / 180;
+  board_comm1.imu_msg_[board_id - 1].yaw = board_imu.yaw() * 32767 / 180;
+  board_comm1.imu_msg_[board_id - 1].pitch = board_imu.pitch() * 32767 / 180;
+  board_comm1.imu_msg_[board_id - 1].roll = board_imu.roll() * 32767 / 180;
+  board_comm2.imu_msg_[board_id - 1].yaw = board_imu.yaw() * 32767 / 180;
+  board_comm2.imu_msg_[board_id - 1].pitch = board_imu.pitch() * 32767 / 180;
+  board_comm2.imu_msg_[board_id - 1].roll = board_imu.roll() * 32767 / 180;
 
   // 记录遥控器挡位状态
   last_rc_switch = rc.switch_;
@@ -132,10 +135,10 @@ void boardLedHandle(void) {
     led.setColor(255, 0, 0);  // red
     led.setModeOn();
   } else if (robot_state == STARTUP) {
-    led.setColor(150, 150, 0);  // yellow
+    led.setColor(0, 0, 255);  // blue
     led.setModeBreath();
   } else if (robot_state == WORKING) {
-    led.setColor(0, 0, 255);  // blue
+    led.setColor(255, 255, 0);  // yellow
     led.setModeBlink(board_id);
   }
   led.handle();

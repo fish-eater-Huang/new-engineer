@@ -33,7 +33,8 @@ SerialStudio serial_tool(DEBUG_UART);
 SerialStudio serial_tool;
 #endif  // DEBUG_UART
 
-BoardComm board_comm(&hcan2);
+BoardComm board_comm1(&hcan1);
+BoardComm board_comm2(&hcan2);
 
 /* FreeRTOS tasks-----------------------------------------------------------*/
 osThreadId controlTaskHandle;
