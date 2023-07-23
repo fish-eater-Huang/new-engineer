@@ -43,40 +43,44 @@ typedef enum RefereeCMDID {
   GAME_STATUS_ID = 0x0001,
   GAME_RESULT_ID = 0x0002,
   GAME_ROBOT_HP_ID = 0x0003,
-  DART_STATUS_ID = 0x0004,
-  ICRA_BUFF_DEBUFF_ZONE_AND_LURK_STATUS_ID = 0x0005,
   EVENT_DATA_ID = 0x0101,
   SUPPLY_PROJECTILE_ACTION_ID = 0x0102,
-  SUPPLY_PROJECTILE_BOOKING_ID = 0x0103,
   REFEREE_WARNING_ID = 0x0104,
   DART_REMAINING_TIME_ID = 0x0105,
-  GAME_ROBOT_STATUS_ID = 0x0201,
+  ROBOT_STATUS_ID = 0x0201,
   POWER_HEAT_DATA_ID = 0x0202,
-  GAME_ROBOT_POS_ID = 0x0203,
+  ROBOT_POS_ID = 0x0203,
   BUFF_ID = 0x0204,
-  AERIAL_ROBOT_ENERGY_ID = 0x0205,
-  ROBOT_HURT_ID = 0x0206,
+  AERIAL_SUPPORT_DATA_ID = 0x0205,
+  HURT_DATA_ID = 0x0206,
   SHOOT_DATA_ID = 0x0207,
-  BULLET_REMAINING_ID = 0x0208,
+  PROJECTILE_ALLOWANCE_ID = 0x0208,
   RFID_STATUS_ID = 0x0209,
-  DART_CLIENT_CMD_ID = 0X020A,
+  DART_CLIENT_CMD_ID = 0x020A,
+  GROUND_ROBOT_POSITION_ID = 0x20B,
+  RADAR_MARK_DATA_ID = 0x20C,
   STUDENT_INTERACTIVE_DATA_ID = 0x0301,
+  MAP_COMMAND_ID = 0x303,
+  REMOTE_CONTROL_ID = 0x304,
+  MAP_ROBOT_DATA_ID = 0x305,
+  CUSTOM_CLIENT_DATA_ID = 0x306,
+  MAP_SENTRY_DATA_ID = 0x307,
 } RefereeCMDID_e;
 
-// 比赛状态数据：0x0001。发送频率：1Hz
+// 0x0001 11 比赛状态数据，固定3Hz 频率发送 服务器→全体机器人
 typedef struct {
   uint8_t game_type : 4;
   uint8_t game_progress : 4;
   uint16_t stage_remain_time;
   uint64_t SyncTimeStamp;
-} __packed ext_game_status_t;
+} __packed game_status_t;
 
-// 比赛结果数据：0x0002。发送频率：比赛结束后发送
+// 0x0002 1 比赛结果数据，比赛结束触发发送 服务器→全体机器人
 typedef struct {
   uint8_t winner;
-} __packed ext_game_result_t;
+} __packed game_result_t;
 
-// 机器人血量数据：0x0003。发送频率：1Hz
+// 0x0003 32 机器人血量数据，固定3Hz 频率发送 服务器→全体机器人
 typedef struct {
   uint16_t red_1_robot_HP;
   uint16_t red_2_robot_HP;
@@ -94,128 +98,107 @@ typedef struct {
   uint16_t blue_7_robot_HP;
   uint16_t blue_outpost_HP;
   uint16_t blue_base_HP;
-} __packed ext_game_robot_HP_t;
+} __packed game_robot_HP_t;
 
-// 人工智能挑战赛加成/惩罚区分布与潜伏模式状态：0x0005。发送频率：1Hz周期发送，发送范围：所有机器人
-typedef struct {
-  uint8_t F1_zone_status : 1;
-  uint8_t F1_zone_buff_debuff_status : 3;
-  uint8_t F2_zone_status : 1;
-  uint8_t F2_zone_buff_debuff_status : 3;
-  uint8_t F3_zone_status : 1;
-  uint8_t F3_zone_buff_debuff_status : 3;
-  uint8_t F4_zone_status : 1;
-  uint8_t F4_zone_buff_debuff_status : 3;
-  uint8_t F5_zone_status : 1;
-  uint8_t F5_zone_buff_debuff_status : 3;
-  uint8_t F6_zone_status : 1;
-  uint8_t F6_zone_buff_debuff_status : 3;
-  uint16_t red1_bullet_left;
-  uint16_t red2_bullet_left;
-  uint16_t blue1_bullet_left;
-  uint16_t blue2_bullet_left;
-  uint8_t lurk_mode;
-  uint8_t res;
-} __packed ext_ICRA_buff_debuff_zone_and_lurk_status_t;
-
-// 场地事件数据：0x0101。发送频率：1Hz
+// 0x0101 4 场地事件数据，固定3Hz 频率发送 服务器→己方全体机器人
+// 0：未占领/未激活 1：已占领/已激活
 // bit 0-2：
-// bit 0：己方补给站 1号补血点占领状态 1为已占领；
-// bit 1：己方补给站 2号补血点占领状态 1为已占领；
-// bit 2：己方补给站 3号补血点占领状态 1为已占领；
+// • bit 0：己方补给站前补血点的占领状态，1 为已占领
+// • bit 1：己方补给站左侧（面向补给站）补血点的占领状态，1 为已占领
+// • bit 2：己方补给站右侧（面向补给站）的占领状态，1 为已占领
 // bit 3-5：己方能量机关状态：
-// • bit 3为打击点占领状态，1为占领；
-// • bit 4为小能量机关激活状态，1为已激活；
-// • bit 5为大能量机关激活状态，1为已激活；
-// bit 6：己方侧R2/B2环形高地占领状态1为已占领；
-// bit 7：己方侧R3/B3梯形高地占领状态 1为已占领；
-// bit 8：己方侧R4/B4梯形高地占领状态 1为已占领；
-// bit 9：己方基地护盾状态：
-// • 1为基地有虚拟护盾血量；
-// • 0为基地无虚拟护盾血量；
-// bit 10：己方前哨战状态：
-// • 1为前哨战存活；
-// • 0为前哨战被击毁；
-// bit 10-31: 保留
+// • bit 3：己方能量机关激活点的占领状态，1 为已占领
+// • bit 4：己方小能量机关的激活状态，1 为已激活
+// • bit 5：己方大能量机关的激活状态，1 为已激活
+// bit 6：己方2 号环形高地的占领状态，1 为已占领
+// bit 7：己方3 号梯形高地的占领状态，1 为已占领
+// bit 8：己方4 号梯形高地的占领状态，1 为已占领
+// bit9-16：己方基地虚拟护盾的值（0-250）
+// bit17-27：己方前哨站的血量（0-1500）
+// bit28：哨兵此时是否在己方巡逻区内
+// bit29-31：保留
 typedef struct {
-  uint32_t event_type;
-} __packed ext_event_data_t;
+  uint32_t event_data;
+} __packed event_data_t;
 
-// 补给站动作标识：0x0102。发送频率：动作改变后发送, 发送范围：己方机器人
+// 0x0102 4 补给站动作标识数据，补给站弹丸释放时触发发送 服务器→己方全体机器人
 typedef struct {
   uint8_t supply_projectile_id;
   uint8_t supply_robot_id;
   uint8_t supply_projectile_step;
   uint8_t supply_projectile_num;
-} __packed ext_supply_projectile_action_t;
+} __packed supply_projectile_action_t;
 
-// 裁判警告信息：cmd_id (0x0104)。发送频率：己方警告发生后发送
+// 0x0104 2 裁判警告数据，己方判罚/判负时触发发送 服务器→被处罚方全体机器人
 typedef struct {
   uint8_t level;
-  uint8_t foul_robot_id;
-} __packed ext_referee_warning_t;
+  uint8_t offending_robot_id;
+} __packed referee_warning_t;
 
-// 飞镖发射口倒计时：0x0105。发送频率：1Hz周期发送，发送范围：己方机器人
+// 0x0201 27 机器人性能体系数据，固定10Hz 频率发送 主控模块→对应机器人
 typedef struct {
   uint8_t dart_remaining_time;
-} __packed ext_dart_remaining_time_t;
+} __packed dart_remaining_time_t;
 
 // 比赛机器人状态：0x0201。发送频率：10Hz
 typedef struct {
   uint8_t robot_id;
   uint8_t robot_level;
-  uint16_t remain_HP;
-  uint16_t max_HP;
-  uint16_t shooter_id1_17mm_cooling_rate;
-  uint16_t shooter_id1_17mm_cooling_limit;
-  uint16_t shooter_id1_17mm_speed_limit;
-  uint16_t shooter_id2_17mm_cooling_rate;
-  uint16_t shooter_id2_17mm_cooling_limit;
-  uint16_t shooter_id2_17mm_speed_limit;
-  uint16_t shooter_id1_42mm_cooling_rate;
-  uint16_t shooter_id1_42mm_cooling_limit;
-  uint16_t shooter_id1_42mm_speed_limit;
+  uint16_t current_HP;
+  uint16_t maximum_HP;
+  uint16_t shooter_id1_17mm_barrel_cooling_value;
+  uint16_t shooter_id1_17mm_barrel_heat_limit;
+  uint16_t shooter_id1_17mm_initial_launching_speed_limit;
+  uint16_t shooter_id2_17mm_barrel_cooling_valuecooling_rate;
+  uint16_t shooter_id2_17mm_barrel_heatcooling_limit;
+  uint16_t shooter_id2_17mm_initial_launching_speed_limit;
+  uint16_t shooter_id1_42mm_barrel_cooling_value;
+  uint16_t shooter_id1_42mm_barrel_heat_cooling_limit;
+  uint16_t shooter_id1_42mm_initial_launching_speed_limit;
   uint16_t chassis_power_limit;
-  uint8_t mains_power_gimbal_output : 1;
-  uint8_t mains_power_chassis_output : 1;
-  uint8_t mains_power_shooter_output : 1;
-} __packed ext_game_robot_status_t;
+  uint8_t power_management_gimbal_output : 1;
+  uint8_t power_management_chassis_output : 1;
+  uint8_t power_management_shooter_output : 1;
+} __packed robot_status_t;
 
-// 实时功率热量数据：0x0202。发送频率：50Hz
+// 0x0202 16 实时功率热量数据，固定50Hz 频率发送 主控模块→对应机器人
 typedef struct {
-  uint16_t chassis_volt;
+  uint16_t chassis_voltage;
   uint16_t chassis_current;
   float chassis_power;
-  uint16_t chassis_power_buffer;
-  uint16_t shooter_id1_17mm_cooling_heat;
-  uint16_t shooter_id2_17mm_cooling_heat;
-  uint16_t shooter_id1_42mm_cooling_heat;
-} __packed ext_power_heat_data_t;
+  uint16_t buffer_energy;
+  uint16_t shooter_17mm_1_barrel_heat;
+  uint16_t shooter_17mm_2_barrel_heat;
+  uint16_t shooter_42mm_barrel_heat;
+} __packed power_heat_data_t;
 
-// 机器人位置：0x0203。发送频率：10Hz
+// 0x0203 16 机器人位置数据，固定10Hz 频率发送 主控模块→对应机器人
 typedef struct {
   float x;
   float y;
   float z;
-  float yaw;
-} __packed ext_game_robot_pos_t;
+  float angle;
+} __packed robot_pos_t;
 
-// 机器人增益：0x0204。发送频率：1Hz
-// bit 0：机器人血量补血状态
-// bit 1：枪口热量冷却加速
-// bit 2：机器人防御加成
-// bit 3：机器人攻击加成
-// 其他bit保留
+// 0x0204 1 机器人增益数据，固定3Hz 频率发送 服务器→对应机器人
+// 机器人回血增益（百分比，值为10 意为每秒回复10%最大血量）
+// 机器人枪口冷却倍率（直接值，值为5 意味着5 倍冷却）
+// 机器人防御增益（百分比，值为50 意为50%防御增益）
+// 机器人攻击增益（百分比，值为50 意为50%攻击增益）
 typedef struct {
-  uint8_t power_rune_buff;
-} __packed ext_buff_t;
+  uint8_t recovery_buff;
+  uint8_t cooling_buff;
+  uint8_t defence_buff;
+  uint16_t attack_buff;
+} __packed buff_t;
 
-// 空中机器人能量状态：0x0205。发送频率：10Hz
+// 0x0205 1 空中支援时间数据，固定10Hz 频率发送 服务器→己方空中机器人
 typedef struct {
-  uint8_t attack_time;
-} __packed ext_aerial_robot_energy_t;
+  uint8_t airforce_status;
+  uint8_t time_remain;
+} air_support_data_t;
 
-// 伤害状态：0x0206。发送频率：伤害发生后发送
+// 0x0206 1 伤害状态数据，伤害发生后发送 主控模块→对应机器人
 // bit 0-3：
 //   当血量变化类型为装甲伤害，代表装甲ID，其中数值为0-4号代表机器人的五个装甲片，其他血量变化类型，该变量数值为0。
 // bit 4-7：血量变化类型
@@ -227,38 +210,56 @@ typedef struct {
 //   0x5 装甲撞击扣血
 typedef struct {
   uint8_t armor_id : 4;
-  uint8_t hurt_type : 4;
-} __packed ext_robot_hurt_t;
+  uint8_t HP_deduction_reason : 4;
+} __packed hurt_data_t;
 
-// 实时射击信息：0x0207。发送频率：射击后发送
+// 0x0207 7 实时射击数据，弹丸发射后发送 主控模块→对应机器人
 typedef struct {
   uint8_t bullet_type;
-  uint8_t shooter_id;
-  uint8_t bullet_freq;
-  float bullet_speed;
-} __packed ext_shoot_data_t;
+  uint8_t shooter_number;
+  uint8_t launching_frequency;
+  float initial_speed;
+} __packed shoot_data_t;
 
-// 子弹剩余发射数：0x0208。发送频率：10Hz周期发送，所有机器人发送
+// 0x0208 允许发弹量，固定10Hz 频率发送 服务器→己方英雄、步兵、哨兵、空中机器人
 typedef struct {
-  uint16_t bullet_remaining_num_17mm;
-  uint16_t bullet_remaining_num_42mm;
-  uint16_t coin_remaining_num;
-} __packed ext_bullet_remaining_t;
+  uint16_t projectile_allowance_17mm;
+  uint16_t projectile_allowance_42mm;
+  uint16_t remaining_gold_coin;
+} __packed projectile_allowance_t;
 
-// 机器人RFID状态：0x0209。发送频率：1Hz，发送范围：单一机器人
-// bit 0：基地增益点RFID状态；
-// bit 1：高地增益点RFID状态；
-// bit 2：能量机关激活点RFID状态；
-// bit 3：飞坡增益点RFID状态；
-// bit 4：前哨岗增益点RFID状态；
-// bit 6：补血点增益点RFID状态；
-// bit 7：工程机器人复活卡RFID状态；
-// bit 8-31：保留
+// 0x0209 4 机器人RFID 状态，固定3Hz 频率发送 服务器→己方装有RFID模块的机器人
+// bit 位值为1/0 的含义：是否已检测到该增益点RFID
+// • bit0：己方基地增益点
+// • bit1：己方环形高地增益点
+// • bit2：对方环形高地增益点
+// • bit3：己方R3/B3 梯形高地增益点
+// • bit4：对方R3/B3 梯形高地增益点
+// • bit5：己方R4/B4 梯形高地增益点
+// • bit6：对方R4/B4 梯形高地增益点
+// • bit7：己方能量机关激活点
+// • bit8：己方飞坡增益点（靠近己方一侧飞坡前）
+// • bit9：己方飞坡增益点（靠近己方一侧飞坡后）
+// • bit10：对方飞坡增益点（靠近对方一侧飞坡前）
+// • bit11：对方飞坡增益点（靠近对方一侧飞坡后）
+// • bit12：己方前哨站增益点
+// • bit13：己方补血点（检测到任一均视为激活）
+// • bit14：己方哨兵巡逻区
+// • bit15：对方哨兵巡逻区
+// • bit16：己方大资源岛增益点
+// • bit17：对方大资源岛增益点
+// • bit18：己方控制区
+// • bit19：对方控制区
+// • bit20-31：保留
+// 注：基地增益点，高地增益点，飞坡增益点，前哨站增益点，资源岛增益点，
+// 补血点，控制区和哨兵巡逻区的RFID 仅在赛内才生效，即在赛外，即使检
+// 测到对应的RFID 卡，对应值也将为0。
 typedef struct {
   uint32_t rfid_status;
-} __packed ext_rfid_status_t;
+} __packed rfid_status_t;
 
-// 飞镖机器人客户端指令数据：0x020A。发送频率：10Hz，发送范围：单一机器人
+// 0x020A 飞镖选手端指令数据，飞镖闸门上线后固定10Hz 频率发送
+//   服务器→己方飞镖机器人
 // 当前飞镖发射口的状态
 // 1：关闭；
 // 2：正在开启或者关闭中
@@ -270,17 +271,42 @@ typedef struct {
   uint8_t dart_launch_opening_status;
   uint8_t dart_attack_target;
   uint16_t target_change_time;
-  uint16_t operate_launch_cmd_time;
-} __packed ext_dart_client_cmd_t;
+  uint16_t latest_launch_cmd_time;
+} __packed dart_client_cmd_t;
+
+// 0x020B 40 地面机器人位置数据，固定1Hz 频率发送 服务器→己方哨兵机器人
+typedef struct {
+  float hero_x;
+  float hero_y;
+  float engineer_x;
+  float engineer_y;
+  float standard_3_x;
+  float standard_3_y;
+  float standard_4_x;
+  float standard_4_y;
+  float standard_5_x;
+  float standard_5_y;
+} __packed ground_robot_position_t;
+
+// 0x020C 6 雷达标记进度数据，固定1Hz 频率发送 服务器→己方雷达机器人
+typedef struct {
+  uint8_t mark_hero_progress;
+  uint8_t mark_engineer_progress;
+  uint8_t mark_standard_3_progress;
+  uint8_t mark_standard_4_progress;
+  uint8_t mark_standard_5_progress;
+  uint8_t mark_sentry_progress;
+} __packed radar_mark_data_t;
 
 // 机器人间交互数据
 
-// 交互数据接收信息：0x0301
+// 0x0301 128 机器人交互数据，发送方触发发送，频率上限为10Hz
 typedef struct {
   uint16_t data_cmd_id;
-  uint16_t sender_ID;
-  uint16_t receiver_ID;
-} __packed ext_student_interactive_header_data_t;
+  uint16_t sender_id;
+  uint16_t receiver_id;
+  // uint8_t user_data[x];
+} __packed robot_interaction_data_t;
 
 // 机器人ID（机器人->机器人）
 typedef enum RobotID {
@@ -326,65 +352,98 @@ typedef enum ClientID {
 typedef struct {
   uint8_t operate_tpye;
   uint8_t layer;
-} __packed ext_client_custom_graphic_delete_t;
+} __packed interaction_layer_delete_t;
 
 // 图形数据
 typedef struct {
-  uint8_t graphic_name[3];
+  uint8_t figure_name[3];
   uint32_t operate_type : 3;
-  uint32_t graphic_type : 3;
+  uint32_t figure_type : 3;
   uint32_t layer : 4;
   uint32_t color : 4;
-  uint32_t start_angle : 9;
-  uint32_t end_angle : 9;
+  uint32_t details_a : 9;
+  uint32_t details_b : 9;
   uint32_t width : 10;
   uint32_t start_x : 11;
   uint32_t start_y : 11;
-  uint32_t radius : 10;
-  uint32_t end_x : 11;
-  uint32_t end_y : 11;
-} __packed graphic_data_struct_t;
-
-// 客户端绘制一个图形
-typedef struct {
-  graphic_data_struct_t grapic_data_struct;
-} __packed ext_client_custom_graphic_single_t;
+  uint32_t details_c : 10;
+  uint32_t details_d : 11;
+  uint32_t details_e : 11;
+} __packed interaction_figure_t;
 
 // 客户端绘制二个图形
 typedef struct {
-  graphic_data_struct_t grapic_data_struct[2];
-} __packed ext_client_custom_graphic_double_t;
+  interaction_figure_t interaction_figure[2];
+} __packed interaction_figure_2_t;
 
 // 客户端绘制五个图形
 typedef struct {
-  graphic_data_struct_t grapic_data_struct[5];
-} __packed ext_client_custom_graphic_five_t;
+  interaction_figure_t interaction_figure[5];
+} __packed interaction_figure_3_t;
 
 // 客户端绘制七个图形
 typedef struct {
-  graphic_data_struct_t grapic_data_struct[7];
-} __packed ext_client_custom_graphic_seven_t;
+  interaction_figure_t interaction_figure[7];
+} __packed interaction_figure_4_t;
 
 // 客户端绘制字符
 typedef struct {
-  graphic_data_struct_t grapic_data_struct;
+  interaction_figure_t grapic_data_struct;
   uint8_t data[30];
-} __packed ext_client_custom_character_t;
+} __packed client_custom_character_t;
 
-// 小地图下发信息标识：0x0303。发送频率：触发时发送。
+// 0x0302 30 自定义控制器与机器人交互数据，发送方触发发送，频率上限为30Hz
+// 自定义控制器→选手端图传连接的机器人
+typedef struct {
+  // uint8_t data[x];
+} __packed custom_robot_data_t;
+
+// 0x0303 15 选手端小地图交互数据，选手端触发发送
+// 选手端点击→服务器→发送方选择的己方机器人。
 typedef struct {
   float target_position_x;
   float target_position_y;
   float target_position_z;
   uint8_t commd_keyboard;
-  uint16_t target_robot_ID;
-} __packed ext_robot_command_t;
+  uint16_t target_robot_id;
+} __packed map_command_t;
 
-// 小地图接收信息标识：0x0305。最大接收频率：10Hz。
+// 0x0304 12 键鼠遥控数据，固定30Hz 频率发送 客户端→选手端图传连接的机器人
 typedef struct {
-  uint16_t target_robot_ID;
+  uint16_t key_value;
+  uint16_t x_position : 12;
+  uint16_t mouse_left : 4;
+  uint16_t y_position : 12;
+  uint16_t mouse_right : 4;
+  uint16_t reserved;
+} __packed custom_client_data_t;
+
+// 0x0305 10 选手端小地图接收雷达数据，频率上限为10Hz 雷达→服务器→己方所有选手端
+typedef struct {
+  uint16_t target_robot_id;
   float target_position_x;
   float target_position_y;
-} __packed ext_client_map_command_t;
+} __packed map_robot_data_t;
+
+// 0x0306 8 自定义控制器与选手端交互数据，发送方触发发送，频率上限为30Hz
+// 自定义控制器→选手端
+typedef struct {
+  int16_t mouse_x;
+  int16_t mouse_y;
+  int16_t mouse_z;
+  int8_t left_button_down;
+  int8_t right_button_down;
+  uint16_t keyboard_value;
+  uint16_t reserved;
+} __packed remote_control_t;
+
+// 0x0307 103 选手端小地图接收哨兵数据，频率上限为1Hz 哨兵→己方云台手选手端
+typedef struct {
+  uint8_t intention;
+  uint16_t start_position_x;
+  uint16_t start_position_y;
+  int8_t delta_x[49];
+  int8_t delta_y[49];
+} __packed map_sentry_data_t;
 
 #endif  // REFEREE_PROTOCOL_H

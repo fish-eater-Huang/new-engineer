@@ -146,51 +146,61 @@ void RefereeComm::rxCallback(void) {
       memcpy(&game_result_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == GAME_ROBOT_HP_ID) {
       memcpy(&game_robot_HP_, rx_.buf + data_offset, rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == DART_STATUS_ID) {
-      // undefined
-    } else if (rx_.frame.cmd_id == ICRA_BUFF_DEBUFF_ZONE_AND_LURK_STATUS_ID) {
-      memcpy(&icra_status_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == EVENT_DATA_ID) {
       memcpy(&event_data_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == SUPPLY_PROJECTILE_ACTION_ID) {
       memcpy(&supply_projectile_action_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == SUPPLY_PROJECTILE_BOOKING_ID) {
-      // undefined
     } else if (rx_.frame.cmd_id == REFEREE_WARNING_ID) {
       memcpy(&referee_warning_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == DART_REMAINING_TIME_ID) {
       memcpy(&dart_remaining_time_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == GAME_ROBOT_STATUS_ID) {
-      memcpy(&game_robot_status_, rx_.buf + data_offset,
-             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == ROBOT_STATUS_ID) {
+      memcpy(&robot_status_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == POWER_HEAT_DATA_ID) {
       memcpy(&power_heat_data_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == GAME_ROBOT_POS_ID) {
-      memcpy(&game_robot_pos_, rx_.buf + data_offset,
-             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == ROBOT_POS_ID) {
+      memcpy(&robot_pos_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == BUFF_ID) {
-      memcpy(&game_buff_, rx_.buf + data_offset, rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == AERIAL_ROBOT_ENERGY_ID) {
-      memcpy(&aerial_robot_energy_, rx_.buf + data_offset,
+      memcpy(&buff_, rx_.buf + data_offset, rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == AERIAL_SUPPORT_DATA_ID) {
+      memcpy(&air_support_data_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == ROBOT_HURT_ID) {
-      memcpy(&robot_hurt_, rx_.buf + data_offset, rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == HURT_DATA_ID) {
+      memcpy(&hurt_data_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == SHOOT_DATA_ID) {
       memcpy(&shoot_data_, rx_.buf + data_offset, rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == BULLET_REMAINING_ID) {
-      memcpy(&bullet_remaining_, rx_.buf + data_offset,
+    } else if (rx_.frame.cmd_id == PROJECTILE_ALLOWANCE_ID) {
+      memcpy(&projectile_allowance_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == RFID_STATUS_ID) {
       memcpy(&rfid_status_, rx_.buf + data_offset, rx_.frame.header.data_len);
     } else if (rx_.frame.cmd_id == DART_CLIENT_CMD_ID) {
       memcpy(&dart_client_cmd_, rx_.buf + data_offset,
              rx_.frame.header.data_len);
-    } else if (rx_.frame.cmd_id == STUDENT_INTERACTIVE_DATA_ID) {
-      // todo
+    } else if (rx_.frame.cmd_id == GROUND_ROBOT_POSITION_ID) {
+      memcpy(&ground_robot_position_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == RADAR_MARK_DATA_ID) {
+      memcpy(&radar_mark_data_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == MAP_COMMAND_ID) {
+      memcpy(&map_command_, rx_.buf + data_offset, rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == REMOTE_CONTROL_ID) {
+      memcpy(&remote_control_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == MAP_ROBOT_DATA_ID) {
+      memcpy(&map_robot_data_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == CUSTOM_CLIENT_DATA_ID) {
+      memcpy(&custom_client_data_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
+    } else if (rx_.frame.cmd_id == MAP_SENTRY_DATA_ID) {
+      memcpy(&map_sentry_data_, rx_.buf + data_offset,
+             rx_.frame.header.data_len);
     } else {
       unpack_error_ = ID_UNDEFINED;
     }
