@@ -39,7 +39,7 @@ Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
 // 气泵电机
-const PID pump_spid(6, 0, 5, 1000, 16384);
+const PID pump_spid(5, 0, 5, 1000, 16384);
 Motor PME(Motor::M3508, 1, Motor::SPEED,                 // type, ratio, method
           PID(), pump_spid,                              // ppid, spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf

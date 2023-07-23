@@ -112,13 +112,9 @@ class ArmTask {
       TRAJ_RETRACT,  // 机械臂收回
     } step;
     // 机械臂中间点关节角度
-    float q_relay[6] = {math::deg2rad(0),     math::deg2rad(-135.0f),
-                        math::deg2rad(60.0f), math::deg2rad(0),
-                        math::deg2rad(0),     math::deg2rad(0)};
+    float q_relay[6] = {0, -2.35, 1.0, 0, 0, 0};
     // 机械臂收回关节角度
-    float q_retract[6] = {math::deg2rad(0),     math::deg2rad(-165.0f),
-                          math::deg2rad(75.0f), math::deg2rad(0),
-                          math::deg2rad(0),     math::deg2rad(0)};
+    float q_retract[6] = {0, -2.87, 1.3, 0, 0, 0};
 
     // 处理函数
     void handle(void);
@@ -140,15 +136,10 @@ class ArmTask {
     // 取矿模式，0-normal，1-high，2-low
     uint8_t type;
     // 默认位姿参数
-    // Pose_t default_pose[3] = {
-    //     Pose(0.235, 0, 0.15, 0, 0, 0),
-    //     Pose(0.5, 0, 0.5, 0, -PI/2, 0),
-    //     Pose(0.3, 0, -0.2, 0, PI/2, 0),
-    // };
     float default_pose[3][6] = {
-        {0, -2.3, 1.0, 0, 0, 0},  // normal
-        {0, -2.3, 1.0, 0, 0, 0},  // high
-        {0, -2.3, 1.0, 0, 0, 0},  // low
+        {0, -2.0, 1.0, 0, -0.5, 0},   // normal
+        {0, -1.5, -0.3, 0, -1.3, 0},  // high
+        {0, -0.75, 0.56, 0, 0.4, 0},  // low
     };
     // 定位位姿
     Pose_t start_pose;
@@ -181,18 +172,18 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {1, -2.0, 0.4, 0, 0, 0},   // left
+        {-1, -2.0, 0.4, 0, 0, 0},  // right
     };
     // 存矿吸盘上方
     float deposit_above[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {2.5, -1.8, 0.5, 0, 1.2, -0.7},  // left
+        {-2.5, -1.8, 0.5, 0, 1.2, 0.7},  // right
     };
     // 存矿吸盘
     float deposit[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {2.5, -1.7, 0.8, 0, 1, -0.7},  // left
+        {-2.5, -1.7, 0.8, 0, 1, 0.7},  // right
     };
 
     // 处理函数
@@ -221,21 +212,21 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {1, -2.0, 0.4, 0, 0, 0},   // left
+        {-1, -2.0, 0.4, 0, 0, 0},  // right
     };
     // 存矿吸盘上方
     float withdraw_above[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {2.5, -1.8, 0.5, 0, 1.2, -0.7},  // left
+        {-2.5, -1.8, 0.5, 0, 1.2, 0.7},  // right
     };
     // 存矿吸盘
     float withdraw[2][6] = {
-        {PI / 2, -2.3, 1.0, 0, 0, 0},   // left
-        {-PI / 2, -2.3, 1.0, 0, 0, 0},  // right
+        {2.5, -1.7, 0.8, 0, 0.8, -0.7},  // left
+        {-2.5, -1.7, 0.8, 0, 0.8, 0.7},  // right
     };
     // 兑换默认位姿
-    float exchange_default[6] = {0, -2.3, 1.0, 0, 0, 0};
+    float exchange_default[6] = {0, -2, 0.45, 0, 0.4, 0};
 
     // 处理函数
     void handle(void);
@@ -252,15 +243,11 @@ class ArmTask {
       TRAJ_DEFAULT,  // 移动至默认位置
       LOCATE,        // 定位
       PUMP_E_OFF,    // 关闭机械臂气泵
-      TRAJ_ROTATE,   // 末端旋转
     } step;
     // 兑换默认位姿
-    float default_pose[6] = {0, -2.3, 1.0, 0, 0, 0};
+    float default_pose[6] = {0, -2, 0.45, 0, 0.4, 0};
     // 兑换开始位姿
     Pose_t start_pose;
-    // 兑换旋转位姿
-    Pose_t rotate_pose;
-    float rotate_angle = math::deg2rad(45);
 
     // 处理函数
     void handle(void);
