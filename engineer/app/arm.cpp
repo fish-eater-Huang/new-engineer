@@ -152,10 +152,10 @@ void Arm::init(void) {
   jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
   jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
   jm5_->setAngleSpeed(
-      math::rad2deg(-ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[4][0]);
   jm6_->setAngleSpeed(
-      math::rad2deg(ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[5][0]);
 
   init_.is_finish = true;
@@ -182,18 +182,18 @@ void Arm::handle(void) {
   fdb_.q[1][0] = math::deg2rad(jm2_->realAngle());
   fdb_.q[2][0] = math::deg2rad(jm3_->realAngle());
   fdb_.q[3][0] = math::deg2rad(jm4_->realAngle());
-  fdb_.q[4][0] = math::deg2rad(-(jm5_->realAngle() - jm6_->realAngle()) * 0.5f);
+  fdb_.q[4][0] = math::deg2rad((jm5_->realAngle() - jm6_->realAngle()) * 0.5f);
   fdb_.q[5][0] =
-      math::deg2rad(-(jm5_->realAngle() + jm6_->realAngle()) * ratio6_);
+      math::deg2rad((jm5_->realAngle() + jm6_->realAngle()) * ratio6_);
 
   fdb_.q_D1[0][0] = math::dps2radps(jm1_->realSpeed());
   fdb_.q_D1[1][0] = math::dps2radps(jm2_->realSpeed());
   fdb_.q_D1[2][0] = math::dps2radps(jm3_->realSpeed());
   fdb_.q_D1[3][0] = math::dps2radps(jm4_->realSpeed());
   fdb_.q_D1[4][0] =
-      math::dps2radps(-(jm5_->realSpeed() - jm6_->realSpeed()) * 0.5f);
+      math::dps2radps((jm5_->realSpeed() - jm6_->realSpeed()) * 0.5f);
   fdb_.q_D1[5][0] =
-      math::dps2radps(-(jm5_->realSpeed() + jm6_->realSpeed()) * ratio6_);
+      math::dps2radps((jm5_->realSpeed() + jm6_->realSpeed()) * ratio6_);
 
   // 反馈位姿解算(正运动学)
   fdb_.T = arm_.fkine(fdb_.q);
@@ -482,10 +482,10 @@ void Arm::manipulationController(void) {
   jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
   jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
   jm5_->setAngleSpeed(
-      math::rad2deg(-ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[4][0]);
   jm6_->setAngleSpeed(
-      math::rad2deg(ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[5][0]);
 }
 
@@ -520,10 +520,10 @@ void Arm::jointController(void) {
   jm3_->setAngleSpeed(math::rad2deg(ref_.q[2][0]), 0, torq_[2][0]);
   jm4_->setAngleSpeed(math::rad2deg(ref_.q[3][0]), 0, torq_[3][0]);
   jm5_->setAngleSpeed(
-      math::rad2deg(-ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[4][0]);
   jm6_->setAngleSpeed(
-      math::rad2deg(ref_.q[4][0] - ref_.q[5][0] * 0.5f / ratio6_), 0,
+      math::rad2deg(-ref_.q[4][0] + ref_.q[5][0] * 0.5f / ratio6_), 0,
       torq_[5][0]);
 }
 

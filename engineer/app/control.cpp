@@ -54,7 +54,7 @@ ArmGimbal gimbal(&JM0, &GMP, &board_imu);
 ServoPwm pump_e_servo(&htim5, TIM_CHANNEL_3);
 ServoPwm pump_0_servo(&htim5, TIM_CHANNEL_4);
 Pump pump_e(&PME, &pump_e_servo, nullptr, 1166, 550, 1166);  // 机械臂气泵
-Pump pump_0(&PM0, &pump_0_servo, nullptr, 1166, 1760, 540);  // 存矿气泵
+Pump pump_0(&PM0, &pump_0_servo, nullptr, 1200, 1800, 550);  // 存矿气泵
 
 ArmTask task;
 
@@ -97,12 +97,13 @@ float gimbal_rate = 0;
 // 机械臂轨迹规划参数
 float arm_traj_speed = 0.45f;      // m/s
 float arm_traj_rotate_speed = PI;  // rad/s
-float arm_traj_q_D1[6] = {math::dps2radps(120), math::dps2radps(90),
-                          math::dps2radps(90),  math::dps2radps(270),
+float arm_traj_q_D1[6] = {math::dps2radps(120), math::dps2radps(75),
+                          math::dps2radps(75),  math::dps2radps(270),
                           math::dps2radps(270), math::dps2radps(270)};  // rad/s
 
 // 气泵电机转速参数
-float pump_motor_speed = 18000;  // dps
+float pump_e_speed = 18000;  // dps
+float pump_0_speed = 12000;  // dps
 
 // 控制初始化
 void controlInit(void) {
@@ -291,7 +292,7 @@ void robotControl(void) {
     // 兑换
     if (rc.channel_.r_col > 500) {
       task.switchMode(ArmTask::Mode_e::EXCHANGE);
-    } else if (rc.channel_.l_col < -500) {
+    } else if (rc.channel_.r_col < -500) {
       task.startExchange();
     }
 
@@ -319,7 +320,7 @@ void robotControl(void) {
       }
     }
     if (rc.channel_.r_col > 500) {
-      pump_0.setMotorSpeed(pump_motor_speed);
+      pump_0.setMotorSpeed(pump_0_speed);
       task.resetDepositCnt();  // 手动重设存矿出矿计数
     } else if (rc.channel_.r_col < -300) {
       pump_0.setMotorSpeed(0);
@@ -338,7 +339,7 @@ void robotControl(void) {
       pump_e.setValve(Pump::CLOSE);
     }
     if (rc.channel_.l_col > 500) {
-      pump_e.setMotorSpeed(pump_motor_speed);
+      pump_e.setMotorSpeed(pump_e_speed);
     } else if (rc.channel_.l_col < -300) {
       pump_e.setMotorSpeed(0);
     }
@@ -554,16 +555,22 @@ void ArmTask::startPick(PickMethod_e method) {
     return;
   }
   // 设置取矿定位位姿
-  pick_.start_pose.x = arm.fdb_.x;
-  pick_.start_pose.y = arm.fdb_.y;
-  pick_.start_pose.z = arm.fdb_.z;
-  pick_.start_pose.yaw = arm.fdb_.yaw;
-  pick_.start_pose.pitch = arm.fdb_.pitch;
-  pick_.start_pose.roll = arm.fdb_.roll;
+  pick_.start_pose.x = arm.ref_.x;
+  pick_.start_pose.y = arm.ref_.y;
+  pick_.start_pose.z = arm.ref_.z;
+  pick_.start_pose.yaw = arm.ref_.yaw;
+  pick_.start_pose.pitch = arm.ref_.pitch;
+  pick_.start_pose.roll = arm.ref_.roll;
   pick_.pick_up_pose = pick_.start_pose;
-  pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_dist;
+  pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
+  pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
+  pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
+  pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+  pick_.pick_up_pose.pitch =
+      pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
+  pick_.pick_up_pose.roll = pick_.start_pose.roll + pick_.pick_up_offset.roll;
   // 设置步骤完成时间
-  finish_tick_ = HAL_GetTick() + 100;
+  finish_tick_ = HAL_GetTick() + 500;
   if (method == TRIPLE) {
     // 设置三连任务状态
     triple_pick_.state = WORKING;
@@ -571,37 +578,36 @@ void ArmTask::startPick(PickMethod_e method) {
     // 设置三连矿石位姿
     triple_pick_.mine[0] = pick_.start_pose;
     triple_pick_.mine[1] = pick_.start_pose;
-    triple_pick_.mine[1].x =
-        pick_.start_pose.x -
-        triple_pick_.mine_dist * sinf(pick_.start_pose.yaw);
-    triple_pick_.mine[1].y =
-        pick_.start_pose.y +
-        triple_pick_.mine_dist * cosf(pick_.start_pose.yaw);
     triple_pick_.mine[2] = pick_.start_pose;
-    triple_pick_.mine[2].x =
-        pick_.start_pose.x +
-        triple_pick_.mine_dist * sinf(pick_.start_pose.yaw);
-    triple_pick_.mine[2].y =
-        pick_.start_pose.y -
-        triple_pick_.mine_dist * cosf(pick_.start_pose.yaw);
+    Matrixf<3, 1> mine_offset[3] = {
+        matrixf::zeros<3, 1>(),
+        matrixf::zeros<3, 1>(),
+        matrixf::zeros<3, 1>(),
+    };
+    for (int i = 0; i < 3; i++) {
+      mine_offset[i] = robotics::t2r(arm.ref_.T) * arm.R0_.trans() *
+                       triple_pick_.mine_offset[i];
+      triple_pick_.mine[i].x = pick_.start_pose.x + mine_offset[i][0][0];
+      triple_pick_.mine[i].y = pick_.start_pose.y + mine_offset[i][1][0];
+      triple_pick_.mine[i].z = pick_.start_pose.z + mine_offset[i][2][0];
+    }
   }
 }
 
 // 开始兑换
 void ArmTask::startExchange(void) {
-  if (exchange_.state == IDLE) {
+  if (withdraw_.state == IDLE && exchange_.state == IDLE) {
     return;
   }
+  exchange_.state = WORKING;
+  exchange_.step = Exchange_t::LOCATE;
   // 设置兑换定位位姿
-  exchange_.start_pose.x = arm.fdb_.x;
-  exchange_.start_pose.y = arm.fdb_.y;
-  exchange_.start_pose.z = arm.fdb_.z;
-  exchange_.start_pose.yaw = arm.fdb_.yaw;
-  exchange_.start_pose.pitch = arm.fdb_.pitch;
-  exchange_.start_pose.roll = arm.fdb_.roll;
-  exchange_.rotate_pose = exchange_.start_pose;
-  exchange_.rotate_pose.pitch =
-      exchange_.start_pose.pitch - exchange_.rotate_angle;
+  exchange_.start_pose.x = arm.ref_.x;
+  exchange_.start_pose.y = arm.ref_.y;
+  exchange_.start_pose.z = arm.ref_.z;
+  exchange_.start_pose.yaw = arm.ref_.yaw;
+  exchange_.start_pose.pitch = arm.ref_.pitch;
+  exchange_.start_pose.roll = arm.ref_.roll;
   // 设置步骤完成时间
   finish_tick_ = HAL_GetTick() + 100;
 }
@@ -614,12 +620,12 @@ void ArmTask::resetDepositCnt(void) {
 
 // 存矿气泵电机处理
 void ArmTask::depositPumpHandle(void) {
-  if (deposit_.cnt[0] > withdraw_.cnt[0] ||
-      deposit_.cnt[1] > withdraw_.cnt[1]) {
-    pump_0.setMotorSpeed(pump_motor_speed);
-  } else {
-    pump_0.setMotorSpeed(0);
-  }
+  // if (deposit_.cnt[0] > withdraw_.cnt[0] ||
+  //     deposit_.cnt[1] > withdraw_.cnt[1]) {
+  //   pump_0.setMotorSpeed(pump_motor_speed);
+  // } else {
+  //   pump_0.setMotorSpeed(0);
+  // }
 }
 
 // 移动处理
@@ -676,7 +682,7 @@ void ArmTask::Pick_t::handle(void) {
       step = TRAJ_DEFAULT;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
       trajSetJoint(default_pose[type]);
-      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 移动至默认位置
@@ -691,7 +697,7 @@ void ArmTask::Pick_t::handle(void) {
     if (HAL_GetTick() > *finish_tick) {
       step = PUMP_E_ON;
       pump_e.setValve(Pump::ValveState_e::CLOSE);
-      pump_e.setMotorSpeed(pump_motor_speed);
+      pump_e.setMotorSpeed(pump_e_speed);
       *finish_tick = HAL_GetTick() + 1000;
     }
   }
@@ -763,7 +769,7 @@ void ArmTask::Deposit_t::handle(void) {
   else if (step == TRAJ_DEPOSIT_DOWNWARD) {
     if (HAL_GetTick() > *finish_tick) {
       step = PUMP_0_ON;
-      pump_0.setMotorSpeed(pump_motor_speed);
+      pump_0.setMotorSpeed(pump_0_speed);
       pump_0.setValve(Pump::ValveState_e::CLOSE);
       *finish_tick = HAL_GetTick() + 100;
     }
@@ -772,8 +778,8 @@ void ArmTask::Deposit_t::handle(void) {
   else if (step == PUMP_0_ON) {
     if (HAL_GetTick() > *finish_tick) {
       step = PUMP_E_OFF;
-      pump_0.setMotorSpeed(pump_motor_speed);
-      pump_0.setValve(Pump::ValveState_e::CLOSE);
+      pump_e.setMotorSpeed(0);
+      pump_e.setValve(Pump::ValveState_e::OPEN_0);
       *finish_tick = HAL_GetTick() + 1000;
     }
   }
@@ -845,7 +851,7 @@ void ArmTask::Withdraw_t::handle(void) {
   else if (step == TRAJ_DEPOSIT_DOWNWARD) {
     if (HAL_GetTick() > *finish_tick) {
       step = PUMP_E_ON;
-      pump_e.setMotorSpeed(pump_motor_speed);
+      pump_e.setMotorSpeed(pump_e_speed);
       pump_e.setValve(Pump::ValveState_e::CLOSE);
       *finish_tick = HAL_GetTick() + 100;
     }
@@ -877,7 +883,7 @@ void ArmTask::Withdraw_t::handle(void) {
       step = TRAJ_EXCHANGE;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
       trajSetJoint(exchange_default);
-      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 移动至兑换默认位姿
@@ -900,7 +906,7 @@ void ArmTask::Exchange_t::handle(void) {
       step = TRAJ_DEFAULT;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
       trajSetJoint(default_pose);
-      *finish_tick = HAL_GetTick() + arm.trajStart() * 1.2;
+      *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
   // 移动至默认位置
@@ -919,17 +925,8 @@ void ArmTask::Exchange_t::handle(void) {
       *finish_tick = HAL_GetTick() + 500;
     }
   }
-  // 开启机械臂气泵
+  // 关闭机械臂气泵
   else if (step == PUMP_E_OFF) {
-    if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_ROTATE;
-      arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
-      trajSetPose(rotate_pose);
-      *finish_tick = HAL_GetTick() + arm.trajStart();
-    }
-  }
-  // 末端旋转
-  else if (step == TRAJ_ROTATE) {
     if (HAL_GetTick() > *finish_tick) {
       arm.trajAbort();
     }
@@ -948,7 +945,7 @@ void ArmTask::triplePickHandle(void) {
         HAL_GetTick() > finish_tick_) {
       // 设置为存矿模式
       triple_pick_.step = TriplePick_t::DEPOSIT_1;
-      mode_ = DEPOSIT_0;
+      mode_ = DEPOSIT_1;
       deposit_.state = WORKING;
       deposit_.step = Deposit_t::PREPARE;
       deposit_.side = 0;
@@ -970,14 +967,21 @@ void ArmTask::triplePickHandle(void) {
       triple_pick_.step = TriplePick_t::PICK_2;
       mode_ = PICK_NORMAL;
       pick_.state = WORKING;
-      pick_.step = Pick_t::PUMP_E_ON;
+      pick_.step = Pick_t::LOCATE;
       pick_.type = 0;
       pick_.start_pose = triple_pick_.mine[1];
       pick_.pick_up_pose = pick_.start_pose;
-      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_dist;
+      pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
+      pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
+      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
+      pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+      pick_.pick_up_pose.pitch =
+          pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
+      pick_.pick_up_pose.roll =
+          pick_.start_pose.roll + pick_.pick_up_offset.roll;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
-      finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.2;
+      finish_tick_ = HAL_GetTick() + arm.trajStart();
       // 重置任务状态
       move_.state = IDLE;
       // pick_.state = IDLE;
@@ -987,13 +991,14 @@ void ArmTask::triplePickHandle(void) {
       // triple_pick_.state = IDLE;
     }
   }
+  // todo: relay
   // 取2
   else if (triple_pick_.step == TriplePick_t::PICK_2) {
     if (pick_.step == Pick_t::TRAJ_PICK_UPWARD &&
         HAL_GetTick() > finish_tick_) {
       // 设置为存矿模式
       triple_pick_.step = TriplePick_t::DEPOSIT_2;
-      mode_ = DEPOSIT_1;
+      mode_ = DEPOSIT_0;
       deposit_.state = WORKING;
       deposit_.step = Deposit_t::PREPARE;
       deposit_.side = 1;
@@ -1015,14 +1020,21 @@ void ArmTask::triplePickHandle(void) {
       triple_pick_.step = TriplePick_t::PICK_3;
       mode_ = PICK_NORMAL;
       pick_.state = WORKING;
-      pick_.step = Pick_t::PUMP_E_ON;
+      pick_.step = Pick_t::LOCATE;
       pick_.type = 0;
       pick_.start_pose = triple_pick_.mine[2];
       pick_.pick_up_pose = pick_.start_pose;
-      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_dist;
+      pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
+      pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
+      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
+      pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+      pick_.pick_up_pose.pitch =
+          pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
+      pick_.pick_up_pose.roll =
+          pick_.start_pose.roll + pick_.pick_up_offset.roll;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
-      finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.2;
+      finish_tick_ = HAL_GetTick() + arm.trajStart();
       // 重置任务状态
       move_.state = IDLE;
       // pick_.state = IDLE;

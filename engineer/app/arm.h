@@ -139,7 +139,7 @@ class Arm {
     // 编码器指针
     EncoderComm* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {0, 0, 0, 100.2, -143.0, -32.0};
+    const float encoder_zero[6] = {0, 0, 0, -80, -143.0, -32.0};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;
@@ -158,10 +158,10 @@ class Arm {
   struct Limit_t {
     const float qmin[6] = {math::deg2rad(-160), math::deg2rad(-165),
                            math::deg2rad(-90),  math::deg2rad(-180),
-                           math::deg2rad(-90),  math::deg2rad(-180)};
+                           math::deg2rad(-70),  math::deg2rad(-180)};
     const float qmax[6] = {math::deg2rad(160), math::deg2rad(0),
                            math::deg2rad(75),  math::deg2rad(180),
-                           math::deg2rad(70),  math::deg2rad(180)};
+                           math::deg2rad(90),  math::deg2rad(180)};
     const float xmin = -0.6f;
     const float xmax = 0.6f;
     const float ymin = -0.6f;

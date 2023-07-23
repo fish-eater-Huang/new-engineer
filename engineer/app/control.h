@@ -137,15 +137,15 @@ class ArmTask {
     uint8_t type;
     // 默认位姿参数
     float default_pose[3][6] = {
-        {0, -2.0, 1.0, 0, -0.5, 0},   // normal
-        {0, -1.5, -0.3, 0, -1.3, 0},  // high
-        {0, -0.75, 0.56, 0, 0.4, 0},  // low
+        {0, -1.75, 0.5, 0, 1.2, 0},      // normal
+        {0, -1.5, -0.3, -3.14, 1.3, 0},  // high
+        {0, -0.75, 0.56, 0, 0.3, 0},     // low
     };
     // 定位位姿
     Pose_t start_pose;
     // 取矿升高距离
+    Pose_t pick_up_offset = Pose_t(-0.1, 0, 0.3, 0, 0.2, 0);
     Pose_t pick_up_pose;
-    float pick_up_dist = 0.3;
 
     // 处理函数
     void handle(void);
@@ -172,8 +172,8 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {1, -2.0, 0.4, 0, 0, 0},   // left
-        {-1, -2.0, 0.4, 0, 0, 0},  // right
+        {1, -2.0, 0.4, 0, 1.2, 0},   // left
+        {-1, -2.0, 0.4, 0, 1.2, 0},  // right
     };
     // 存矿吸盘上方
     float deposit_above[2][6] = {
@@ -182,8 +182,8 @@ class ArmTask {
     };
     // 存矿吸盘
     float deposit[2][6] = {
-        {2.5, -1.7, 0.8, 0, 1, -0.7},  // left
-        {-2.5, -1.7, 0.8, 0, 1, 0.7},  // right
+        {2.5, -1.7, 0.8, 0, 1.0, -0.7},  // left
+        {-2.5, -1.7, 0.8, 0, 1.0, 0.7},  // right
     };
 
     // 处理函数
@@ -212,8 +212,8 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {1, -2.0, 0.4, 0, 0, 0},   // left
-        {-1, -2.0, 0.4, 0, 0, 0},  // right
+        {1, -2.0, 0.4, 0, 1.2, 0},   // left
+        {-1, -2.0, 0.4, 0, 1.2, 0},  // right
     };
     // 存矿吸盘上方
     float withdraw_above[2][6] = {
@@ -222,8 +222,8 @@ class ArmTask {
     };
     // 存矿吸盘
     float withdraw[2][6] = {
-        {2.5, -1.7, 0.8, 0, 0.8, -0.7},  // left
-        {-2.5, -1.7, 0.8, 0, 0.8, 0.7},  // right
+        {2.5, -1.7, 0.8, 0, 1.0, -0.7},  // left
+        {-2.5, -1.7, 0.8, 0, 1.0, 0.7},  // right
     };
     // 兑换默认位姿
     float exchange_default[6] = {0, -2, 0.45, 0, 0.4, 0};
@@ -262,14 +262,22 @@ class ArmTask {
       PREPARE,    // 准备
       PICK_1,     // 取1
       DEPOSIT_1,  // 存1
+      RELAY_1,    // 中间点1
       PICK_2,     // 取2
       DEPOSIT_2,  // 存2
+      RELAY_2,    // 中间点1
       PICK_3,     // 取3
     } step;
     // 矿石间隔
-    float mine_dist = 0.27;
+    Matrixf<3, 1> mine_offset[3] = {
+        Matrixf<3, 1>((float[3]){0, 0, 0}),
+        Matrixf<3, 1>((float[3]){0, 0.27, 0}),
+        Matrixf<3, 1>((float[3]){0, -0.27, 0}),
+    };
     // 3矿坐标
     Pose_t mine[3];
+    // 中间点坐标
+    Pose_t relay[3];
 
     // // 处理函数
     // void handle(void);
