@@ -41,11 +41,11 @@ class ArmGimbal {
   // 云台/J0参数
   struct Param_t {
     // 编码器零点
-    const float j0_zero = 1.75f;
+    const float j0_zero = -32.6;
 
     // 云台角度限位(°)
     const float pitch_min = -45;
-    const float pitch_max = 30;
+    const float pitch_max = 5;
 
     // 初始化
     const float j0_speed_limit = 360;
@@ -66,7 +66,6 @@ class ArmGimbal {
     float j0;
     float pitch;
   } ref_;
-
   // 反馈状态数据
   struct Fdb_t {
     float j0;

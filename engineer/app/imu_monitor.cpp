@@ -45,7 +45,7 @@ struct Param {
                              {0.0f, 0.0f, 1.0f}};
 
   // 传感器偏移
-  const float gyro_bias[3] = {-1.4e-3f, 1.5e-3f, 2.6e-3f};
+  const float gyro_bias[3] = {1.76e-2f, 5.38e-2f, 7.4e-3f};
   const float accel_bias[3] = {0, 0, 0};
   const float mag_bias[3] = {-13.0f, -0.5f, 30.0f};
   // 加速度计比例
@@ -147,7 +147,8 @@ void boardimu::initSensor(imu::RawData_t& raw_data) {
     mpu_device_init();
   }
   // 开机校准500ms
-  board_imu.init(EulerAngle_t(0, 0, 0), false, 500);
+  // board_imu.init(EulerAngle_t(0, 0, 0), false, 500);
+  board_imu.init(EulerAngle_t(0, 0, 0), true);
 #endif  // DBC / DBA
   boardimu::temp.init();
 }

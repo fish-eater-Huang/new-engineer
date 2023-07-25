@@ -71,7 +71,7 @@ void ArmGimbal::handle(void) {
   if (!init_.pitch_finish) {
     if (gm_pitch_->mode_ != Motor::POWEROFF &&
         gm_pitch_->mode_ != Motor::STOP) {
-      ref_.pitch += 9e-2f;
+      ref_.pitch += 6e-2f;
       ref_.pitch = math::limitMax(ref_.pitch, fdb_.pitch + 20);
       gm_pitch_->targetAngle() = ref_.pitch;
     }
