@@ -96,7 +96,7 @@ float arm_traj_q_D1[6] = {math::dps2radps(120), math::dps2radps(75),
                           math::dps2radps(270), math::dps2radps(270)};  // rad/s
 
 // 气泵电机转速参数
-float pump_e_speed = 18000;  // dps
+float pump_e_speed = 15000;  // dps
 float pump_0_speed = 15000;  // dps
 
 // 控制初始化
@@ -1018,7 +1018,7 @@ void ArmTask::Withdraw_t::handle(void) {
       step = TRAJ_DEPOSIT_UPWARD;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
       trajSetJoint(withdraw_above[side]);
-      *finish_tick = HAL_GetTick() + arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart() + 500;
     }
   }
   // 升高至存矿点上方

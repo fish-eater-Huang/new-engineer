@@ -121,7 +121,7 @@ void armTask(void const* argument) {
   arm.init();
   for (;;) {
     arm.handle();
-    osDelay(1);
+    osDelay(2);
   }
 }
 

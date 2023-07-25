@@ -117,7 +117,7 @@ int main(void)
   MX_TIM5_Init();
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_GPIO_WritePin(GPIOH, DC24V_2_Pin|DC24V_3_Pin|DC24V_4_Pin|DC24V_5_Pin, GPIO_PIN_SET);
   /* USER CODE END 2 */
 
   /* Call init function for freertos objects (in freertos.c) */
