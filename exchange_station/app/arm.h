@@ -86,7 +86,7 @@ class Arm {
                      matrixf::zeros<3, 3>()),                      // I
 
       // link6
-      robotics::Link(0, 0.384, 0, 0,             // theta,d,a,alpha
+      robotics::Link(0, 0.42, 0, 0,              // theta,d,a,alpha
                      robotics::Joint_Type_e::R,  // joint type
                      0, 0, 0, 1.792,             // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, 0, -0.123}),  // rc

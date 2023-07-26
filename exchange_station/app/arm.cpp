@@ -29,7 +29,7 @@ Arm::Arm(Motor* j1, Motor* j2, Motor* j3, Motor* j4, Motor* j5, Motor* j6,
 // 初始化关节角度
 void Arm::init(void) {
   // 初始角度设置
-  float q_init_deg[6] = {0, 67.5f, -65.6f, -1.9f, 90.0f, 0};
+  float q_init_deg[6] = {0, 75.0f, -70.0f, -5.0f, 90.0f, 0};
   j1_->resetFeedbackAngle(q_init_deg[0]);
   j2_->resetFeedbackAngle(q_init_deg[1]);
   j3_->resetFeedbackAngle(q_init_deg[2]);
