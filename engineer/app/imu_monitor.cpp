@@ -45,7 +45,7 @@ struct Param {
                              {0.0f, 0.0f, 1.0f}};
 
   // 传感器偏移
-  const float gyro_bias[3] = {-2e-3f, 1.2e-2f, 1.75e-2f};
+  const float gyro_bias[3] = {-1.5e-3f, 1.7e-3f, 2e-3f};
   const float accel_bias[3] = {0, 0, 0};
   const float mag_bias[3] = {-13.0f, -0.5f, 30.0f};
   // 加速度计比例

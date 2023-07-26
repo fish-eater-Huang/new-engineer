@@ -61,7 +61,7 @@ void MecanumChassis::rotateHandle(float fdb_angle, float follow_fdb_angle) {
   if (mode_ == NORMAL) {
   } else if (mode_ == FOLLOW) {
     ref_.wz =
-        math::deadBand(angle_pid_.calc(ref_.angle, follow_fdb_angle), -10, 10) +
+        math::deadBand(angle_pid_.calc(ref_.angle, follow_fdb_angle), -5, 5) +
         feedforward_wz_;
   } else if (mode_ == GYRO) {
   }

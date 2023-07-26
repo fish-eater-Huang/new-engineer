@@ -75,6 +75,9 @@ class ArmTask {
   // 切换任务模式
   void switchMode(ArmTask::Mode_e mode);
 
+  // 中止任务
+  void abort(void);
+
   // 任务处理
   void handle(void);
 
@@ -112,7 +115,7 @@ class ArmTask {
       TRAJ_RETRACT,  // 机械臂收回
     } step;
     // 机械臂中间点关节角度
-    float q_relay[6] = {0, -2.35, 1.0, 0, 1.57, 0};
+    float q_relay[6] = {0, -2.35, 1.0, 0, 0, 0};
     // 机械臂收回关节角度
     float q_retract[6] = {0, -2.87, 1.3, 0, 0, 0};
     // float q_retract[6] = {0, -2.87, 1.3, 0, 1.66, 0};
@@ -138,9 +141,9 @@ class ArmTask {
     uint8_t type;
     // 默认位姿参数
     float default_pose[3][6] = {
-        {0, -1.75, 0.5, 0, 1.2, 0},      // normal
+        {0, -1.75, 0.5, 0, 1.2, 0},   // normal
         {0, -1.5, -0.3, 0, -1.4, 0},  // high
-        {0, -0.75, 0.56, 0, 0.3, 0},     // low
+        {0, -0.75, 0.56, 0, 0.3, 0},  // low
     };
     // 定位位姿
     Pose_t start_pose;
@@ -173,13 +176,13 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {1, -2.0, 0.4, 0, 1.2, 0},   // left
-        {-1, -2.0, 0.4, 0, 1.2, 0},  // right
+        {1.5, -2.0, 0.2, 0, 1.2, 0},   // left
+        {-1.5, -2.0, 0.2, 0, 1.2, 0},  // right
     };
     // 存矿吸盘上方
     float deposit_above[2][6] = {
-        {2.6, -1.75, 0.55, 0, 1.2, -0.7},  // left
-        {-2.6, -1.75, 0.55, 0, 1.2, 0.7},  // right
+        {2.63, -1.76, 0.56, 0, 1.2, -0.7},  // left
+        {-2.63, -1.76, 0.56, 0, 1.2, 0.7},  // right
     };
     // 存矿吸盘
     float deposit[2][6] = {
@@ -191,6 +194,48 @@ class ArmTask {
     void handle(void);
   } deposit_;
 
+  // // 出矿
+  // struct Withdraw_t {
+  //   // 状态
+  //   TaskState_e state;
+  //   uint32_t* finish_tick;
+  //   // 步骤
+  //   enum Step_e {
+  //     PREPARE,                // 准备
+  //     TRAJ_RELAY,             // 移动至中间点(避免干涉)
+  //     TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
+  //     TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
+  //     PUMP_E_ON,              // 开启机械臂气泵
+  //     PUMP_0_OFF,             // 关闭存矿气泵
+  //     TRAJ_DEPOSIT_UPWARD,    // 升高至存矿点上方
+  //     TRAJ_EXCHANGE,          // 移动至兑换默认位姿
+  //   } step;
+  //   // 出矿位
+  //   uint8_t side;
+  //   // 出矿数记录(打开存矿气泵)
+  //   uint32_t cnt[2];
+  //   // 中间点(左右，避免干涉)
+  //   float relay[2][6] = {
+  //       {1, -2.0, 0.4, 0, 1.2, 0},   // left
+  //       {-1, -2.0, 0.4, 0, 1.2, 0},  // right
+  //   };
+  //   // 存矿吸盘上方
+  //   float withdraw_above[2][6] = {
+  //       {2.6, -1.75, 0.55, 0, 1.2, -0.7},  // left
+  //       {-2.6, -1.75, 0.55, 0, 1.2, 0.7},  // right
+  //   };
+  //   // 存矿吸盘
+  //   float withdraw[2][6] = {
+  //       {2.6, -1.58, 0.7, 0, 0.9, -0.7},  // left
+  //       {-2.6, -1.58, 0.7, 0, 0.9, 0.7},  // right
+  //   };
+  //   // 兑换默认位姿
+  //   float exchange_default[6] = {0, -2, 0.45, 0, 0.1, 0};
+
+  //   // 处理函数
+  //   void handle(void);
+  // } withdraw_;
+
   // 出矿
   struct Withdraw_t {
     // 状态
@@ -199,9 +244,8 @@ class ArmTask {
     // 步骤
     enum Step_e {
       PREPARE,                // 准备
-      TRAJ_RELAY,             // 移动至中间点(避免干涉)
-      TRAJ_DEPOSIT_ABOVE,     // 移动至存矿点上方
-      TRAJ_DEPOSIT_DOWNWARD,  // 下降至存矿点
+      TRAJ_DEPOSIT_FRONT,     // 移动至存矿点上方
+      TRAJ_DEPOSIT_BACKWARD,  // 下降至存矿点
       PUMP_E_ON,              // 开启机械臂气泵
       PUMP_0_OFF,             // 关闭存矿气泵
       TRAJ_DEPOSIT_UPWARD,    // 升高至存矿点上方
@@ -211,23 +255,23 @@ class ArmTask {
     uint8_t side;
     // 出矿数记录(打开存矿气泵)
     uint32_t cnt[2];
-    // 中间点(左右，避免干涉)
-    float relay[2][6] = {
-        {1, -2.0, 0.4, 0, 1.2, 0},   // left
-        {-1, -2.0, 0.4, 0, 1.2, 0},  // right
-    };
-    // 存矿吸盘上方
-    float withdraw_above[2][6] = {
-        {2.6, -1.75, 0.55, 0, 1.2, -0.7},  // left
-        {-2.6, -1.75, 0.55, 0, 1.2, 0.7},  // right
+    // 存矿吸盘前方
+    float withdraw_front[2][6] = {
+        {1.51, -1.55, 1.10, -1.42, -1.41, 0.48},   // left
+        {-1.51, -1.55, 1.10, 1.42, -1.41, -0.48},  // right
     };
     // 存矿吸盘
     float withdraw[2][6] = {
-        {2.6, -1.58, 0.7, 0, 0.9, -0.7},  // left
-        {-2.6, -1.58, 0.7, 0, 0.9, 0.7},  // right
+        {2.41, -1.44, 0.97, -0.91, -1.19, 0.40},   // left
+        {-2.41, -1.44, 0.97, 0.91, -1.19, -0.40},  // right
+    };
+    // 存矿吸盘上方
+    float withdraw_above[2][6] = {
+        {2.40, -1.90, 0.84, -1.14, -0.95, 0.92},   // left
+        {-2.40, -1.90, 0.84, 1.14, -0.95, -0.92},  // right
     };
     // 兑换默认位姿
-    float exchange_default[6] = {0, -2, 0.45, 0, 0.1, 0};
+    float exchange_default[6] = {0, -2, 0.45, 0, -0.2, 0};
 
     // 处理函数
     void handle(void);
@@ -246,7 +290,7 @@ class ArmTask {
       PUMP_E_OFF,    // 关闭机械臂气泵
     } step;
     // 兑换默认位姿
-    float default_pose[6] = {0, -2, 0.45, 0, 0.1, 0};
+    float default_pose[6] = {0, -2, 0.45, 0, -0.2, 0};
     // 兑换开始位姿
     Pose_t start_pose;
 
@@ -272,8 +316,8 @@ class ArmTask {
     // 矿石间隔
     Matrixf<3, 1> mine_offset[3] = {
         Matrixf<3, 1>((float[3]){0, 0, 0}),
-        Matrixf<3, 1>((float[3]){0, -0.27, 0}),
         Matrixf<3, 1>((float[3]){0, 0.27, 0}),
+        Matrixf<3, 1>((float[3]){0, -0.27, 0}),
     };
     // 3矿坐标
     Pose_t mine[3];

@@ -101,6 +101,7 @@ float pump_0_speed = 15000;  // dps
 
 // 控制初始化
 void controlInit(void) {
+  chassis.lock_ = false;
   gimbal.initAll();
   pump_0_servo.init();
   pump_e_servo.init();
@@ -210,6 +211,7 @@ void robotControl(void) {
     rcArmControl(1);
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       arm.trajAbort();
+      task.abort();
     }
   }
   // 遥控器挡位左中右上
@@ -222,6 +224,7 @@ void robotControl(void) {
     rcArmControl(0);
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       arm.trajAbort();
+      task.abort();
     }
   }
   // 遥控器挡位左下右上
@@ -235,6 +238,7 @@ void robotControl(void) {
     controllerArmControl();
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       arm.trajAbort();
+      task.abort();
     }
   }
   // 遥控器挡位左上右中
@@ -444,7 +448,7 @@ void kbGimbalControl(void) {
   } else {
     gimbal.addAngle(-rc.mouse_.x * 5e-4f, rc.mouse_.y * 2e-4f);
   }
-  if (rc.key_ & KEY_F || rc.key_ & KEY_E || rc.key_ & KEY_R) {
+  if (rc.mouse_.press_r) {
     gimbal.ref_.pitch = 0;
   }
 }
@@ -465,28 +469,8 @@ void kbArmTaskControl(void) {
       task.switchMode(ArmTask::Mode_e::PICK_NORMAL);
     }
   }
-  // 存矿(Z/X)
-  if (rc.key_ & KEY_Z) {
-    task.switchMode(ArmTask::Mode_e::DEPOSIT_0);
-  }
-  if (rc.key_ & KEY_X) {
-    task.switchMode(ArmTask::Mode_e::DEPOSIT_1);
-  }
-  // 出矿(C/V)
-  if (rc.key_ & KEY_C) {
-    task.switchMode(ArmTask::Mode_e::WITHDRAW_0);
-  }
-  if (rc.key_ & KEY_V) {
-    task.switchMode(ArmTask::Mode_e::WITHDRAW_1);
-  }
-  // 兑换
-  if (rc.key_ & KEY_R) {
-    task.switchMode(ArmTask::Mode_e::EXCHANGE);
-  }
-
-  // 机械臂气泵
-  // 左键-开启
-  if (rc.mouse_.press_l) {
+  // 机械臂气泵开启/开始取矿(G)
+  if (rc.key_ & KEY_G) {
     // 强制开启机械臂气泵
     if (rc.key_ & KEY_CTRL && rc.key_ & KEY_SHIFT) {
       pump_e.setMotorSpeed(pump_e_speed);
@@ -501,12 +485,31 @@ void kbArmTaskControl(void) {
       task.startPick(ArmTask::PickMethod_e::SINGLE);
     }
   }
-  // 右键-关闭
-  else if (rc.mouse_.press_r) {
+  // 存矿(Z/X)
+  if (rc.key_ & KEY_Z) {
+    task.switchMode(ArmTask::Mode_e::DEPOSIT_0);
+  }
+  if (rc.key_ & KEY_X) {
+    task.switchMode(ArmTask::Mode_e::DEPOSIT_1);
+  }
+  // 出矿(C/V)
+  if (rc.key_ & KEY_C) {
+    task.switchMode(ArmTask::Mode_e::WITHDRAW_0);
+  }
+  if (rc.key_ & KEY_V) {
+    task.switchMode(ArmTask::Mode_e::WITHDRAW_1);
+  }
+  // 兑换(R)
+  if (rc.key_ & KEY_R) {
+    task.switchMode(ArmTask::Mode_e::EXCHANGE);
+  }
+  // 机械臂气泵关闭(B)
+  if (rc.key_ & KEY_B) {
     // 强制关闭机械臂气泵
     if (rc.key_ & KEY_CTRL && rc.key_ & KEY_SHIFT) {
-      pump_e.setMotorSpeed(0);
-      pump_e.setValve(Pump::ValveState_e::OPEN_0);
+      pump_0.setMotorSpeed(0);
+      pump_0.setValve(Pump::ValveState_e::CLOSE);
+      task.resetDepositCnt();
     }
     // 兑换
     else {
@@ -667,6 +670,21 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
   }
 }
 
+// 中止任务
+void ArmTask::abort(void) {
+  // 重置任务状态
+  move_.state = IDLE;
+  if (pick_.step != Pick_t::LOCATE) {
+    pick_.state = IDLE;
+  }
+  deposit_.state = IDLE;
+  withdraw_.state = IDLE;
+  if (exchange_.step != Exchange_t::LOCATE) {
+    exchange_.state = IDLE;
+  }
+  triple_pick_.state = IDLE;
+}
+
 // 任务处理
 void ArmTask::handle(void) {
   if (mode_ == MOVE) {
@@ -680,14 +698,14 @@ void ArmTask::handle(void) {
   deposit_.handle();
   withdraw_.handle();
   exchange_.handle();
+  // depositPumpHandle();
 }
 
 // 开始取矿
 void ArmTask::startPick(PickMethod_e method) {
   if (pick_.state == IDLE) {
-    return;
-  }
-  if (pick_.step != Pick_t::LOCATE) {
+    pump_e.setValve(Pump::ValveState_e::CLOSE);
+    pump_e.setMotorSpeed(pump_e_speed);
     return;
   }
   // 设置取矿定位位姿
@@ -755,12 +773,12 @@ void ArmTask::resetDepositCnt(void) {
 
 // 存矿气泵电机处理
 void ArmTask::depositPumpHandle(void) {
-  // if (deposit_.cnt[0] > withdraw_.cnt[0] ||
-  //     deposit_.cnt[1] > withdraw_.cnt[1]) {
-  //   pump_0.setMotorSpeed(pump_motor_speed);
-  // } else {
-  //   pump_0.setMotorSpeed(0);
-  // }
+  if (deposit_.cnt[0] > withdraw_.cnt[0] ||
+      deposit_.cnt[1] > withdraw_.cnt[1]) {
+    pump_0.setMotorSpeed(pump_0_speed);
+  } else {
+    pump_0.setMotorSpeed(0);
+  }
 }
 
 // 移动处理
@@ -958,41 +976,23 @@ void ArmTask::Withdraw_t::handle(void) {
   // 准备阶段
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
-      if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
-        // 经过中间点
-        step = TRAJ_RELAY;
-        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-        trajSetJoint(relay[side]);
-        *finish_tick = HAL_GetTick() + arm.trajStart();
-      } else {
-        // 不经过中间点
-        step = TRAJ_DEPOSIT_ABOVE;
-        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-        trajSetJoint(withdraw_above[side]);
-        *finish_tick = HAL_GetTick() + arm.trajStart();
-      }
-    }
-  }
-  // 移动至中间点
-  else if (step == TRAJ_RELAY) {
-    if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_DEPOSIT_ABOVE;
+      step = TRAJ_DEPOSIT_FRONT;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-      trajSetJoint(withdraw_above[side]);
+      trajSetJoint(withdraw_front[side]);
       *finish_tick = HAL_GetTick() + arm.trajStart();
     }
   }
-  // 移动至存矿点上方
-  else if (step == TRAJ_DEPOSIT_ABOVE) {
+  // 移动至存矿点前方
+  else if (step == TRAJ_DEPOSIT_FRONT) {
     if (HAL_GetTick() > *finish_tick) {
-      step = TRAJ_DEPOSIT_DOWNWARD;
+      step = TRAJ_DEPOSIT_BACKWARD;
       arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
       trajSetJoint(withdraw[side]);
-      *finish_tick = HAL_GetTick() + arm.trajStart();
+      *finish_tick = HAL_GetTick() + arm.trajStart() + 500;
     }
   }
   // 下降至存矿点
-  else if (step == TRAJ_DEPOSIT_DOWNWARD) {
+  else if (step == TRAJ_DEPOSIT_BACKWARD) {
     if (HAL_GetTick() > *finish_tick) {
       step = PUMP_E_ON;
       pump_e.setMotorSpeed(pump_e_speed);
@@ -1191,8 +1191,7 @@ void ArmTask::triplePickHandle(void) {
   }
   // 取3上方
   else if (triple_pick_.step == TriplePick_t::PICK_3_ABOVE) {
-    if (deposit_.step == Deposit_t::TRAJ_DEPOSIT_UPWARD &&
-        HAL_GetTick() > finish_tick_) {
+    if (HAL_GetTick() > finish_tick_) {
       // 设置为取矿模式(跳过准备和移至默认步骤)
       triple_pick_.step = TriplePick_t::PICK_3;
       mode_ = PICK_NORMAL;

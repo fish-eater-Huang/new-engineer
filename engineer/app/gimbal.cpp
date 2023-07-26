@@ -62,8 +62,8 @@ float ArmGimbal::j0EncoderAngle(void) {
 void ArmGimbal::handle(void) {
   // J0初始化，更新反馈角度并回正
   if (!init_.j0_finish) {
-    ref_.j0 = fdb_.j0 + fmin(fabs(ref_.j0 - fdb_.j0), 6e-2f) *
-                            math::sign(ref_.j0 - fdb_.j0);
+    ref_.j0 = fdb_.j0 - fmin(fabs(jm0_->motor_data_.angle), 90.0f / jm0_->ppid_.kp_) *
+                            math::sign(jm0_->motor_data_.angle);
     init_.j0_finish = (jm0_->connect_.check() &&
                        fabs(jm0_->motor_data_.angle) < init_.j0_thres);
   }
@@ -80,7 +80,7 @@ void ArmGimbal::handle(void) {
         gm_pitch_->motor_data_.current * gm_pitch_->ratio_ > 3000) {
       // 初始化完成
       gm_pitch_->resetFeedbackAngle(init_.pitch_angle);
-      ref_.pitch = 0;  // todo
+      ref_.pitch = 0;
       init_.pitch_finish = true;
     }
   }
@@ -101,10 +101,6 @@ void ArmGimbal::handle(void) {
   fdb_.pitch_speed = gm_pitch_->realSpeed();
 
   // 设置电机控制目标角度
-  if (init_.j0_finish) {
-    jm0_->setAngle(ref_.j0);
-  }
-  if (init_.pitch_finish) {
-    gm_pitch_->setAngle(ref_.pitch);
-  }
+  jm0_->setAngle(ref_.j0);
+  gm_pitch_->setAngle(ref_.pitch);
 }
