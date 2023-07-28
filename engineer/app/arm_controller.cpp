@@ -191,7 +191,7 @@ void ControllerComm::rxCallback(void) {
 
 // 机械臂控制器构造函数
 ArmController::ArmController(ControllerComm* comm, IMU imu[3])
-    : comm_(comm), ref_(0.05f) {
+    : comm_(comm), ref_(0.03f) {
   imu_[0] = &imu[0];
   imu_[1] = &imu[1];
   imu_[2] = &imu[2];
@@ -269,9 +269,9 @@ void ArmController::handle(void) {
   raw_.z = p[2][0];
 
   // 目标位置+偏置
-  ref_.x = raw_.x + offset_.x;
-  ref_.y = raw_.y + offset_.y;
-  ref_.z = raw_.z + offset_.z;
+  ref_.x = ref_.x_filter.update(raw_.x + offset_.x);
+  ref_.y = ref_.y_filter.update(raw_.y + offset_.y);
+  ref_.z = ref_.z_filter.update(raw_.z + offset_.z);
 
   // 目标状态T矩阵
   float ref_p[3] = {ref_.x, ref_.y, ref_.z};

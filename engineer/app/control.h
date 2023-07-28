@@ -87,12 +87,6 @@ class ArmTask {
   // 开始兑换
   void startExchange(void);
 
-  // 重置存矿计数
-  void resetDepositCnt(void);
-
-  // 存矿气泵电机处理
-  void depositPumpHandle(void);
-
   // 三连取矿处理
   void triplePickHandle(void);
 
@@ -141,7 +135,7 @@ class ArmTask {
     uint8_t type;
     // 默认位姿参数
     float default_pose[3][6] = {
-        {0, -1.75, 0.5, 0, 1.2, 0},   // normal
+        {0, -1.86, 0.58, 0, 1.22, 0},   // normal
         {0, -1.5, -0.3, 0, -1.4, 0},  // high
         {0, -0.75, 0.56, 0, 0.3, 0},  // low
     };
@@ -176,8 +170,8 @@ class ArmTask {
     uint32_t cnt[2];
     // 中间点(左右，避免干涉)
     float relay[2][6] = {
-        {1.5, -2.0, 0.2, 0, 1.2, 0},   // left
-        {-1.5, -2.0, 0.2, 0, 1.2, 0},  // right
+        {1.5, -2.0, 0.2, 0, 1.2, -0.7},  // left
+        {-1.5, -2.0, 0.2, 0, 1.2, 0.7},  // right
     };
     // 存矿吸盘上方
     float deposit_above[2][6] = {
@@ -271,7 +265,7 @@ class ArmTask {
         {-2.40, -1.90, 0.84, 1.14, -0.95, -0.92},  // right
     };
     // 兑换默认位姿
-    float exchange_default[6] = {0, -2, 0.45, 0, -0.2, 0};
+    float exchange_default[6] = {0, -2.3, 0.5, 0, 0.2, 0};
 
     // 处理函数
     void handle(void);
@@ -287,12 +281,16 @@ class ArmTask {
       PREPARE,       // 准备
       TRAJ_DEFAULT,  // 移动至默认位置
       LOCATE,        // 定位
+      TRAJ_PUSH_IN,  // 推入
       PUMP_E_OFF,    // 关闭机械臂气泵
     } step;
     // 兑换默认位姿
-    float default_pose[6] = {0, -2, 0.45, 0, -0.2, 0};
+    float default_pose[6] = {0, -2.3, 0.5, 0, 0.2, 0};
+    // 推入量
+    Matrixf<3, 1> push_in_offset = Matrixf<3, 1>((float[3]){0, 0, 0.2});
     // 兑换开始位姿
     Pose_t start_pose;
+    Pose_t push_in_pose;
 
     // 处理函数
     void handle(void);
@@ -307,6 +305,7 @@ class ArmTask {
       PREPARE,       // 准备
       PICK_1,        // 取1
       DEPOSIT_1,     // 存1
+      TRAJ_RELAY12,  // 12中间点
       PICK_2_ABOVE,  // 取2上方
       PICK_2,        // 取2
       DEPOSIT_2,     // 存2
@@ -316,13 +315,15 @@ class ArmTask {
     // 矿石间隔
     Matrixf<3, 1> mine_offset[3] = {
         Matrixf<3, 1>((float[3]){0, 0, 0}),
+        Matrixf<3, 1>((float[3]){0, -0.29, 0}),
         Matrixf<3, 1>((float[3]){0, 0.27, 0}),
-        Matrixf<3, 1>((float[3]){0, -0.27, 0}),
     };
     // 3矿坐标
     Pose_t mine[3];
     // 矿上方坐标
     Pose_t mine_above[3];
+    // 中间点坐标
+    float relay12[6] = {-1.5, -2.0, 0.2, 0, 1.2, 0.7};
 
     // // 处理函数
     // void handle(void);

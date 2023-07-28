@@ -178,7 +178,7 @@ class ArmController {
 
   // 参数
   struct Param_t {
-    float l[2] = {0.3f, 0.27f};
+    float l[2] = {0.36f, 0.33f};
   } param_;
 };
 
