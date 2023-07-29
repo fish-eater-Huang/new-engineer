@@ -23,7 +23,7 @@ class Arm {
  public:
   // 构造函数
   Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
-      EncoderComm* encoder, IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm);
+      KKEncoder* encoder, IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm);
 
   // 初始化关节角度(非绝对式编码器, todo)
   void init(void);
@@ -137,9 +137,9 @@ class Arm {
     } method[6];
 
     // 编码器指针
-    EncoderComm* encoder;
+    KKEncoder* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {205.3, 0, 0, 160.2, 175.6, 100.0};
+    const float encoder_zero[6] = {205.3, 0, 0, 40.7, 30.6, -58.3};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;

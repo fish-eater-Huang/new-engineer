@@ -43,6 +43,7 @@ class ArmTask {
   // 任务类别
   typedef enum Mode {
     MOVE,         // 行驶
+    MOVE_HIGH,    // 行驶(机械臂伸出)
     PICK_NORMAL,  // 取矿(资源岛)
     PICK_LOW,     // 取矿(地面)/障碍块/救援
     PICK_HIGH,    // 取矿(空接)
@@ -135,9 +136,9 @@ class ArmTask {
     uint8_t type;
     // 默认位姿参数
     float default_pose[3][6] = {
-        {0, -1.86, 0.58, 0, 1.22, 0},   // normal
-        {0, -1.5, -0.3, 0, -1.4, 0},  // high
-        {0, -0.75, 0.56, 0, 0.3, 0},  // low
+        {0, -1.86, 0.58, 0, 1.22, 0},  // normal
+        {0, -1.5, -0.3, 0, -1.4, 0},   // high
+        {0, -0.75, 0.56, 0, 0.3, 0},   // low
     };
     // 定位位姿
     Pose_t start_pose;
@@ -282,7 +283,6 @@ class ArmTask {
       TRAJ_DEFAULT,  // 移动至默认位置
       LOCATE,        // 定位
       TRAJ_PUSH_IN,  // 推入
-      PUMP_E_OFF,    // 关闭机械臂气泵
     } step;
     // 兑换默认位姿
     float default_pose[6] = {0, -2.3, 0.5, 0, 0.2, 0};
@@ -316,7 +316,7 @@ class ArmTask {
     Matrixf<3, 1> mine_offset[3] = {
         Matrixf<3, 1>((float[3]){0, 0, 0}),
         Matrixf<3, 1>((float[3]){0, -0.29, 0}),
-        Matrixf<3, 1>((float[3]){0, 0.27, 0}),
+        Matrixf<3, 1>((float[3]){0, 0.29, 0}),
     };
     // 3矿坐标
     Pose_t mine[3];

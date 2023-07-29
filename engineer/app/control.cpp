@@ -13,10 +13,10 @@
 #include "iwdg.h"
 
 #include "app/chassis.h"
+#include "app/encoder.h"
 #include "app/gimbal.h"
 #include "app/imu_comm.h"
 #include "app/imu_monitor.h"
-#include "app/mine.h"
 #include "app/motor_monitor.h"
 #include "base/bsp/bsp_buzzer.h"
 #include "base/bsp/bsp_led.h"
@@ -48,12 +48,12 @@ extern Arm arm;
 extern ArmController arm_controller;
 extern CVComm cv_comm;
 extern RefereeComm referee;
-// extern ServoZX361D pump_servo[];
+extern AS5048Encoder j0_encoder;
 
 MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(6, 0, 8, 100, 270),
                        LowPassFilter(5e-3f));
 
-ArmGimbal gimbal(&JM0, &GMP, &board_imu);
+ArmGimbal gimbal(&JM0, &GMP, &board_imu, &j0_encoder);
 
 ServoPwm pump_e_servo(&htim5, TIM_CHANNEL_3);
 ServoPwm pump_0_servo(&htim5, TIM_CHANNEL_4);
@@ -237,10 +237,10 @@ void robotControl(void) {
     kbArmTaskControl();
     task.handle();
     // 控制器档
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
     controllerArmControl();
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
       arm_controller_state = true;
+      arm.mode_ = Arm::Mode_e::MANIPULATION;
       arm.trajAbort();
       task.abort();
     }
@@ -400,31 +400,39 @@ void rcArmControl(uint8_t type) {
 // 键鼠底盘控制
 void kbChassisControl(void) {
   float vx = 0, vy = 0, wz = 0;
-  float speed_rate = 1;
+  float speed_rate = 1, mode_rate = 1;
   // 底盘速度比例设置
-  if (rc.key_ & KEY_CTRL || task.mode_ != ArmTask::Mode_e::MOVE) {
-    speed_rate = 0.25;
+  if (rc.key_ & KEY_CTRL) {
+    speed_rate = 0.5;
   } else if (rc.key_ & KEY_SHIFT) {
     speed_rate = 1.5;
   } else {
     speed_rate = 1;
   }
+  // 模式速度比例
+  if (task.mode_ == ArmTask::Mode_e::MOVE) {
+    mode_rate = 1;
+  } else if (task.mode_ == ArmTask::Mode_e::MOVE_HIGH) {
+    mode_rate = 0.75;
+  } else {
+    mode_rate = 0.25;
+  }
   // 底盘速度设置
   if (rc.key_ & KEY_W && rc.key_ & KEY_S) {
     vx = 0;
   } else if (rc.key_ & KEY_W) {
-    vx = 2.5 * speed_rate;
+    vx = 2.5 * speed_rate * mode_rate;
   } else if (rc.key_ & KEY_S) {
-    vx = -2.5 * speed_rate;
+    vx = -2.5 * speed_rate * mode_rate;
   } else {
     vx = 0;
   }
   if (rc.key_ & KEY_A && rc.key_ & KEY_D) {
     vy = 0;
   } else if (rc.key_ & KEY_A) {
-    vy = 2.0 * speed_rate;
+    vy = 2.0 * speed_rate * mode_rate;
   } else if (rc.key_ & KEY_D) {
-    vy = -2.0 * speed_rate;
+    vy = -2.0 * speed_rate * mode_rate;
   } else {
     vy = 0;
   }
@@ -443,8 +451,8 @@ void kbChassisControl(void) {
   if (chassis.mode_ == MecanumChassis::FOLLOW) {
     chassis.setAngleSpeed(vx, vy, 0);
   } else if (chassis.mode_ == MecanumChassis::GYRO) {
-    // wz = 360 + 90 * sinf(HAL_GetTick() * 1e-3f);
-    wz = 480 + 90 * sinf(HAL_GetTick() * 6e-3f);
+    // wz = 360 + 90 * sinf(HAL_GetTick() * 6e-3f)
+    wz = 480;
     chassis.setSpeed(vx, vy, wz);
   }
 }
@@ -452,11 +460,22 @@ void kbChassisControl(void) {
 // 键鼠云台控制
 void kbGimbalControl(void) {
   if (task.mode_ == ArmTask::Mode_e::MOVE) {
-    gimbal.addAngle(-rc.mouse_.x * 1e-3f, rc.mouse_.y * 2e-4f);
+    gimbal.addAngle(-rc.mouse_.x * 1.2e-3f, rc.mouse_.y * 6e-4f);
   } else {
-    gimbal.addAngle(-rc.mouse_.x * 5e-4f, rc.mouse_.y * 2e-4f);
+    gimbal.addAngle(-rc.mouse_.x * 6e-4f, rc.mouse_.y * 6e-4f);
   }
+  // 云台角度设置
   if (rc.mouse_.press_l) {
+    gimbal.ref_.pitch = 0;
+  }
+  if (rc.key_ & KEY_F) {
+    if (rc.key_ & KEY_CTRL) {
+      gimbal.ref_.pitch = -20;
+    } else {
+      gimbal.ref_.pitch = 0;
+    }
+  } else if (rc.key_ & KEY_E || rc.key_ & KEY_R || rc.key_ & KEY_C ||
+             rc.key_ & KEY_V) {
     gimbal.ref_.pitch = 0;
   }
 }
@@ -465,7 +484,11 @@ void kbGimbalControl(void) {
 void kbArmTaskControl(void) {
   // 移动(F)
   if (rc.key_ & KEY_F) {
-    task.switchMode(ArmTask::Mode_e::MOVE);
+    if (rc.key_ & KEY_CTRL) {
+      task.switchMode(ArmTask::Mode_e::MOVE_HIGH);
+    } else {
+      task.switchMode(ArmTask::Mode_e::MOVE);
+    }
   }
   // 取矿(E)
   else if (rc.key_ & KEY_E) {
@@ -477,9 +500,13 @@ void kbArmTaskControl(void) {
       task.switchMode(ArmTask::Mode_e::PICK_NORMAL);
     }
   }
-  // 兑换(R)
+  // 兑换(R)/推入(shift+R)
   else if (rc.key_ & KEY_R) {
-    task.switchMode(ArmTask::Mode_e::EXCHANGE);
+    if (rc.key_ & KEY_SHIFT) {
+      task.startExchange();
+    } else {
+      task.switchMode(ArmTask::Mode_e::EXCHANGE);
+    }
   }
   // 机械臂气泵开启(ctrl+X)
   // 开始取矿(X)
@@ -515,18 +542,10 @@ void kbArmTaskControl(void) {
       task.switchMode(ArmTask::Mode_e::DEPOSIT_1);
     }
   }
-  // 开始兑换(shift+G)
   // 机械臂气泵关闭(G)
   else if (rc.key_ & KEY_G) {
-    // 开始兑换
-    if (rc.key_ & KEY_SHIFT) {
-      task.startExchange();
-    }
-    // 关闭机械臂气泵
-    else {
-      pump_e.setValve(Pump::ValveState_e::OPEN_0);
-      pump_e.setMotorSpeed(0);
-    }
+    pump_e.setValve(Pump::ValveState_e::OPEN_0);
+    pump_e.setMotorSpeed(0);
   }
   // 关闭存矿气泵(ctrl+B)
   else if (rc.key_ & KEY_B) {
@@ -549,11 +568,10 @@ void controllerArmControl(void) {
         rc.channel_.l_col * rcctrl::arm_position_rate,
         -rc.channel_.l_row * rcctrl::arm_position_rate,
         -rc.channel_.dial_wheel * rcctrl::arm_position_rate);
-         arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
-             arm_controller.ref_.z, arm_controller.ref_.yaw,
-             arm_controller.ref_.pitch, arm_controller.ref_.roll);
+    arm.setRef(arm_controller.ref_.x, arm_controller.ref_.y,
+               arm_controller.ref_.z, arm_controller.ref_.yaw,
+               arm_controller.ref_.pitch, arm_controller.ref_.roll);
   }
- 
 }
 
 // 设置机械臂轨迹终点位姿
@@ -597,7 +615,7 @@ void ArmTask::reset(void) {
 void ArmTask::switchMode(ArmTask::Mode_e mode) {
   arm_controller_state = false;
   // 切换至移动模式
-  if (mode == MOVE) {
+  if (mode == MOVE || mode == MOVE_HIGH) {
     // 设置任务模式
     mode_ = mode;
     move_.state = WORKING;
@@ -772,11 +790,8 @@ void ArmTask::startPick(PickMethod_e method) {
 // 开始兑换
 void ArmTask::startExchange(void) {
   arm_controller_state = false;
-  if (exchange_.state == IDLE) {
-    pump_e.setValve(Pump::ValveState_e::OPEN_0);
-    pump_e.setMotorSpeed(0);
-    return;
-  }
+  exchange_.state = WORKING;
+  exchange_.step = Exchange_t::Step_e::LOCATE;
   // 设置兑换定位位姿
   exchange_.start_pose.x = arm.ref_.x;
   exchange_.start_pose.y = arm.ref_.y;
@@ -1085,15 +1100,6 @@ void ArmTask::Exchange_t::handle(void) {
   }
   // 推入
   else if (step == TRAJ_PUSH_IN) {
-    if (HAL_GetTick() > *finish_tick) {
-      step = PUMP_E_OFF;
-      pump_e.setValve(Pump::ValveState_e::OPEN_0);
-      pump_e.setMotorSpeed(0);
-      *finish_tick = HAL_GetTick() + 500;
-    }
-  }
-  // 关闭机械臂气泵
-  else if (step == PUMP_E_OFF) {
     if (HAL_GetTick() > *finish_tick) {
       arm.trajAbort();
     }

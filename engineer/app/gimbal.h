@@ -11,13 +11,14 @@
 #ifndef GIMBAL_H
 #define GIMBAL_H
 
+#include "app/encoder.h"
 #include "base/imu/imu.h"
 #include "base/motor/motor.h"
 
 // 机械臂云台类
 class ArmGimbal {
  public:
-  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu);
+  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu, AS5048Encoder* j0_encoder);
 
   // J0初始化
   void initJ0(void);
@@ -41,7 +42,7 @@ class ArmGimbal {
   // 云台/J0参数
   struct Param_t {
     // 编码器零点
-    const float j0_zero = -7.1;
+    const float j0_zero = -2.7;
 
     // 云台角度限位(°)
     const float pitch_min = -45;
@@ -79,6 +80,8 @@ class ArmGimbal {
   Motor *jm0_, *gm_pitch_;
   // imu指针
   IMU* j0_imu_;
+  // J0编码器指针
+  AS5048Encoder* j0_encoder_;
 };
 
 #endif  // GIMBAL_H

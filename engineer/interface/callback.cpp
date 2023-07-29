@@ -31,8 +31,9 @@ extern RC rc;
 extern CVComm cv_comm;
 extern RefereeComm referee;
 extern ImuComm imu_comm;
-extern EncoderComm encoder;
 extern ControllerComm controller_comm;
+extern KKEncoder arm_encoder;
+extern AS5048Encoder j0_encoder;
 extern SerialStudio serial_tool;
 
 // CAN receive callback
@@ -46,8 +47,11 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan) {
   if (imu_comm.canRxMsgCheck(hcan, rx_header)) {
     imu_comm.canRxMsgCallback(hcan, rx_header, rx_data);
   }
-  if (encoder.canRxMsgCheck(hcan, rx_header)) {
-    encoder.canRxMsgCallback(hcan, rx_header, rx_data);
+  if (arm_encoder.canRxMsgCheck(hcan, rx_header)) {
+    arm_encoder.canRxMsgCallback(hcan, rx_header, rx_data);
+  }
+  if (j0_encoder.canRxMsgCheck(hcan, rx_header)) {
+    j0_encoder.canRxMsgCallback(hcan, rx_header, rx_data);
   }
 }
 

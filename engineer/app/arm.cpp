@@ -15,8 +15,7 @@
 
 // 构造函数
 Arm::Arm(Motor* jm1, Motor* jm2, Motor* jm3, Motor* jm4, Motor* jm5, Motor* jm6,
-         EncoderComm* encoder, IMU* imu0, IMU* imu2, IMU* imu3,
-         ImuComm* imu_comm)
+         KKEncoder* encoder, IMU* imu0, IMU* imu2, IMU* imu3, ImuComm* imu_comm)
     : jm1_(jm1),
       jm2_(jm2),
       jm3_(jm3),
@@ -465,8 +464,8 @@ void Arm::manipulationController(void) {
   // 逆运动学解析解
   ref_.q = ikine(ref_.T, fdb_.q);
 
+  // 关节限位
   for (int i = 0; i < 6; i++) {
-    // 关节限位
     ref_.q[i][0] = math::limit(ref_.q[i][0], limit_.qmin[i], limit_.qmax[i]);
   }
 
