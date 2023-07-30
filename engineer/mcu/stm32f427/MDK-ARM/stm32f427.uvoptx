@@ -215,45 +215,40 @@
         <Ww>
           <count>0</count>
           <WinNumber>2</WinNumber>
-          <ItemText>GMY,0x0A</ItemText>
+          <ItemText>GMP,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>2</WinNumber>
-          <ItemText>GMP,0x0A</ItemText>
+          <ItemText>CMFL,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>2</WinNumber>
-          <ItemText>CMFL,0x0A</ItemText>
+          <ItemText>CMFR,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>3</count>
           <WinNumber>2</WinNumber>
-          <ItemText>CMFR,0x0A</ItemText>
+          <ItemText>CMBL,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>4</count>
           <WinNumber>2</WinNumber>
-          <ItemText>CMBL,0x0A</ItemText>
+          <ItemText>CMBR,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>5</count>
           <WinNumber>2</WinNumber>
-          <ItemText>CMBR,0x0A</ItemText>
+          <ItemText>dji_motor_driver,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>6</count>
           <WinNumber>2</WinNumber>
-          <ItemText>dji_motor_driver,0x0A</ItemText>
-        </Ww>
-        <Ww>
-          <count>7</count>
-          <WinNumber>2</WinNumber>
           <ItemText>mit_motor_driver</ItemText>
         </Ww>
         <Ww>
-          <count>8</count>
+          <count>7</count>
           <WinNumber>2</WinNumber>
           <ItemText>nc_motor_driver</ItemText>
         </Ww>

@@ -139,7 +139,7 @@ class Arm {
     // 编码器指针
     KKEncoder* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {205.3, 0, 0, 40.7, 30.6, -58.3};
+    const float encoder_zero[6] = {205.3, 0, 0, 40.7, 33.4, -60.9};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;
@@ -163,7 +163,7 @@ class Arm {
                            math::deg2rad(75),  math::deg2rad(180),
                            math::deg2rad(70),  math::deg2rad(180)};
     const float xmin = -0.6f;
-    const float xmax = 0.6f;
+    const float xmax = 0.8f;
     const float ymin = -0.6f;
     const float ymax = 0.6f;
     const float zmin = -0.6f;

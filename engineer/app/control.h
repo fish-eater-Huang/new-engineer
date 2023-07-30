@@ -109,8 +109,10 @@ class ArmTask {
       TRAJ_RELAY,    // 机械臂中间点
       TRAJ_RETRACT,  // 机械臂收回
     } step;
+    // 类型
+    uint8_t type;
     // 机械臂中间点关节角度
-    float q_relay[6] = {0, -2.35, 1.0, 0, 0, 0};
+    float q_relay[6] = {0, -2.35, 1.0, 0, -0.22, 0};
     // 机械臂收回关节角度
     float q_retract[6] = {0, -2.87, 1.3, 0, 0, 0};
     // float q_retract[6] = {0, -2.87, 1.3, 0, 1.66, 0};
@@ -136,9 +138,9 @@ class ArmTask {
     uint8_t type;
     // 默认位姿参数
     float default_pose[3][6] = {
-        {0, -1.86, 0.58, 0, 1.22, 0},  // normal
-        {0, -1.5, -0.3, 0, -1.4, 0},   // high
-        {0, -0.75, 0.56, 0, 0.3, 0},   // low
+        {0, -1.81, 0.59, 0, 1.2, 0},    // normal
+        {0, -1.11, -0.67, 0, -1.3, 0},  // high
+        {0, -0.75, 0.56, 0, 0.3, 0},    // low
     };
     // 定位位姿
     Pose_t start_pose;
@@ -176,13 +178,13 @@ class ArmTask {
     };
     // 存矿吸盘上方
     float deposit_above[2][6] = {
-        {2.63, -1.76, 0.56, 0, 1.2, -0.7},  // left
-        {-2.63, -1.76, 0.56, 0, 1.2, 0.7},  // right
+        {2.65, -1.73, 0.54, 0, 1.2, -0.7},  // left
+        {-2.65, -1.73, 0.54, 0, 1.2, 0.7},  // right
     };
     // 存矿吸盘
     float deposit[2][6] = {
-        {2.6, -1.58, 0.7, 0, 0.9, -0.7},  // left
-        {-2.6, -1.58, 0.7, 0, 0.9, 0.7},  // right
+        {2.65, -1.56, 0.68, 0, 0.89, -0.7},  // left
+        {-2.65, -1.56, 0.68, 0, 0.89, 0.7},  // right
     };
 
     // 处理函数
@@ -309,14 +311,15 @@ class ArmTask {
       PICK_2_ABOVE,  // 取2上方
       PICK_2,        // 取2
       DEPOSIT_2,     // 存2
+      TRAJ_RELAY23,  // 12中间点
       PICK_3_ABOVE,  // 取3上方
       PICK_3,        // 取3
     } step;
     // 矿石间隔
     Matrixf<3, 1> mine_offset[3] = {
         Matrixf<3, 1>((float[3]){0, 0, 0}),
-        Matrixf<3, 1>((float[3]){0, -0.29, 0}),
-        Matrixf<3, 1>((float[3]){0, 0.29, 0}),
+        Matrixf<3, 1>((float[3]){0, -0.3, 0}),
+        Matrixf<3, 1>((float[3]){0, 0.3, 0}),
     };
     // 3矿坐标
     Pose_t mine[3];
@@ -324,6 +327,7 @@ class ArmTask {
     Pose_t mine_above[3];
     // 中间点坐标
     float relay12[6] = {-1.5, -2.0, 0.2, 0, 1.2, 0.7};
+    float relay23[6] = {1.0, -2.0, 0.2, 0, 1.2, -0.7};
 
     // // 处理函数
     // void handle(void);

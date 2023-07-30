@@ -23,14 +23,17 @@ ArmGimbal::ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu,
 void ArmGimbal::initJ0(void) {
   init_.j0_finish = false;
   // 设置J0反馈角度为编码器单圈角度
-  jm0_->motor_data_.angle = math::degNormalize180(
-      (jm0_->motor_data_.ecd_angle - param_.j0_zero) / jm0_->ratio_);
-  // if (j0_encoder_->connect_.check()) {
-  //   jm0_->motor_data_.angle =
-  //       math::degNormalize180((j0_encoder_->rx_data_.deg - param_.j0_zero));
-  // } else {
-  //   jm0_->motor_data_.angle = 0;
-  // }
+  if (j0_encoder_->connect_.check()) {
+    init_.jm0_encoder_offset =
+        (j0_encoder_->rx_data_.deg - param_.ext_j0_zero) -
+        (jm0_->motor_data_.ecd_angle - param_.jm0_zero);
+    jm0_->motor_data_.angle = math::degNormalize180(
+        (j0_encoder_->rx_data_.deg - param_.ext_j0_zero) / jm0_->ratio_);
+  } else {
+    init_.jm0_encoder_offset = 0;
+    jm0_->motor_data_.angle = math::degNormalize180(
+        (jm0_->motor_data_.ecd_angle - param_.jm0_zero) / jm0_->ratio_);
+  }
   jm0_->resetFeedbackAngle(jm0_->motor_data_.angle);
   // 设置反馈数据源为陀螺仪
   jm0_->setFdbSrc(&j0_imu_->yaw(), &j0_imu_->wzWorld());
@@ -64,7 +67,12 @@ void ArmGimbal::addAngle(const float& j0, const float& pitch) {
 
 // 获取J0编码器角度
 float ArmGimbal::j0EncoderAngle(void) {
-  return math::degNormalize180((jm0_->motor_data_.ecd_angle - param_.j0_zero) /
+  if (j0_encoder_->connect_.check()) {
+    return math::degNormalize180(
+        (j0_encoder_->rx_data_.deg - param_.ext_j0_zero) / jm0_->ratio_);
+  }
+  return math::degNormalize180((jm0_->motor_data_.ecd_angle +
+                                init_.jm0_encoder_offset - param_.jm0_zero) /
                                jm0_->ratio_);
 }
 

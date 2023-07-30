@@ -34,7 +34,7 @@ Motor GMP(Motor::M3508, 1, Motor::POSITION_SPEED,        // type, ratio, method
 
 // J0转轴电机
 Motor JM0(Motor::MIT, 1, Motor::POSITION_SPEED,          // type, ratio, method
-          PID(6, 0, 10, 100, 180),                       // ppid
+          PID(6, 0, 10, 100, 240),                       // ppid
           PID(0.4, 0, 0.5, 100, 20),                     // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50));  // kf
 
@@ -52,7 +52,7 @@ float jm123Model(const float& torque, const float& speed = 0) {
   return torque * 0.035f;
 }
 Motor JM1(Motor::MIT, -25, Motor::POSITION_SPEED,        // type, ratio, method
-          PID(20, 0.1, 5, 100, 120),                     // ppid
+          PID(20, 0.1, 5, 100, 135),                     // ppid
           PID(2e-2, 0, 1e-2, 0, 5),                      // spid
           true, Motor::KFParam_t(2, 1e4, 1, 0.75, 50),   // kf
           jm123Model);                                   // model

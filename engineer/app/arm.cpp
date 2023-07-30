@@ -38,6 +38,9 @@ void Arm::init(void) {
   float jm_init_deg[6] = {0, -165.0f, 75.0f, 0, 0, 0};
 
   // JM1
+  if (!jm1_->connect_.check()) {
+    return;
+  }
   if (init_.encoder->connect_.check()) {
     // 按编码器角度初始化
     init_.method[0] = Arm::Init_t::Method_e::ENCODER;
@@ -48,6 +51,9 @@ void Arm::init(void) {
     init_.method[0] = Arm::Init_t::Method_e::MANUAL;
   }
   // JM23
+  if (!(jm2_->connect_.check() && jm3_->connect_.check())) {
+    return;
+  }
   if (init_.imu_comm->imu1_connect_.check() &&
       init_.imu_comm->imu2_connect_.check() &&
       (fabs(init_.imu0->pitch()) < 10.0f && fabs(init_.imu0->roll()) < 10.0f)) {
@@ -75,13 +81,22 @@ void Arm::init(void) {
     init_.method[2] = Arm::Init_t::Method_e::MANUAL;
   }
   // JM456
+  if (!jm4_->connect_.check()) {
+    return;
+  }
   init_.method[3] = Arm::Init_t::Method_e::ENCODER;
-  init_.method[4] = Arm::Init_t::Method_e::ENCODER;
-  init_.method[5] = Arm::Init_t::Method_e::ENCODER;
   jm_init_deg[3] = math::loopLimit(
       jm4_->motor_data_.ecd_angle - init_.encoder_zero[3], -180, 180);
+  if (!jm5_->connect_.check()) {
+    return;
+  }
+  init_.method[4] = Arm::Init_t::Method_e::ENCODER;
   jm_init_deg[4] = math::loopLimit(
       jm5_->motor_data_.ecd_angle - init_.encoder_zero[4], -180, 180);
+  if (!jm6_->connect_.check()) {
+    return;
+  }
+  init_.method[5] = Arm::Init_t::Method_e::ENCODER;
   jm_init_deg[5] = math::loopLimit(
       jm6_->motor_data_.ecd_angle - init_.encoder_zero[5], -180, 180);
 

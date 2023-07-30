@@ -18,7 +18,8 @@
 // 机械臂云台类
 class ArmGimbal {
  public:
-  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu, AS5048Encoder* j0_encoder);
+  ArmGimbal(Motor* jm0, Motor* gm_pitch, IMU* j0_imu,
+            AS5048Encoder* j0_encoder);
 
   // J0初始化
   void initJ0(void);
@@ -41,16 +42,14 @@ class ArmGimbal {
  public:
   // 云台/J0参数
   struct Param_t {
-    // 编码器零点
-    const float j0_zero = -2.7;
+    // 外置编码器零点
+    float ext_j0_zero = 42.0;
+    // 电机编码器零点
+    float jm0_zero = 8.8;
 
     // 云台角度限位(°)
-    const float pitch_min = -45;
-    const float pitch_max = 5;
-
-    // 初始化
-    const float j0_speed_limit = 360;
-    const float gm_speed_limit = 720;
+    float pitch_min = -45;
+    float pitch_max = 5;
   } param_;
 
   // 初始化相关
@@ -58,8 +57,10 @@ class ArmGimbal {
     bool j0_finish;
     bool pitch_finish;
 
-    const float j0_thres = 5;
-    const float pitch_angle = 25;
+    float j0_thres = 5;
+    float pitch_angle = 25;
+
+    float jm0_encoder_offset;
   } init_;
 
   // 目标状态数据
