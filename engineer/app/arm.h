@@ -139,7 +139,7 @@ class Arm {
     // 编码器指针
     KKEncoder* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {205.3, 0, 0, 40.7, 33.4, -60.9};
+    const float encoder_zero[6] = {205.3, 0, 0, -138.8, -14.6, -93.2};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;

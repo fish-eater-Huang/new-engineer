@@ -155,8 +155,8 @@ const float t_max = 10;
 // 4310电机参数
 namespace m4310 {
 // position limit(rad)
-const float p_min = -12.5f;
-const float p_max = 12.5f;
+const float p_min = -3.141593;
+const float p_max = 3.141593;
 // velocity limit(rad/s)
 const float v_min = -30;
 const float v_max = 30;

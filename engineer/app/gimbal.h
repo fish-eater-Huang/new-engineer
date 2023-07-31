@@ -60,6 +60,7 @@ class ArmGimbal {
     float j0_thres = 5;
     float pitch_angle = 25;
 
+    bool j0_encoder_flag;
     float jm0_encoder_offset;
   } init_;
 

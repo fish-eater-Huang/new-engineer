@@ -88,8 +88,10 @@ float chassis_follow_ff_rate = 0.3f;
 float gimbal_rate = 3e-4f;
 }  // namespace rcctrl
 
+float chassis_gyro_dir = 1;
+
 // 机械臂轨迹规划参数
-float arm_traj_speed = 0.6f;       // m/s
+float arm_traj_speed = 0.7f;       // m/s
 float arm_traj_rotate_speed = PI;  // rad/s
 float arm_traj_q_D1[6] = {math::dps2radps(135), math::dps2radps(90),
                           math::dps2radps(90),  math::dps2radps(270),
@@ -453,19 +455,29 @@ void kbChassisControl(void) {
   if (rc.key_ & KEY_Q) {
     if (rc.key_ & KEY_CTRL) {
       chassis.mode_ = MecanumChassis::FOLLOW;
+    } else if (rc.key_ & KEY_SHIFT) {
+      chassis.mode_ = MecanumChassis::TWIST;
     } else {
       chassis.mode_ = MecanumChassis::GYRO;
     }
   }
-  if (rc.key_ & KEY_F && !(rc.key_ & KEY_CTRL) && !(rc.key_ & KEY_SHIFT)) {
+  if (rc.key_ & KEY_F) {
     chassis.mode_ = MecanumChassis::FOLLOW;
+  }
+  // 陀螺方向设置(防止编码器上下溢)
+  if (JM0.motor_data_.ecd_angle < -5000) {
+    chassis_gyro_dir = -1;
+  } else if (JM0.motor_data_.ecd_angle > 5000) {
+    chassis_gyro_dir = 1;
   }
   // 设置底盘速度
   if (chassis.mode_ == MecanumChassis::FOLLOW) {
     chassis.setAngleSpeed(vx, vy, 0);
   } else if (chassis.mode_ == MecanumChassis::GYRO) {
-    // wz = 360 + 90 * sinf(HAL_GetTick() * 6e-3f)
-    wz = 480;
+    wz = 480 * chassis_gyro_dir;
+    chassis.setSpeed(vx, vy, wz);
+  } else if (chassis.mode_ == MecanumChassis::TWIST) {
+    wz = 480 * sin(HAL_GetTick() * 6e-3f);
     chassis.setSpeed(vx, vy, wz);
   }
 }

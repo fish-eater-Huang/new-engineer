@@ -77,6 +77,7 @@ class MecanumChassis {
     NORMAL,  // 正常
     FOLLOW,  // 跟随
     GYRO,    // 陀螺
+    TWIST,   // 扭腰
   } mode_;
 
   bool lock_;  // 底盘锁定
