@@ -45,7 +45,7 @@ void Arm::init(void) {
     // 按编码器角度初始化
     init_.method[0] = Arm::Init_t::Method_e::ENCODER;
     jm_init_deg[0] = math::loopLimit(
-        init_.encoder->deg_[0] - init_.encoder_zero[0], -180, 180);
+        init_.encoder->deg_[1] - init_.encoder_zero[0], -180, 180);
   } else {
     // 按默认角度初始化(手动移至初始位置后重启)
     init_.method[0] = Arm::Init_t::Method_e::MANUAL;
@@ -464,6 +464,10 @@ void Arm::manipulationController(void) {
   ref_.x = math::limit(ref_.x, limit_.xmin, limit_.xmax);
   ref_.y = math::limit(ref_.y, limit_.ymin, limit_.ymax);
   ref_.z = math::limit(ref_.z, limit_.zmin, limit_.zmax);
+  if (ref_.z < 0.2f) {
+    ref_.x = math::limit(ref_.x, limit_.xmin,
+                         limit_.xmax + (ref_.z - limit_.zmax) * 0.05f);
+  }
 
   // 目标状态解算
   Matrixf<3, 1> p_ref;

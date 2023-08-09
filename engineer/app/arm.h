@@ -139,7 +139,7 @@ class Arm {
     // 编码器指针
     KKEncoder* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {205.3, 0, 0, -138.8, -14.6, -93.2};
+    const float encoder_zero[6] = {4.5, 0, 0, 40.8, -177.7, -135.6};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;
@@ -163,11 +163,11 @@ class Arm {
                            math::deg2rad(75),  math::deg2rad(180),
                            math::deg2rad(70),  math::deg2rad(180)};
     const float xmin = -0.6f;
-    const float xmax = 0.8f;
+    const float xmax = 0.66f;
     const float ymin = -0.6f;
     const float ymax = 0.6f;
     const float zmin = -0.6f;
-    const float zmax = 0.6f;
+    const float zmax = 0.57f;
   } limit_;
 
   // J6减速比

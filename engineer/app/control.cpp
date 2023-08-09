@@ -101,7 +101,7 @@ float arm_traj_q_D1[6] = {math::dps2radps(135), math::dps2radps(90),
 bool arm_controller_state = false;
 
 // 气泵电机转速参数
-float pump_e_speed = 15000;  // dps
+float pump_e_speed = 14000;  // dps
 float pump_0_speed = 15000;  // dps
 
 // 控制初始化
@@ -241,10 +241,13 @@ void robotControl(void) {
     // 控制器档
     controllerArmControl();
     if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm_controller_state = true;
       arm.mode_ = Arm::Mode_e::MANIPULATION;
       arm.trajAbort();
       task.abort();
+      arm_controller_state = true;
+      arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
+                               arm.fdb_.y - arm_controller.raw_.y,
+                               arm.fdb_.z - arm_controller.raw_.z);
     }
 
     // 兑换
@@ -258,6 +261,9 @@ void robotControl(void) {
     // 重新使能机械臂控制器
     if (rc.channel_.r_row > 500 || rc.channel_.r_row < -500) {
       arm_controller_state = true;
+      arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
+                               arm.fdb_.y - arm_controller.raw_.y,
+                               arm.fdb_.z - arm_controller.raw_.z);
     }
   }
   // 遥控器挡位左上右中
@@ -265,7 +271,9 @@ void robotControl(void) {
     // 云台底盘测试
     arm.mode_ = Arm::Mode_e::JOINT;
     arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+    if (rc.channel_.l_col > 500) {
+      task.switchMode(ArmTask::Mode_e::MOVE_HIGH);
+    } else if (rc.channel_.l_col < -500) {
       task.switchMode(ArmTask::Mode_e::MOVE);
     }
     task.handle();
@@ -313,9 +321,17 @@ void robotControl(void) {
 
     // 出矿
     if (rc.channel_.r_row < -500) {
-      task.switchMode(ArmTask::Mode_e::WITHDRAW_0);
+      if (rc.channel_.dial_wheel < -300) {
+        task.switchMode(ArmTask::Mode_e::WITHDRAW_U0);
+      } else {
+        task.switchMode(ArmTask::Mode_e::WITHDRAW_0);
+      }
     } else if (rc.channel_.r_row > 500) {
-      task.switchMode(ArmTask::Mode_e::WITHDRAW_1);
+      if (rc.channel_.dial_wheel < -300) {
+        task.switchMode(ArmTask::Mode_e::WITHDRAW_U1);
+      } else {
+        task.switchMode(ArmTask::Mode_e::WITHDRAW_1);
+      }
     }
 
     // 兑换
@@ -539,13 +555,9 @@ void kbArmTaskControl(void) {
   // 开始三连(Z/shift+X)
   else if (rc.key_ & KEY_X) {
     // 强制开启机械臂气泵
-    if (rc.key_ & KEY_CTRL) {
+    if (rc.key_ & KEY_CTRL || rc.key_ & KEY_SHIFT) {
       pump_e.setMotorSpeed(pump_e_speed);
       pump_e.setValve(Pump::ValveState_e::CLOSE);
-    }
-    // 三连
-    else if (rc.key_ & KEY_SHIFT) {
-      task.startPick(ArmTask::PickMethod_e::TRIPLE);
     }
     // 单取
     else {
@@ -556,14 +568,18 @@ void kbArmTaskControl(void) {
   }
   // 存矿(C/V)/出矿(ctrl/shift+C/V)
   else if (rc.key_ & KEY_C) {
-    if (rc.key_ & KEY_CTRL || rc.key_ & KEY_SHIFT) {
+    if (rc.key_ & KEY_SHIFT) {
       task.switchMode(ArmTask::Mode_e::WITHDRAW_0);
+    } else if (rc.key_ & KEY_CTRL) {
+      task.switchMode(ArmTask::Mode_e::WITHDRAW_U0);
     } else {
       task.switchMode(ArmTask::Mode_e::DEPOSIT_0);
     }
   } else if (rc.key_ & KEY_V) {
-    if (rc.key_ & KEY_CTRL || rc.key_ & KEY_SHIFT) {
+    if (rc.key_ & KEY_SHIFT) {
       task.switchMode(ArmTask::Mode_e::WITHDRAW_1);
+    } else if (rc.key_ & KEY_CTRL) {
+      task.switchMode(ArmTask::Mode_e::WITHDRAW_U1);
     } else {
       task.switchMode(ArmTask::Mode_e::DEPOSIT_1);
     }
@@ -584,11 +600,6 @@ void kbArmTaskControl(void) {
 
 // 控制器机械臂控制
 void controllerArmControl(void) {
-  if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-    arm_controller.setOffset(arm.fdb_.x - arm_controller.raw_.x,
-                             arm.fdb_.y - arm_controller.raw_.y,
-                             arm.fdb_.z - arm_controller.raw_.z);
-  }
   if (arm_controller.state_ && arm_controller_state) {
     arm_controller.addOffset(
         rc.channel_.l_col * rcctrl::arm_position_rate,
@@ -620,6 +631,7 @@ void ArmTask::reset(void) {
   pick_.state = IDLE;
   deposit_.state = IDLE;
   withdraw_.state = IDLE;
+  withdraw_above_.state = IDLE;
   exchange_.state = IDLE;
   triple_pick_.state = IDLE;
   // 重置任务步骤
@@ -627,6 +639,7 @@ void ArmTask::reset(void) {
   pick_.step = Pick_t::PREPARE;
   deposit_.step = Deposit_t::PREPARE;
   withdraw_.step = Withdraw_t::PREPARE;
+  withdraw_above_.step = WithdrawAbove_t::PREPARE;
   exchange_.step = Exchange_t::PREPARE;
   triple_pick_.step = TriplePick_t::PREPARE;
   // 设置指针
@@ -634,6 +647,7 @@ void ArmTask::reset(void) {
   pick_.finish_tick = &finish_tick_;
   deposit_.finish_tick = &finish_tick_;
   withdraw_.finish_tick = &finish_tick_;
+  withdraw_above_.finish_tick = &finish_tick_;
   exchange_.finish_tick = &finish_tick_;
 }
 
@@ -657,6 +671,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     pick_.state = IDLE;
     deposit_.state = IDLE;
     withdraw_.state = IDLE;
+    withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
   }
@@ -679,6 +694,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     // pick_.state = IDLE;
     deposit_.state = IDLE;
     withdraw_.state = IDLE;
+    withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
   }
@@ -699,6 +715,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     pick_.state = IDLE;
     // deposit_.state = IDLE;
     withdraw_.state = IDLE;
+    withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
   }
@@ -719,6 +736,28 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     pick_.state = IDLE;
     deposit_.state = IDLE;
     // withdraw_.state = IDLE;
+    withdraw_above_.state = IDLE;
+    exchange_.state = IDLE;
+    triple_pick_.state = IDLE;
+  }
+  // 切换至上表面出矿模式
+  else if (mode == WITHDRAW_U0 || mode == WITHDRAW_U1) {
+    // 设置任务模式
+    mode_ = mode;
+    withdraw_above_.state = WORKING;
+    withdraw_above_.step = WithdrawAbove_t::PREPARE;
+    if (mode == WITHDRAW_U0) {
+      withdraw_above_.side = 0;
+    } else if (mode == WITHDRAW_U1) {
+      withdraw_above_.side = 1;
+    }
+    finish_tick_ = HAL_GetTick() + 10;
+    // 重置任务状态
+    move_.state = IDLE;
+    pick_.state = IDLE;
+    deposit_.state = IDLE;
+    withdraw_.state = IDLE;
+    // withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
   }
@@ -734,6 +773,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     pick_.state = IDLE;
     deposit_.state = IDLE;
     withdraw_.state = IDLE;
+    withdraw_above_.state = IDLE;
     // exchange_.state = IDLE;
     triple_pick_.state = IDLE;
   }
@@ -748,6 +788,7 @@ void ArmTask::abort(void) {
   }
   deposit_.state = IDLE;
   withdraw_.state = IDLE;
+  withdraw_above_.state = IDLE;
   if (exchange_.step != Exchange_t::LOCATE) {
     exchange_.state = IDLE;
   }
@@ -766,6 +807,7 @@ void ArmTask::handle(void) {
   pick_.handle();
   deposit_.handle();
   withdraw_.handle();
+  withdraw_above_.handle();
   exchange_.handle();
 }
 
@@ -785,13 +827,18 @@ void ArmTask::startPick(PickMethod_e method) {
   pick_.start_pose.pitch = arm.ref_.pitch;
   pick_.start_pose.roll = arm.ref_.roll;
   pick_.pick_up_pose = pick_.start_pose;
-  pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
-  pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
-  pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
-  pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+  pick_.pick_up_pose.x =
+      pick_.start_pose.x + pick_.pick_up_offset[pick_.type].x;
+  pick_.pick_up_pose.y =
+      pick_.start_pose.y + pick_.pick_up_offset[pick_.type].y;
+  pick_.pick_up_pose.z =
+      pick_.start_pose.z + pick_.pick_up_offset[pick_.type].z;
+  pick_.pick_up_pose.yaw =
+      pick_.start_pose.yaw + pick_.pick_up_offset[pick_.type].yaw;
   pick_.pick_up_pose.pitch =
-      pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
-  pick_.pick_up_pose.roll = pick_.start_pose.roll + pick_.pick_up_offset.roll;
+      pick_.start_pose.pitch + pick_.pick_up_offset[pick_.type].pitch;
+  pick_.pick_up_pose.roll =
+      pick_.start_pose.roll + pick_.pick_up_offset[pick_.type].roll;
   // 设置步骤完成时间
   finish_tick_ = HAL_GetTick() + 10;
   if (method == TRIPLE) {
@@ -1080,7 +1127,101 @@ void ArmTask::Withdraw_t::handle(void) {
       *finish_tick = HAL_GetTick() + 800;
     }
   }
-  // 关闭机械臂气泵
+  // 关闭存矿气泵
+  else if (step == PUMP_0_OFF) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = TRAJ_DEPOSIT_UPWARD;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
+    }
+  }
+  // 升高至存矿点上方
+  else if (step == TRAJ_DEPOSIT_UPWARD) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = TRAJ_EXCHANGE;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(exchange_default);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
+    }
+  }
+  // 移动至兑换默认位姿
+  else if (step == TRAJ_EXCHANGE) {
+    if (HAL_GetTick() > *finish_tick) {
+      arm.trajAbort();
+    }
+  }
+}
+
+// 出矿(上表面)处理
+void ArmTask::WithdrawAbove_t::handle(void) {
+  if (state == IDLE) {
+    return;
+  }
+
+  // 防止溢出
+  if (side > 1) {
+    side = 0;
+  }
+
+  // 准备阶段
+  if (step == PREPARE) {
+    if (HAL_GetTick() > *finish_tick) {
+      if (arm.fdb_.x > 0.1 || arm.fdb_.z < 0.2) {
+        // 经过中间点
+        step = TRAJ_RELAY;
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(relay[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
+      } else {
+        // 不经过中间点
+        step = TRAJ_DEPOSIT_ABOVE;
+        arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+        trajSetJoint(withdraw_above[side]);
+        *finish_tick = HAL_GetTick() + arm.trajStart();
+      }
+    }
+  }
+  // 移动至中间点
+  else if (step == TRAJ_RELAY) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = TRAJ_DEPOSIT_ABOVE;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw_above[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
+    }
+  }
+  // 移动至存矿上方
+  else if (step == TRAJ_DEPOSIT_ABOVE) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = TRAJ_DEPOSIT_DOWNWARD;
+      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+      trajSetJoint(withdraw[side]);
+      *finish_tick = HAL_GetTick() + arm.trajStart();
+    }
+  }
+  // 下降至存矿点
+  else if (step == TRAJ_DEPOSIT_DOWNWARD) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = PUMP_E_ON;
+      pump_e.setMotorSpeed(pump_e_speed);
+      pump_e.setValve(Pump::ValveState_e::CLOSE);
+      *finish_tick = HAL_GetTick() + 10;
+    }
+  }
+  // 开启机械臂气泵
+  else if (step == PUMP_E_ON) {
+    if (HAL_GetTick() > *finish_tick) {
+      step = PUMP_0_OFF;
+      if (side == 0) {
+        pump_0.setValve(Pump::ValveState_e::OPEN_0);
+      } else if (side == 1) {
+        pump_0.setValve(Pump::ValveState_e::OPEN_1);
+      }
+      *finish_tick = HAL_GetTick() + 800;
+    }
+  }
+  // 关闭存矿气泵
   else if (step == PUMP_0_OFF) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEPOSIT_UPWARD;
@@ -1168,6 +1309,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       // deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1185,6 +1327,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1201,6 +1344,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1216,14 +1360,18 @@ void ArmTask::triplePickHandle(void) {
       pick_.type = 0;
       pick_.start_pose = triple_pick_.mine[1];
       pick_.pick_up_pose = pick_.start_pose;
-      pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
-      pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
-      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
-      pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+      pick_.pick_up_pose.x =
+          pick_.start_pose.x + pick_.pick_up_offset[pick_.type].x;
+      pick_.pick_up_pose.y =
+          pick_.start_pose.y + pick_.pick_up_offset[pick_.type].y;
+      pick_.pick_up_pose.z =
+          pick_.start_pose.z + pick_.pick_up_offset[pick_.type].z;
+      pick_.pick_up_pose.yaw =
+          pick_.start_pose.yaw + pick_.pick_up_offset[pick_.type].yaw;
       pick_.pick_up_pose.pitch =
-          pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
+          pick_.start_pose.pitch + pick_.pick_up_offset[pick_.type].pitch;
       pick_.pick_up_pose.roll =
-          pick_.start_pose.roll + pick_.pick_up_offset.roll;
+          pick_.start_pose.roll + pick_.pick_up_offset[pick_.type].roll;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
       finish_tick_ = HAL_GetTick() + arm.trajStart();
@@ -1232,6 +1380,7 @@ void ArmTask::triplePickHandle(void) {
       // pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1252,6 +1401,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       // deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1269,6 +1419,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1285,6 +1436,7 @@ void ArmTask::triplePickHandle(void) {
       pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
@@ -1300,14 +1452,18 @@ void ArmTask::triplePickHandle(void) {
       pick_.type = 0;
       pick_.start_pose = triple_pick_.mine[2];
       pick_.pick_up_pose = pick_.start_pose;
-      pick_.pick_up_pose.x = pick_.start_pose.x + pick_.pick_up_offset.x;
-      pick_.pick_up_pose.y = pick_.start_pose.y + pick_.pick_up_offset.y;
-      pick_.pick_up_pose.z = pick_.start_pose.z + pick_.pick_up_offset.z;
-      pick_.pick_up_pose.yaw = pick_.start_pose.yaw + pick_.pick_up_offset.yaw;
+      pick_.pick_up_pose.x =
+          pick_.start_pose.x + pick_.pick_up_offset[pick_.type].x;
+      pick_.pick_up_pose.y =
+          pick_.start_pose.y + pick_.pick_up_offset[pick_.type].y;
+      pick_.pick_up_pose.z =
+          pick_.start_pose.z + pick_.pick_up_offset[pick_.type].z;
+      pick_.pick_up_pose.yaw =
+          pick_.start_pose.yaw + pick_.pick_up_offset[pick_.type].yaw;
       pick_.pick_up_pose.pitch =
-          pick_.start_pose.pitch + pick_.pick_up_offset.pitch;
+          pick_.start_pose.pitch + pick_.pick_up_offset[pick_.type].pitch;
       pick_.pick_up_pose.roll =
-          pick_.start_pose.roll + pick_.pick_up_offset.roll;
+          pick_.start_pose.roll + pick_.pick_up_offset[pick_.type].roll;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
       trajSetPose(pick_.start_pose);
       finish_tick_ = HAL_GetTick() + arm.trajStart();
@@ -1316,6 +1472,7 @@ void ArmTask::triplePickHandle(void) {
       // pick_.state = IDLE;
       deposit_.state = IDLE;
       withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
