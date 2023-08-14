@@ -43,7 +43,7 @@ class ArmGimbal {
   // 云台/J0参数
   struct Param_t {
     // 外置编码器零点
-    float ext_j0_zero = 42.0;
+    float ext_j0_zero = 275.0;
     // 电机编码器零点
     float jm0_zero = 8.8;
 

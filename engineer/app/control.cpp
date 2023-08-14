@@ -556,12 +556,12 @@ void kbArmTaskControl(void) {
   else if (rc.key_ & KEY_X) {
     // 强制开启机械臂气泵
     if (rc.key_ & KEY_CTRL || rc.key_ & KEY_SHIFT) {
-      pump_e.setMotorSpeed(pump_e_speed);
-      pump_e.setValve(Pump::ValveState_e::CLOSE);
+      task.startPick(ArmTask::PickMethod_e::SINGLE);
     }
     // 单取
     else {
-      task.startPick(ArmTask::PickMethod_e::SINGLE);
+      pump_e.setMotorSpeed(pump_e_speed);
+      pump_e.setValve(Pump::ValveState_e::CLOSE);
     }
   } else if (rc.key_ & KEY_Z) {
     task.startPick(ArmTask::PickMethod_e::TRIPLE);
@@ -859,9 +859,13 @@ void ArmTask::startPick(PickMethod_e method) {
       triple_pick_.mine[i].x = pick_.start_pose.x + mine_offset[i][0][0];
       triple_pick_.mine[i].y = pick_.start_pose.y + mine_offset[i][1][0];
       triple_pick_.mine[i].z = pick_.start_pose.z + mine_offset[i][2][0];
-      triple_pick_.mine_above[i] = triple_pick_.mine[i];
-      triple_pick_.mine_above[i].z = triple_pick_.mine[i].z + 0.1;
     }
+    triple_pick_.mine[2].pitch = pick_.start_pose.pitch - PI * 0.5;
+    for (int i = 0; i < 3; i++) {
+      triple_pick_.mine_prepare[i] = triple_pick_.mine[i];
+    }
+    triple_pick_.mine_prepare[1].z = triple_pick_.mine[1].z + 0.1;
+    triple_pick_.mine_prepare[2].x = triple_pick_.mine[2].x - 0.1;
   }
 }
 
@@ -1337,7 +1341,7 @@ void ArmTask::triplePickHandle(void) {
     if (HAL_GetTick() > finish_tick_) {
       triple_pick_.step = TriplePick_t::PICK_2_ABOVE;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
-      trajSetPose(triple_pick_.mine_above[1]);
+      trajSetPose(triple_pick_.mine_prepare[1]);
       finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.1;
       // 重置任务状态
       move_.state = IDLE;
@@ -1429,7 +1433,7 @@ void ArmTask::triplePickHandle(void) {
     if (HAL_GetTick() > finish_tick_) {
       triple_pick_.step = TriplePick_t::PICK_3_ABOVE;
       arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
-      trajSetPose(triple_pick_.mine_above[2]);
+      trajSetPose(triple_pick_.mine_prepare[2]);
       finish_tick_ = HAL_GetTick() + arm.trajStart() * 1.1;
       // 重置任务状态
       move_.state = IDLE;

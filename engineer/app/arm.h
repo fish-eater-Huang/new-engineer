@@ -114,7 +114,7 @@ class Arm {
                      Matrixf<3, 1>((float[3]){0, 0, 0.012}),  // rc
                      matrixf::zeros<3, 3>()),                 // I
       // link6
-      robotics::Link(0, 0.025, 0, 0,                      // theta,d,a,alpha
+      robotics::Link(0, 0, 0, 0,                          // theta,d,a,alpha
                      robotics::Joint_Type_e::R,           // joint type
                      0, 0, 0, 0,                          // offset,qmin,qmax,m
                      Matrixf<3, 1>((float[3]){0, 0, 0}),  // rc
@@ -139,7 +139,7 @@ class Arm {
     // 编码器指针
     KKEncoder* encoder;
     // 电机编码器零点
-    const float encoder_zero[6] = {4.5, 0, 0, 40.8, -177.7, -135.6};
+    const float encoder_zero[6] = {4.5, 0, 0, 40.8, -152.2, -130.2};
 
     // IMU指针
     IMU *imu0, *imu2, *imu3;
@@ -158,16 +158,16 @@ class Arm {
   struct Limit_t {
     const float qmin[6] = {math::deg2rad(-160), math::deg2rad(-165),
                            math::deg2rad(-90),  math::deg2rad(-180),
-                           math::deg2rad(-95),  math::deg2rad(-180)};
+                           math::deg2rad(-95),  math::deg2rad(-360)};
     const float qmax[6] = {math::deg2rad(160), math::deg2rad(0),
                            math::deg2rad(75),  math::deg2rad(180),
-                           math::deg2rad(70),  math::deg2rad(180)};
+                           math::deg2rad(70),  math::deg2rad(360)};
     const float xmin = -0.6f;
     const float xmax = 0.66f;
     const float ymin = -0.6f;
     const float ymax = 0.6f;
     const float zmin = -0.6f;
-    const float zmax = 0.57f;
+    const float zmax = 0.6f;
   } limit_;
 
   // J6减速比

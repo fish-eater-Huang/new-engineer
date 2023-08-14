@@ -464,10 +464,10 @@ void Arm::manipulationController(void) {
   ref_.x = math::limit(ref_.x, limit_.xmin, limit_.xmax);
   ref_.y = math::limit(ref_.y, limit_.ymin, limit_.ymax);
   ref_.z = math::limit(ref_.z, limit_.zmin, limit_.zmax);
-  if (ref_.z < 0.2f) {
-    ref_.x = math::limit(ref_.x, limit_.xmin,
-                         limit_.xmax + (ref_.z - limit_.zmax) * 0.05f);
-  }
+  // if (ref_.z < 0.2f) {
+  //   ref_.x = math::limit(ref_.x, limit_.xmin,
+  //                        limit_.xmax + (ref_.z - limit_.zmax) * 0.05f);
+  // }
 
   // 目标状态解算
   Matrixf<3, 1> p_ref;
@@ -482,6 +482,14 @@ void Arm::manipulationController(void) {
 
   // 逆运动学解析解
   ref_.q = ikine(ref_.T, fdb_.q);
+  ref_.q[5][0] =
+      math::loopLimit(ref_.q[5][0], fdb_.q[5][0] - PI, fdb_.q[5][0] + PI);
+  while (ref_.q[5][0] > 2.f * PI) {
+    ref_.q[5][0] -= 2.f * PI;
+  }
+  while (ref_.q[5][0] < -2.f * PI) {
+    ref_.q[5][0] += 2.f * PI;
+  }
 
   // 关节限位
   for (int i = 0; i < 6; i++) {
