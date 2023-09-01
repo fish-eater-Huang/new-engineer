@@ -153,49 +153,17 @@ void robotControl(void) {
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      arm.trajSet(0.3, 0, 0.15, 0, 0, 0, 0.3, PI);
-      arm.trajStart();
-    }
     arm.addRef(rc.channel_.l_col * rcctrl::arm_position_rate,
                -rc.channel_.l_row * rcctrl::arm_position_rate,
                -rc.channel_.dial_wheel * rcctrl::arm_position_rate,
                -rc.channel_.r_row * rcctrl::arm_direction_rate,
                -rc.channel_.r_col * rcctrl::arm_direction_rate, 0);
-//    arm.trajAbort();
+    arm.trajAbort();
   }
   // 遥控器挡位左下右上
   else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::UP) {
     arm.mode_ = Arm::Mode_e::MANIPULATION;
     arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
-      float q[6] = {0, -2.5, 1.4, 0, 0, 0};
-      float q_D1[6] = {math::dps2radps(120), math::dps2radps(90),
-                       math::dps2radps(90),  math::dps2radps(270),
-                       math::dps2radps(270), math::dps2radps(270)};  // rad/s
-      arm.trajSet(q, q_D1);
-      arm.trajStart();
-    }
-  }
-  // 遥控器挡位左上右中
-  else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::COMPLIANCE;
-    arm.trajAbort();
-  }
-  // 遥控器挡位左中右中
-  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::JOINT;
-    arm.addJointRef(-rc.channel_.l_row * rcctrl::arm_joint_rate,
-                    rc.channel_.l_col * rcctrl::arm_joint_rate,
-                    rc.channel_.dial_wheel * rcctrl::arm_joint_rate,
-                    rc.channel_.r_row * rcctrl::arm_joint_rate,
-                    -rc.channel_.r_col * rcctrl::arm_joint_rate, 0);
-    arm.trajAbort();
-  }
-  // 遥控器挡位左下右中
-  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
-    arm.mode_ = Arm::Mode_e::MANIPULATION;
-
     if (arm_controller.state_) {
       if (rc.switch_.l != last_rc_switch.l ||
           rc.switch_.r != last_rc_switch.r) {
@@ -207,7 +175,35 @@ void robotControl(void) {
                  arm_controller.ref_.z, arm_controller.ref_.yaw,
                  arm_controller.ref_.pitch, arm_controller.ref_.roll);
     }
-
+  }
+  // 遥控器挡位左上右中
+  else if (rc.switch_.l == RC::UP && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::JOINT;
+    arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+    if (rc.switch_.l != last_rc_switch.l || rc.switch_.r != last_rc_switch.r) {
+      float q[6] = {0, -1.8, 0.6, 0, -0.3, 0};
+      float q_D1[6] = {math::dps2radps(120), math::dps2radps(90),
+                       math::dps2radps(90),  math::dps2radps(270),
+                       math::dps2radps(270), math::dps2radps(270)};  // rad/s
+      arm.trajSet(q, q_D1);
+      arm.trajStart();
+    }
+  }
+  // 遥控器挡位左中右中
+  else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::JOINT;
+    arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+    arm.addJointRef(-rc.channel_.l_row * rcctrl::arm_joint_rate,
+                    rc.channel_.l_col * rcctrl::arm_joint_rate,
+                    rc.channel_.dial_wheel * rcctrl::arm_joint_rate,
+                    rc.channel_.r_row * rcctrl::arm_joint_rate,
+                    -rc.channel_.r_col * rcctrl::arm_joint_rate, 0);
+    arm.trajAbort();
+  }
+  // 遥控器挡位左下右中
+  else if (rc.switch_.l == RC::DOWN && rc.switch_.r == RC::MID) {
+    arm.mode_ = Arm::Mode_e::COMPLIANCE;
+    arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
     arm.trajAbort();
   }
 
