@@ -103,7 +103,7 @@ typedef enum MsgType {
   AIM_SHOOT = 0x01,    // 云台+发射数据包
   NAVIGATION = 0x02,   // 导航数据包
   GAME_STATUS = 0x03,  // 比赛信息数据包(用于决策)
-  // todo: 工程相关(机械臂等)
+  AUTO_EXCHANGE = 0x04,
 } MsgType_e;
 
 // general通用数据包----------------------------------------------------------------
@@ -231,8 +231,26 @@ typedef struct GameStatusMsg_Board2PC {
     float yaw;
   } __packed game_robot_pos;
 } __packed Board2PC_t;
+
 }  // namespace gamestatus
 
+    namespace autoexchange
+    {
+        typedef struct AutoExchange_PC2Board {
+            float TransX;
+            float TransY;
+            float TransZ;
+            float RotX;
+            float RotY;
+            float RotZ;
+
+        } __packed PC2Board_t;
+
+        typedef struct AutoExchange_Board2PC {
+
+        } __packed Board2PC_t;
+        //todo:fill it
+    } //namespace autoexchange
 }  // namespace cvcomm
 
 #endif  // CV_PROTOCOL_H
