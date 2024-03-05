@@ -218,7 +218,8 @@ void robotControl(void) {
       arm.trajAbort();
       task.abort();
     }
-  }
+  }//随便加点注释
+
   // 遥控器挡位左中右上
   else if (rc.switch_.l == RC::MID && rc.switch_.r == RC::UP) {
     kbChassisControl();
