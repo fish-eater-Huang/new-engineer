@@ -25,7 +25,7 @@
 #include "base/referee_comm/referee_comm.h"
 #include "base/remote/remote.h"
 #include "base/servo/servo.h"
-
+#include "app/auto_exchange.h"
 void iwdgHandler(bool iwdg_refresh_flag);
 void robotPowerStateFSM(bool stop_flag);
 void robotReset(void);
@@ -49,6 +49,7 @@ extern ArmController arm_controller;
 extern CVComm cv_comm;
 extern RefereeComm referee;
 extern AS5048Encoder j0_encoder;
+extern AutoExchangeController autoexchange_controller;
 
 MecanumChassis chassis(&CMFL, &CMFR, &CMBL, &CMBR, PID(6, 0, 8, 100, 270),
                        LowPassFilter(5e-3f));
