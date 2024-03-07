@@ -54,6 +54,7 @@ class ArmTask {
     WITHDRAW_U0,  // 出矿0(左)
     WITHDRAW_U1,  // 出矿1(右)
     EXCHANGE,     // 兑换
+    CV_EXCHANGE,   // 视觉兑换
   } Mode_e;
 
   // 任务状态
@@ -89,8 +90,10 @@ class ArmTask {
 
   // 开始兑换
   void startExchange(void);
+  // 开始视觉兑换
+  void startCVExchange(void);
 
-  // 三连取矿处理
+      // 三连取矿处理
   void triplePickHandle(void);
 
  public:
@@ -300,7 +303,28 @@ class ArmTask {
     // 处理函数
     void handle(void);
   } exchange_;
+  struct CV_Exchange_t {
+      // 状态
+      TaskState_e state;
+      uint32_t* finish_tick;
+      // 步骤
+      enum Step_e {
+          PREPARE,       // 准备
+          TRAJ_DEFAULT,  // 移动至默认位置
+          LOCATE,        // 定位
+          TRAJ_PUSH_IN,  // 推入
+      } step;
+      // 兑换默认位姿
+      float default_pose[6] = {0, -2.3, 0.5, 0, 0.2, 0};
+      // 推入量
+      Matrixf<3, 1> push_in_offset = Matrixf<3, 1>((float[3]){0, 0, 0.2});
+      // 兑换开始位姿
+      Pose_t start_pose;
+      Pose_t push_in_pose;
 
+      // 处理函数
+      void handle(void);
+  } cv_exchange_;
   // 三连取矿
   struct TriplePick_t {
     // 状态

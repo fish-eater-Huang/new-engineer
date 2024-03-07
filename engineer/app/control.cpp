@@ -255,6 +255,7 @@ void robotControl(void) {
     // 兑换
     if (rc.channel_.r_col > 500) {
       task.startExchange();
+      //task.startCVExchange();
     } else if (rc.channel_.r_col < -500) {
       pump_e.setMotorSpeed(0);
       pump_e.setValve(Pump::ValveState_e::OPEN_0);
@@ -340,6 +341,7 @@ void robotControl(void) {
     if (rc.channel_.r_col > 500) {
       if (rc.channel_.dial_wheel > 300 || rc.channel_.dial_wheel < -300) {
         task.startExchange();
+        //task.startCVExchange();
       } else {
         task.switchMode(ArmTask::Mode_e::EXCHANGE);
       }
@@ -676,6 +678,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
   }
   // 切换至取矿模式
   else if (mode == PICK_NORMAL || mode == PICK_HIGH || mode == PICK_LOW) {
@@ -699,6 +702,8 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
+
   }
   // 切换至存矿模式
   else if (mode == DEPOSIT_0 || mode == DEPOSIT_1) {
@@ -720,6 +725,8 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
+
   }
   // 切换至出矿模式
   else if (mode == WITHDRAW_0 || mode == WITHDRAW_1) {
@@ -741,6 +748,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
   }
   // 切换至上表面出矿模式
   else if (mode == WITHDRAW_U0 || mode == WITHDRAW_U1) {
@@ -762,6 +770,7 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     // withdraw_above_.state = IDLE;
     exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
   }
   // 切换至兑换模式
   else if (mode == EXCHANGE) {
@@ -778,6 +787,26 @@ void ArmTask::switchMode(ArmTask::Mode_e mode) {
     withdraw_above_.state = IDLE;
     // exchange_.state = IDLE;
     triple_pick_.state = IDLE;
+    cv_exchange_.state = IDLE;
+
+  }
+  // 切换至视觉兑换模式
+  else if (mode == CV_EXCHANGE) {
+      // 设置任务模式
+      mode_ = mode;
+      cv_exchange_.state = WORKING;
+      cv_exchange_.step = CV_Exchange_t::PREPARE;
+      finish_tick_ = HAL_GetTick() + 10;
+      // 重置任务状态
+      move_.state = IDLE;
+      pick_.state = IDLE;
+      deposit_.state = IDLE;
+      withdraw_.state = IDLE;
+      withdraw_above_.state = IDLE;
+      exchange_.state = IDLE;
+      triple_pick_.state = IDLE;
+      //cv_exchange_.state = IDLE;
+
   }
 }
 
@@ -811,6 +840,7 @@ void ArmTask::handle(void) {
   withdraw_.handle();
   withdraw_above_.handle();
   exchange_.handle();
+  cv_exchange_.handle();
 }
 
 // 开始取矿
@@ -891,6 +921,28 @@ void ArmTask::startExchange(void) {
   exchange_.push_in_pose.z = exchange_.start_pose.z + push_in_offset[2][0];
   // 设置步骤完成时间
   finish_tick_ = HAL_GetTick() + 10;
+}
+// 开始视觉兑换
+void ArmTask::startCVExchange(void) {
+    //todo:加入视觉通讯的坐标转移代码
+    arm_controller_state = false;
+    exchange_.state = WORKING;
+    exchange_.step = Exchange_t::Step_e::LOCATE;
+    // 设置兑换定位位姿
+    exchange_.start_pose.x = arm.ref_.x;
+    exchange_.start_pose.y = arm.ref_.y;
+    exchange_.start_pose.z = arm.ref_.z;
+    exchange_.start_pose.yaw = arm.ref_.yaw;
+    exchange_.start_pose.pitch = arm.ref_.pitch;
+    exchange_.start_pose.roll = arm.ref_.roll;
+    exchange_.push_in_pose = exchange_.start_pose;
+    Matrixf<3, 1> push_in_offset =
+            robotics::t2r(arm.ref_.T) * exchange_.push_in_offset;
+    exchange_.push_in_pose.x = exchange_.start_pose.x + push_in_offset[0][0];
+    exchange_.push_in_pose.y = exchange_.start_pose.y + push_in_offset[1][0];
+    exchange_.push_in_pose.z = exchange_.start_pose.z + push_in_offset[2][0];
+    // 设置步骤完成时间
+    finish_tick_ = HAL_GetTick() + 10;
 }
 
 // 移动处理
@@ -1263,11 +1315,11 @@ void ArmTask::Exchange_t::handle(void) {
   if (step == PREPARE) {
     if (HAL_GetTick() > *finish_tick) {
       step = TRAJ_DEFAULT;
-      arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
-      trajSetJoint(default_pose);
-      *finish_tick = HAL_GetTick() + arm.trajStart();
-    }
-  }
+    arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+    trajSetJoint(default_pose);
+    *finish_tick = HAL_GetTick() + arm.trajStart();
+}
+}
   // 移动至默认位置
   else if (step == TRAJ_DEFAULT) {
     if (HAL_GetTick() > *finish_tick) {
@@ -1291,6 +1343,45 @@ void ArmTask::Exchange_t::handle(void) {
       arm.trajAbort();
     }
   }
+}
+// 视觉兑换处理
+void ArmTask::CV_Exchange_t::handle(void) {
+    if (state == IDLE) {
+        return;
+    }
+
+    // 准备阶段
+    if (step == PREPARE) {
+        if (HAL_GetTick() > *finish_tick) {
+            step = TRAJ_DEFAULT;
+            arm.traj_.method = Arm::Traj_t::Method_e::JOINT;
+            trajSetJoint(default_pose);
+            *finish_tick = HAL_GetTick() + arm.trajStart();
+        }
+    }
+        // 移动至默认位置
+    else if (step == TRAJ_DEFAULT) {
+        if (HAL_GetTick() > *finish_tick) {
+            step = LOCATE;
+            arm.trajAbort();
+            *finish_tick = UINT32_MAX;  // 等待取矿开始函数
+        }
+    }
+        // 定位
+    else if (step == LOCATE) {
+        if (HAL_GetTick() > *finish_tick) {
+            step = TRAJ_PUSH_IN;
+            arm.traj_.method = Arm::Traj_t::Method_e::MANIPULATION;
+            trajSetPose(push_in_pose);
+            *finish_tick = HAL_GetTick() + arm.trajStart();
+        }
+    }
+        // 推入
+    else if (step == TRAJ_PUSH_IN) {
+        if (HAL_GetTick() > *finish_tick) {
+            arm.trajAbort();
+        }
+    }
 }
 
 // 三连取矿处理
