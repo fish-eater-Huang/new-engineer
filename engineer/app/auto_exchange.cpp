@@ -75,7 +75,7 @@ Matrixf<4,4> AutoExchangeController::cv2t(void)
 }
 
 
-void AutoExchangeController::auto_follow()
+void AutoExchangeController::auto_follow_set_ref()
 {
 
     cv2t();

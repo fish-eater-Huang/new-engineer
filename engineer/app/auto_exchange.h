@@ -20,7 +20,7 @@ public:
     //视觉信息转换为传递矩阵
     Matrixf<4,4> cv2t(void);
     //自动跟随函数
-    void auto_follow();
+    void auto_follow_set_ref();
 
     struct AutoExchange_ref_t
     {
