@@ -8,7 +8,6 @@
 
 extern CVComm cv_comm;
 extern Arm arm;
-float test1,test2;
 float r0[9] = {0, 0, 1, 0, -1, 0, 1, 0, 0};
 Matrixf<3,3> R0_ = Matrixf<3, 3>(r0);
 
@@ -68,7 +67,6 @@ Matrixf<4,4> AutoExchangeController::cv2t(void)
     this->ref_.pitch = rpy_ref[1][0];
     this->ref_.roll = rpy_ref[2][0];
 
-    test2 = this->ref_.x;
 
     return cv_t;
 
@@ -78,12 +76,12 @@ Matrixf<4,4> AutoExchangeController::cv2t(void)
 void AutoExchangeController::auto_follow_set_ref()
 {
 
-    cv2t();
-    if(powf(this->ref_.x,2)+powf(this->ref_.y,2)+powf(this->ref_.z,2)>=powf(0.45,2)||this->ref_.x == 0)
-    {
-        ref_state_ = OUT_OF_RANGE;
-    }
-    else
+//    cv2t();
+//    if(powf(this->ref_.x,2)+powf(this->ref_.y,2)+powf(this->ref_.z,2)>=powf(0.45,2)||this->ref_.x == 0)
+//    {
+//        ref_state_ = OUT_OF_RANGE;
+//    }
+//    else
     {
         ref_state_ = IN_RANGE;
         arm.ref_.x = this->ref_.x;
