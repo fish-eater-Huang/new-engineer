@@ -340,6 +340,7 @@ void robotControl(void) {
     // 兑换
     if (rc.channel_.r_col > 500) {
       if (rc.channel_.dial_wheel > 300 || rc.channel_.dial_wheel < -300) {
+        autoexchange_controller.auto_follow_set_ref();
         task.startExchange();
         //task.startCVExchange();
       } else {
