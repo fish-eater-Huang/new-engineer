@@ -254,8 +254,8 @@ void robotControl(void) {
 
     // 兑换
     if (rc.channel_.r_col > 500) {
-      task.startExchange();
-      //task.startCVExchange();
+      //task.startExchange();
+      task.startCVExchange();
     } else if (rc.channel_.r_col < -500) {
       pump_e.setMotorSpeed(0);
       pump_e.setValve(Pump::ValveState_e::OPEN_0);
