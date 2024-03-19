@@ -76,7 +76,7 @@ Matrixf<4,4> AutoExchangeController::cv2t(void)
 void AutoExchangeController::auto_follow_set_ref()
 {
 
-//    cv2t();
+      cv2t();
 //    if(powf(this->ref_.x,2)+powf(this->ref_.y,2)+powf(this->ref_.z,2)>=powf(0.45,2)||this->ref_.x == 0)
 //    {
 //        ref_state_ = OUT_OF_RANGE;

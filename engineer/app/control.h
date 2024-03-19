@@ -303,6 +303,7 @@ class ArmTask {
     // 处理函数
     void handle(void);
   } exchange_;
+
   struct CV_Exchange_t {
       // 状态
       TaskState_e state;

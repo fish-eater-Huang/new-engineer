@@ -337,14 +337,14 @@ void robotControl(void) {
       }
     }
 
-    // 兑换
+    // 视觉兑换
     if (rc.channel_.r_col > 500) {
       if (rc.channel_.dial_wheel > 300 || rc.channel_.dial_wheel < -300) {
         autoexchange_controller.auto_follow_set_ref();
-        task.startExchange();
-        //task.startCVExchange();
+        //task.startExchange();
+        task.startCVExchange();
       } else {
-        task.switchMode(ArmTask::Mode_e::EXCHANGE);
+        task.switchMode(ArmTask::Mode_e::CV_EXCHANGE);
       }
     } else if (rc.channel_.r_col < -500) {
       pump_e.setMotorSpeed(0);
@@ -547,12 +547,12 @@ void kbArmTaskControl(void) {
       task.switchMode(ArmTask::Mode_e::PICK_NORMAL);
     }
   }
-  // 兑换(R)/推入(shift+R)
+  // 视觉兑换(R)/推入(shift+R)
   else if (rc.key_ & KEY_R) {
     if (rc.key_ & KEY_SHIFT) {
-      task.startExchange();
+      task.startCVExchange();
     } else {
-      task.switchMode(ArmTask::Mode_e::EXCHANGE);
+      task.switchMode(ArmTask::Mode_e::CV_EXCHANGE);
     }
   }
   // 机械臂气泵开启(ctrl+X)
@@ -638,6 +638,7 @@ void ArmTask::reset(void) {
   withdraw_.state = IDLE;
   withdraw_above_.state = IDLE;
   exchange_.state = IDLE;
+  cv_exchange_.state = IDLE;
   triple_pick_.state = IDLE;
   // 重置任务步骤
   move_.step = Move_t::PREPARE;
@@ -646,6 +647,7 @@ void ArmTask::reset(void) {
   withdraw_.step = Withdraw_t::PREPARE;
   withdraw_above_.step = WithdrawAbove_t::PREPARE;
   exchange_.step = Exchange_t::PREPARE;
+  cv_exchange_.step = CV_Exchange_t::PREPARE;
   triple_pick_.step = TriplePick_t::PREPARE;
   // 设置指针
   move_.finish_tick = &finish_tick_;
@@ -654,6 +656,7 @@ void ArmTask::reset(void) {
   withdraw_.finish_tick = &finish_tick_;
   withdraw_above_.finish_tick = &finish_tick_;
   exchange_.finish_tick = &finish_tick_;
+  cv_exchange_.finish_tick = &finish_tick_;
 }
 
 // 切换任务模式
@@ -824,6 +827,9 @@ void ArmTask::abort(void) {
   if (exchange_.step != Exchange_t::LOCATE) {
     exchange_.state = IDLE;
   }
+  if (cv_exchange_.step != CV_Exchange_t::LOCATE) {
+      cv_exchange_.state = IDLE;
+  }
   triple_pick_.state = IDLE;
 }
 
@@ -925,23 +931,22 @@ void ArmTask::startExchange(void) {
 }
 // 开始视觉兑换
 void ArmTask::startCVExchange(void) {
-    //todo:加入视觉通讯的坐标转移代码
     arm_controller_state = false;
-    exchange_.state = WORKING;
-    exchange_.step = Exchange_t::Step_e::LOCATE;
+    cv_exchange_.state = WORKING;
+    cv_exchange_.step = CV_Exchange_t::Step_e::LOCATE;
     // 设置兑换定位位姿
-    exchange_.start_pose.x = arm.ref_.x;
-    exchange_.start_pose.y = arm.ref_.y;
-    exchange_.start_pose.z = arm.ref_.z;
-    exchange_.start_pose.yaw = arm.ref_.yaw;
-    exchange_.start_pose.pitch = arm.ref_.pitch;
-    exchange_.start_pose.roll = arm.ref_.roll;
-    exchange_.push_in_pose = exchange_.start_pose;
+    cv_exchange_.start_pose.x = arm.ref_.x;
+    cv_exchange_.start_pose.y = arm.ref_.y;
+    cv_exchange_.start_pose.z = arm.ref_.z;
+    cv_exchange_.start_pose.yaw = arm.ref_.yaw;
+    cv_exchange_.start_pose.pitch = arm.ref_.pitch;
+    cv_exchange_.start_pose.roll = arm.ref_.roll;
+    cv_exchange_.push_in_pose = cv_exchange_.start_pose;
     Matrixf<3, 1> push_in_offset =
-            robotics::t2r(arm.ref_.T) * exchange_.push_in_offset;
-    exchange_.push_in_pose.x = exchange_.start_pose.x + push_in_offset[0][0];
-    exchange_.push_in_pose.y = exchange_.start_pose.y + push_in_offset[1][0];
-    exchange_.push_in_pose.z = exchange_.start_pose.z + push_in_offset[2][0];
+            robotics::t2r(arm.ref_.T) * cv_exchange_.push_in_offset;
+    cv_exchange_.push_in_pose.x = cv_exchange_.start_pose.x + push_in_offset[0][0];
+    cv_exchange_.push_in_pose.y = cv_exchange_.start_pose.y + push_in_offset[1][0];
+    cv_exchange_.push_in_pose.z = cv_exchange_.start_pose.z + push_in_offset[2][0];
     // 设置步骤完成时间
     finish_tick_ = HAL_GetTick() + 10;
 }
@@ -1409,6 +1414,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1427,6 +1433,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1444,6 +1451,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1480,6 +1488,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1501,6 +1510,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1519,6 +1529,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1536,6 +1547,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
@@ -1572,6 +1584,7 @@ void ArmTask::triplePickHandle(void) {
       withdraw_.state = IDLE;
       withdraw_above_.state = IDLE;
       exchange_.state = IDLE;
+      cv_exchange_.state = IDLE;
       // triple_pick_.state = IDLE;
     }
   }
